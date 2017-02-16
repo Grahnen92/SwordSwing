@@ -18,9 +18,11 @@ public:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
-	UPROPERTY(Category = "Voxel Terrain", BlueprintReadWrite, VisibleAnywhere)
+	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
 		class UProceduralMeshComponent * mesh;
 
+	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
+		UStaticMeshComponent* baseModel;
 	// Called every frame
 	virtual void Tick( float DeltaSeconds ) override;
 

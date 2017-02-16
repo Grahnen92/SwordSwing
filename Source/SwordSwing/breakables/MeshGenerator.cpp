@@ -5,6 +5,8 @@
 #include "ScalarField.h"
 #include "MeshGenerator.h"
 #include "Triangulation.h"
+#include "RawMesh.h"
+#include "Components/StaticMeshComponent.h"
 
 
 
@@ -13,7 +15,8 @@ AMeshGenerator::AMeshGenerator()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	mesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Terrain Mesh"));
+	mesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Procedural Mesh"));
+	baseModel = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Base Model"));
 }
 
 // Called when the game starts or when spawned
@@ -21,11 +24,16 @@ void AMeshGenerator::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	ScalarField<float> sf(100, 1000);
-	sf.setHalfOfAllValues(255.0f);
-	//sf.generateMesh(mesh);
+	FStaticMeshSourceModel* sourceM = &baseModel->StaticMesh->SourceModels[0];
+	FRawMesh rawMesh;
+	sourceM->RawMeshBulkData->LoadRawMesh(rawMesh);
 
-	triangulation::test();
+	ScalarField<float> sf(100, baseModel->Bounds.GetBox().GetExtent());
+	sf.meshToLeveSet(&rawMesh);
+	//sf.setHalfOfAllValues(255.0f);
+
+
+	triangulation::marchingCubes(mesh, &sf);
 }
 
 // Called every frame

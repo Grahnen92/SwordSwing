@@ -6,7 +6,7 @@ public class SwordSwing : ModuleRules
 {
 	public SwordSwing(TargetInfo Target)
 	{
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ProceduralMeshComponent" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ProceduralMeshComponent", "RawMesh"});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
