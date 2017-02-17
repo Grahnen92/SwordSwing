@@ -23,6 +23,9 @@ public:
 
 	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
 		UStaticMeshComponent* baseModel;
+
+	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
+		int32 resolution = 30;
 	// Called every frame
 	virtual void Tick( float DeltaSeconds ) override;
 

@@ -7,6 +7,7 @@
 #include <vector>
 #include "ProceduralMeshComponent.h"
 #include "RawMesh.h"
+#include <limits>
 
 template <typename scalar_value>
 using scalar_u_ptr_3d = std::unique_ptr < std::unique_ptr<std::unique_ptr<scalar_value[]>[]>[]>;
@@ -134,31 +135,45 @@ public:
 	{
 		float x, y, z;
 
+		/*scalar_value max = -std::numeric_limits<scalar_value>::infinity();
+		scalar_value min = -max;*/
+		
 		for (int i = 0; i < res.X; i++)
 		{
 			for (int j = 0; j < res.Y; j++)
 			{
 				for (int k = 0; k < res.Z; k++) {
-					if (i == 0 || j == 0 || k == 0 || i == res.X - 1 || j == res.Y - 1 || k == res.Z - 1) 
-					{
-						data[i][j][k] = 0.0f;
-					}
-					else
-					{
-						x = ((i - (res.X / 2)) / res.X)*dim.X;
-						y = ((j - (res.Y / 2)) / res.Y)*dim.Y;
-						z = ((k - (res.Z / 2)) / res.Z)*dim.Z;
-						data[i][j][k] = distanceToMesh(_rm, FVector(x, y, z));
+					//if (i == 0 || j == 0 || k == 0 || i == res.X - 1 || j == res.Y - 1 || k == res.Z - 1) 
+					//{
+					//	//data[i][j][k] = -1000.0f;
+					//}
+					//else
+					//{
+						x = ((i - (res.X / 2)) / res.X)*dim.X + (dim.X/ res.X)*0.5f;
+						y = ((j - (res.Y / 2)) / res.Y)*dim.Y + (dim.Y / res.Y)*0.5f;
+						//z = ((k - (res.Z / 2)) / res.Z)*dim.Z + (dim.Z / res.Z)*0.5f;
+						z = ((k ) / res.Z)*dim.Z + (dim.Z / res.Z)*0.5f;
+						data[i][j][k] = -distanceToMesh(_rm, FVector(x, y, z));
+						
 
-						if(data[i][j][k] > 0)
+						/*if (data[i][j][k] > max) 
+						{
+							max = data[i][j][k];
+						}
+						else if (data[i][j][k] < min)
+						{
+							min = data[i][j][k];
+						}*/
+
+						/*if(data[i][j][k] > 0)
 						{
 							data[i][j][k] = 0.0f;
 						}
 						else 
 						{
 							data[i][j][k] = 255.0f;
-						}
-					}
+						}*/
+					//}
 				}
 			}
 		}
@@ -184,6 +199,10 @@ public:
 	{
 		return iso_value;
 	}
+	void setIsoValue(scalar_value _iv)
+	{
+		 iso_value = _iv;
+	}
 
 private:
 		//scalar_u_ptr_3d<scalar_value> data;
@@ -191,7 +210,7 @@ private:
 		FVector res;
 		FVector dim;
 
-		scalar_value iso_value = 122.5f;
+		scalar_value iso_value;
 
 		void allocateData() {
 			//data = scalar_u_ptr_3d<scalar_value>(new scalar_u_ptr_2d<scalar_value>[res.X]);
@@ -209,6 +228,8 @@ private:
 		}
 
 		float distanceToMesh(FRawMesh* _rm, FVector _p) {
+			
+			
 			FVector closest_point_on_tri;
 			FVector closest_point_on_mesh;
 
@@ -218,21 +239,21 @@ private:
 			int closest_tri_index;
 			
 			closest_point_on_tri = FMath::ClosestPointOnTriangleToPoint(_p,
-				_rm->VertexPositions[0],
-				_rm->VertexPositions[0 + 1],
-				_rm->VertexPositions[0 + 2]);
+				_rm->VertexPositions[_rm->WedgeIndices[0]],
+				_rm->VertexPositions[_rm->WedgeIndices[0 + 1]],
+				_rm->VertexPositions[_rm->WedgeIndices[0 + 2]]);
 
 			min_dist = FVector::DistSquared(closest_point_on_tri, _p);
 			closest_point_on_mesh = closest_point_on_tri;
 			closest_tri_index = 0;
 			
 			
-			for (int i = 3; i < _rm->VertexPositions.Num(); i = i + 3)
+			for (int i = 3; i < _rm->WedgeIndices.Num(); i = i + 3)
 			{
 				closest_point_on_tri = FMath::ClosestPointOnTriangleToPoint(_p,
-					_rm->VertexPositions[i],
-					_rm->VertexPositions[i + 1],
-					_rm->VertexPositions[i + 2]);
+					_rm->VertexPositions[_rm->WedgeIndices[i]],
+					_rm->VertexPositions[_rm->WedgeIndices[i + 1]],
+					_rm->VertexPositions[_rm->WedgeIndices[i + 2]]);
 
 				tmp_dist = FVector::DistSquared(closest_point_on_tri, _p);
 				if (tmp_dist < min_dist)
@@ -245,8 +266,8 @@ private:
 
 
 			FVector closest_vector = closest_point_on_mesh - _p;
-			FVector e1 = _rm->VertexPositions[closest_tri_index + 1] - _rm->VertexPositions[closest_tri_index];
-			FVector e2 = _rm->VertexPositions[closest_tri_index + 2] - _rm->VertexPositions[closest_tri_index];
+			FVector e1 = _rm->VertexPositions[_rm->WedgeIndices[closest_tri_index + 1]] - _rm->VertexPositions[_rm->WedgeIndices[closest_tri_index]];
+			FVector e2 = _rm->VertexPositions[_rm->WedgeIndices[closest_tri_index + 2]] - _rm->VertexPositions[_rm->WedgeIndices[closest_tri_index]];
 			closest_vector.Normalize();
 			if (FVector::DotProduct(closest_vector, FVector::CrossProduct(e1, e2)) < 0)
 			{
