@@ -131,7 +131,7 @@ public:
 		}
 	}
 
-	void meshToLeveSet(FRawMesh* _rm)
+	void meshToLeveSet(FRawMesh* _rm, FVector& _mid_point)
 	{
 		float x, y, z;
 
@@ -149,10 +149,10 @@ public:
 					//}
 					//else
 					//{
-						x = ((i - (res.X / 2)) / res.X)*dim.X + (dim.X/ res.X)*0.5f;
-						y = ((j - (res.Y / 2)) / res.Y)*dim.Y + (dim.Y / res.Y)*0.5f;
-						//z = ((k - (res.Z / 2)) / res.Z)*dim.Z + (dim.Z / res.Z)*0.5f;
-						z = ((k ) / res.Z)*dim.Z + (dim.Z / res.Z)*0.5f;
+						x = ((i - (res.X / 2)) / res.X)*dim.X + (dim.X/ res.X)*0.5f + _mid_point.X;
+						y = ((j - (res.Y / 2)) / res.Y)*dim.Y + (dim.Y / res.Y)*0.5f + _mid_point.Y;
+						z = ((k - (res.Z / 2)) / res.Z)*dim.Z + (dim.Z / res.Z)*0.5f + _mid_point.Z;
+						//z = ((k ) / res.Z)*dim.Z + (dim.Z / res.Z)*0.5f;
 						data[i][j][k] = -distanceToMesh(_rm, FVector(x, y, z));
 						
 
