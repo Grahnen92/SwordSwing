@@ -18,7 +18,7 @@ namespace triangulation {
 	};
 
 	template <typename scalar_value>
-	void marchingCubes(UProceduralMeshComponent* _mesh, ScalarField<scalar_value>* _sf, FVector& _mid_point) {
+	void marchingCubes(UProceduralMeshComponent* _mesh, ScalarField<scalar_value>* _sf, FVector& _mid_point = FVector(0.0f, 0.0f, 0.0f)) {
 		UE_LOG(LogTemp, Warning, TEXT("generating mesh..."));
 		int cubeIndex;
 
@@ -33,6 +33,9 @@ namespace triangulation {
 
 		int x, y, z;
 		int layerIndex = 0;
+
+
+
 
 		TArray<FVector> vertexArray;
 		TArray<int32> triangleArray;
@@ -50,6 +53,13 @@ namespace triangulation {
 		scalar_value _iso_value = _sf->getIsoValue();
 		scalar_value*** _data = _sf->getData();
 
+		float resxm1 = (_res.X - 1);
+		float resxm1d2 = resxm1 / 2.0f;
+		float resym1 = (_res.Y - 1);
+		float resym1d2 = resym1 / 2.0f;
+		float reszm1 = (_res.Z - 1);
+		float reszm1d2 = reszm1 / 2.0f;
+
 		cacheCell*** isoCache = new cacheCell**[2];
 		for (int i = 0; i < 2; i++)
 		{
@@ -61,7 +71,7 @@ namespace triangulation {
 		}
 
 		std::vector<int> y0Cache;
-		y0Cache.resize(_res.Z);
+		y0Cache.resize(reszm1);
 		int z0Cache;
 
 		//create the first layer
@@ -76,9 +86,10 @@ namespace triangulation {
 		//inherit corner values from isoCache
 
 		//calculate corner values that could not be inherited
-		xyz[0][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-		xyz[0][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y +_mid_point.Y;
-		xyz[0][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+		//((i - ((res.X - 1) / 2.f)) / (res.X - 1))*dim.X + offset.X;
+		xyz[0][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+		xyz[0][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y +_mid_point.Y;
+		xyz[0][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 		val[0] = _data[x][y][z];
 		if (_data[x][y][z] < _iso_value)			// cubeIndex |= 1;
 			cellIsoBool[0] = true;
@@ -87,45 +98,45 @@ namespace triangulation {
 
 
 
-		xyz[1][0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-		xyz[1][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-		xyz[1][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+		xyz[1][0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+		xyz[1][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+		xyz[1][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 		val[1] = _data[x + 1][y][z];
 		if (_data[x + 1][y][z] < _iso_value)		// cubeIndex |= 2;
 			cellIsoBool[1] = true;
 		else
 			cellIsoBool[1] = false;
 
-		xyz[2][0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-		xyz[2][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-		xyz[2][2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+		xyz[2][0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+		xyz[2][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+		xyz[2][2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 		val[2] = _data[x + 1][y][z + 1];
 		if (_data[x + 1][y][z + 1] < _iso_value)	// cubeIndex |= 4;
 			cellIsoBool[2] = true;
 		else
 			cellIsoBool[2] = false;
 
-		xyz[3][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-		xyz[3][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y+ _mid_point.Y;
-		xyz[3][2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+		xyz[3][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+		xyz[3][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y+ _mid_point.Y;
+		xyz[3][2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 		val[3] = _data[x][y][z + 1];
 		if (_data[x][y][z + 1] < _iso_value)		// cubeIndex |= 8;
 			cellIsoBool[3] = true;
 		else
 			cellIsoBool[3] = false;
 
-		xyz[4][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-		xyz[4][1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-		xyz[4][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+		xyz[4][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+		xyz[4][1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+		xyz[4][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 		val[4] = _data[x][y + 1][z];
 		if (_data[x][y + 1][z] < _iso_value)		//cubeIndex |= 16;
 			cellIsoBool[4] = true;
 		else
 			cellIsoBool[4] = false;
 
-		xyz[5][0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-		xyz[5][1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-		xyz[5][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+		xyz[5][0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+		xyz[5][1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+		xyz[5][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 		val[5] = _data[x + 1][y + 1][z];
 		if (_data[x + 1][y + 1][z] < _iso_value)	// cubeIndex |= 32;
 			cellIsoBool[5] = true;
@@ -133,18 +144,18 @@ namespace triangulation {
 			cellIsoBool[5] = false;
 
 		//save the sixth corner values to isoCache
-		xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-		xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-		xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+		xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+		xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+		xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 		val[6] = _data[x + 1][y + 1][z + 1];
 		if (_data[x + 1][y + 1][z + 1] < _iso_value)// cubeIndex |= 64;
 			cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
 		else
 			cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
 
-		xyz[7][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-		xyz[7][1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-		xyz[7][2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+		xyz[7][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+		xyz[7][1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+		xyz[7][2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 		val[7] = _data[x][y + 1][z + 1];
 		if (_data[x][y + 1][z + 1] < _iso_value)	// cubeIndex |= 128;
 			cellIsoBool[7] = true;
@@ -318,18 +329,18 @@ namespace triangulation {
 			cellIsoBool[5] = isoCache[layerIndex][y][z - 1].isoBool;
 
 			//calculate corner values that could not be inherited
-			xyz[2][0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[2][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-			xyz[2][2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[2][0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[2][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+			xyz[2][2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[2] = _data[x + 1][y][z + 1];
 			if (_data[x + 1][y][z + 1] < _iso_value)	// cubeIndex |= 4;
 				cellIsoBool[2] = true;
 			else
 				cellIsoBool[2] = false;
 
-			xyz[3][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[3][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y+ _mid_point.Y;
-			xyz[3][2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[3][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[3][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y+ _mid_point.Y;
+			xyz[3][2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[3] = _data[x][y][z + 1];
 			if (_data[x][y][z + 1] < _iso_value)		// cubeIndex |= 8;
 				cellIsoBool[3] = true;
@@ -337,18 +348,18 @@ namespace triangulation {
 				cellIsoBool[3] = false;
 
 			//save the sixth corner values to isoCache
-			xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-			xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+			xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[6] = _data[x + 1][y + 1][z + 1];
 			if (_data[x + 1][y + 1][z + 1] < _iso_value)// cubeIndex |= 64;
 				cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
 			else
 				cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
 
-			xyz[7][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[7][1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-			xyz[7][2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[7][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[7][1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+			xyz[7][2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[7] = _data[x][y + 1][z + 1];
 			if (_data[x][y + 1][z + 1] < _iso_value)	// cubeIndex |= 128;
 				cellIsoBool[7] = true;
@@ -484,45 +495,45 @@ namespace triangulation {
 			cellIsoBool[2] = isoCache[layerIndex][y - 1][z].isoBool;
 
 			//calculate corner values that could not be inherited ---------------------------------
-			xyz[0][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[0][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y +_mid_point.Y;
-			xyz[0][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[0][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[0][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y +_mid_point.Y;
+			xyz[0][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[0] = _data[x][y][z];
 			if (_data[x][y][z] < _iso_value)			// cubeIndex |= 1;
 				cellIsoBool[0] = true;
 			else
 				cellIsoBool[0] = false;
 
-			xyz[1][0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[1][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-			xyz[1][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[1][0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[1][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+			xyz[1][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[1] = _data[x + 1][y][z];
 			if (_data[x + 1][y][z] < _iso_value)		// cubeIndex |= 2;
 				cellIsoBool[1] = true;
 			else
 				cellIsoBool[1] = false;
 
-			xyz[3][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[3][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y+ _mid_point.Y;
-			xyz[3][2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[3][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[3][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y+ _mid_point.Y;
+			xyz[3][2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[3] = _data[x][y][z + 1];
 			if (_data[x][y][z + 1] < _iso_value)		// cubeIndex |= 8;
 				cellIsoBool[3] = true;
 			else
 				cellIsoBool[3] = false;
 
-			xyz[4][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[4][1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-			xyz[4][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[4][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[4][1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+			xyz[4][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[4] = _data[x][y + 1][z];
 			if (_data[x][y + 1][z] < _iso_value)		//cubeIndex |= 16;
 				cellIsoBool[4] = true;
 			else
 				cellIsoBool[4] = false;
 
-			xyz[5][0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[5][1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-			xyz[5][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[5][0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[5][1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+			xyz[5][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[5] = _data[x + 1][y + 1][z];
 			if (_data[x + 1][y + 1][z] < _iso_value)	// cubeIndex |= 32;
 				cellIsoBool[5] = true;
@@ -530,18 +541,18 @@ namespace triangulation {
 				cellIsoBool[5] = false;
 
 			//save the sixth corner values to isoCache
-			xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-			xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+			xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[6] = _data[x + 1][y + 1][z + 1];
 			if (_data[x + 1][y + 1][z + 1] < _iso_value)// cubeIndex |= 64;
 				cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
 			else
 				cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
 
-			xyz[7][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[7][1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-			xyz[7][2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[7][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[7][1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+			xyz[7][2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[7] = _data[x][y + 1][z + 1];
 			if (_data[x][y + 1][z + 1] < _iso_value)	// cubeIndex |= 128;
 				cellIsoBool[7] = true;
@@ -696,9 +707,9 @@ namespace triangulation {
 				cellIsoBool[5] = isoCache[layerIndex][y][z - 1].isoBool;
 
 				//calculate corner values that could not be inherited
-				xyz[3][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-				xyz[3][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y+ _mid_point.Y;
-				xyz[3][2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+				xyz[3][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+				xyz[3][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y+ _mid_point.Y;
+				xyz[3][2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 				val[3] = _data[x][y][z + 1];
 				if (_data[x][y][z + 1] < _iso_value)		// cubeIndex |= 8;
 					cellIsoBool[3] = true;
@@ -706,18 +717,18 @@ namespace triangulation {
 					cellIsoBool[3] = false;
 
 				//save the sixth corner values to isoCache
-				xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-				xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-				xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+				xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+				xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+				xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 				val[6] = _data[x + 1][y + 1][z + 1];
 				if (_data[x + 1][y + 1][z + 1] < _iso_value)// cubeIndex |= 64;
 					cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
 				else
 					cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = false;
 
-				xyz[7][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-				xyz[7][1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-				xyz[7][2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+				xyz[7][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+				xyz[7][1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+				xyz[7][2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 				val[7] = _data[x][y + 1][z + 1];
 				if (_data[x][y + 1][z + 1] < _iso_value)	// cubeIndex |= 128;
 					cellIsoBool[7] = true;
@@ -840,54 +851,54 @@ namespace triangulation {
 			cellIsoBool[7] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
 
 			//calculate corner values that could not be inherited
-			xyz[0][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[0][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y +_mid_point.Y;
-			xyz[0][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[0][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[0][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y +_mid_point.Y;
+			xyz[0][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[0] = _data[x][y][z];
 			if (_data[x][y][z] < _iso_value)			// cubeIndex |= 1;
 				cellIsoBool[0] = true;
 			else
 				cellIsoBool[0] = false;
 
-			xyz[1][0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[1][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-			xyz[1][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[1][0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[1][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+			xyz[1][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[1] = _data[x + 1][y][z];
 			if (_data[x + 1][y][z] < _iso_value)		// cubeIndex |= 2;
 				cellIsoBool[1] = true;
 			else
 				cellIsoBool[1] = false;
 
-			xyz[2][0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[2][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-			xyz[2][2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[2][0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[2][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+			xyz[2][2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[2] = _data[x + 1][y][z + 1];
 			if (_data[x + 1][y][z + 1] < _iso_value)	// cubeIndex |= 4;
 				cellIsoBool[2] = true;
 			else
 				cellIsoBool[2] = false;
 
-			xyz[3][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[3][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y+ _mid_point.Y;
-			xyz[3][2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[3][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[3][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y+ _mid_point.Y;
+			xyz[3][2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[3] = _data[x][y][z + 1];
 			if (_data[x][y][z + 1] < _iso_value)		// cubeIndex |= 8;
 				cellIsoBool[3] = true;
 			else
 				cellIsoBool[3] = false;
 
-			xyz[4][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[4][1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-			xyz[4][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[4][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[4][1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+			xyz[4][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[4] = _data[x][y + 1][z];
 			if (_data[x][y + 1][z] < _iso_value)		//cubeIndex |= 16;
 				cellIsoBool[4] = true;
 			else
 				cellIsoBool[4] = false;
 
-			xyz[5][0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[5][1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-			xyz[5][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[5][0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[5][1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+			xyz[5][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[5] = _data[x + 1][y + 1][z];
 			if (_data[x + 1][y + 1][z] < _iso_value)	// cubeIndex |= 32;
 				cellIsoBool[5] = true;
@@ -895,9 +906,9 @@ namespace triangulation {
 				cellIsoBool[5] = false;
 
 			//save the sixth corner values to isoCache
-			xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-			xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-			xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+			xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+			xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+			xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 			val[6] = _data[x + 1][y + 1][z + 1];
 			if (_data[x + 1][y + 1][z + 1] < _iso_value)// cubeIndex |= 64;
 				cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
@@ -1067,18 +1078,18 @@ namespace triangulation {
 				cellIsoBool[7] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
 
 				//calculate corner values that could not be inherited ---------------------------
-				xyz[2][0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-				xyz[2][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-				xyz[2][2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+				xyz[2][0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+				xyz[2][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+				xyz[2][2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 				val[2] = _data[x + 1][y][z + 1];
 				if (_data[x + 1][y][z + 1] < _iso_value)	// cubeIndex |= 4;
 					cellIsoBool[2] = true;
 				else
 					cellIsoBool[2] = false;
 
-				xyz[3][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-				xyz[3][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y+ _mid_point.Y;
-				xyz[3][2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+				xyz[3][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+				xyz[3][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y+ _mid_point.Y;
+				xyz[3][2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 				val[3] = _data[x][y][z + 1];
 				if (_data[x][y][z + 1] < _iso_value)		// cubeIndex |= 8;
 					cellIsoBool[3] = true;
@@ -1086,9 +1097,9 @@ namespace triangulation {
 					cellIsoBool[3] = false;
 
 				//save the sixth corner values to isoCache
-				xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-				xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-				xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+				xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+				xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+				xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 				val[6] = _data[x + 1][y + 1][z + 1];
 				if (_data[x + 1][y + 1][z + 1] < _iso_value)// cubeIndex |= 64;
 					cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
@@ -1228,36 +1239,36 @@ namespace triangulation {
 				cellIsoBool[7] = isoCache[(layerIndex + 1) % 2][y][z].isoBool;
 
 				//calculate corner values that could not be inherited ---------------------------------
-				xyz[0][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-				xyz[0][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y +_mid_point.Y;
-				xyz[0][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+				xyz[0][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+				xyz[0][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y +_mid_point.Y;
+				xyz[0][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 				val[0] = _data[x][y][z];
 				if (_data[x][y][z] < _iso_value)			// cubeIndex |= 1;
 					cellIsoBool[0] = true;
 				else
 					cellIsoBool[0] = false;
 
-				xyz[1][0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-				xyz[1][1] = (float)((y - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-				xyz[1][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+				xyz[1][0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+				xyz[1][1] = (float)((y - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+				xyz[1][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 				val[1] = _data[x + 1][y][z];
 				if (_data[x + 1][y][z] < _iso_value)		// cubeIndex |= 2;
 					cellIsoBool[1] = true;
 				else
 					cellIsoBool[1] = false;
 
-				xyz[4][0] = (float)((x - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-				xyz[4][1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-				xyz[4][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+				xyz[4][0] = (float)((x - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+				xyz[4][1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+				xyz[4][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 				val[4] = _data[x][y + 1][z];
 				if (_data[x][y + 1][z] < _iso_value)		//cubeIndex |= 16;
 					cellIsoBool[4] = true;
 				else
 					cellIsoBool[4] = false;
 
-				xyz[5][0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-				xyz[5][1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-				xyz[5][2] = (float)((z - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+				xyz[5][0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+				xyz[5][1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+				xyz[5][2] = (float)((z - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 				val[5] = _data[x + 1][y + 1][z];
 				if (_data[x + 1][y + 1][z] < _iso_value)	// cubeIndex |= 32;
 					cellIsoBool[5] = true;
@@ -1265,9 +1276,9 @@ namespace triangulation {
 					cellIsoBool[5] = false;
 
 				//save the sixth corner values to isoCache
-				xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-				xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-				xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+				xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+				xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+				xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 				val[6] = _data[x + 1][y + 1][z + 1];
 				if (_data[x + 1][y + 1][z + 1] < _iso_value)// cubeIndex |= 64;
 					cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
@@ -1426,9 +1437,9 @@ namespace triangulation {
 
 					//calculate corner values that could not be inherited -------------------------------------------------
 					//save the sixth corner values to isoCache
-					xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (_res.X / 2)) / ((float)(_res.X)))*_dim.X + _mid_point.X;
-					xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (_res.Y / 2)) / ((float)(_res.Y)))*_dim.Y + _mid_point.Y;
-					xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (_res.Z / 2)) / ((float)(_res.Z)))*_dim.Z + _mid_point.Z;
+					xyz[6][0] = isoCache[layerIndex][y][z].cornerPoint[0] = (float)((x + 1 - (resxm1d2)) / ((float)(resxm1)))*_dim.X + _mid_point.X;
+					xyz[6][1] = isoCache[layerIndex][y][z].cornerPoint[1] = (float)((y + 1 - (resym1d2)) / ((float)(resym1)))*_dim.Y + _mid_point.Y;
+					xyz[6][2] = isoCache[layerIndex][y][z].cornerPoint[2] = (float)((z + 1 - (reszm1d2)) / ((float)(reszm1)))*_dim.Z + _mid_point.Z;
 					val[6] = _data[x + 1][y + 1][z + 1];
 					if (_data[x + 1][y + 1][z + 1] < _iso_value)// cubeIndex |= 64;
 						cellIsoBool[6] = isoCache[layerIndex][y][z].isoBool = true;
@@ -1526,14 +1537,14 @@ namespace triangulation {
 
 
 		auto UV0 = TArray<FVector2D>();
-		auto Colors = TArray<FColor>();
+		auto Colors = TArray<FLinearColor>();
 		for (int i = 0; i < vertexArray.Num(); i++)
-			Colors.Add(FColor(1.0f, 1.0f, 1.0f));
+			Colors.Add(FLinearColor(1.0f, 0.0f, 0.0f));
 
 
 		calcNormals(&vertexArray, &triangleArray, &normalArray, &tangentArray);
 
-		_mesh->CreateMeshSection(0, vertexArray, triangleArray, normalArray, UV0, Colors, tangentArray, true);
+		_mesh->CreateMeshSection_LinearColor(_mesh->GetNumSections(), vertexArray, triangleArray, normalArray, UV0, Colors, tangentArray, true);
 		//debugpoint
 		UE_LOG(LogTemp, Warning, TEXT("finished..."));
 		UE_LOG(LogTemp, Warning, TEXT("tris %f"), triangleArray.Num());
