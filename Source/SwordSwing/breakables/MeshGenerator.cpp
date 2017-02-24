@@ -18,6 +18,8 @@ AMeshGenerator::AMeshGenerator()
 	mesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Procedural Mesh"));
 	//mesh->bUseComplexAsSimpleCollision = true;
 	RootComponent = mesh;
+	mesh->SetSimulatePhysics(true);
+
 	baseModel = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Base Model"));
 	baseModel->SetupAttachment(NULL);
 }
@@ -61,15 +63,16 @@ void AMeshGenerator::BeginPlay()
 	//triangulation::marchingCubes(mesh, &sf, mid_point);
 
 	//Create signed distance function and level set for fragments ===============================================================================
-	ScalarField<float> sf2(res.Z, increased_extent.Z/2.0f);
+	ScalarField<float> sf2(resolution, increased_extent.Z/2.0f);
 	sf2.setIsoValue(0.0f);
 	sf2.sphereSignedDistance(FVector::ZeroVector);
+	
 
 	//mid_point = FVector(0.0f, 0.0f, 0.0f);
 	triangulation::marchingCubes(mesh, &sf2, mid_point);
 
 	FMatrix test_mat;
-	ScalarField<float> sf3(res.Z, increased_extent.Z / 2.0f);
+	ScalarField<float> sf3(resolution, increased_extent.Z / 2.0f);
 	//ScalarField<float>::mergeLevelSets(&sf, &sf2,FMatrix::Identity.ConcatTranslation(mid_point) , &sf3);
 	//triangulation::marchingCubes(mesh, &sf3, mid_point);
 	if(mesh->IsCollisionEnabled())
@@ -78,9 +81,9 @@ void AMeshGenerator::BeginPlay()
 		UE_LOG(LogTemp, Warning, TEXT("physicscollision is enabled..."));
 	if(mesh->ContainsPhysicsTriMeshData(false))
 		UE_LOG(LogTemp, Warning, TEXT("ContainsPhysicsTriMeshData..."));
-	mesh->SetSimulatePhysics(true);
 	if(mesh->IsSimulatingPhysics())
 		UE_LOG(LogTemp, Warning, TEXT("is simulating physics..."));
+
 	
 }
 
