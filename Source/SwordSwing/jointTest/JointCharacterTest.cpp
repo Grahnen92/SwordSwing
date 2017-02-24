@@ -29,7 +29,7 @@ AJointCharacterTest::AJointCharacterTest()
 	camera->SetupAttachment(camera_spring_arm, USpringArmComponent::SocketName);
 
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
-
+	//git test
 	
 }
 
