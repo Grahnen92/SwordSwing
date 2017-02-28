@@ -2,8 +2,11 @@
 
 #pragma once
 
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
+
 #include "GameFramework/Pawn.h"
 #include "JointCharacterTest.generated.h"
+
 
 UCLASS()
 class SWORDSWING_API AJointCharacterTest : public APawn
@@ -27,6 +30,24 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* rolling_body;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* weapon_axis;
+
+	UPROPERTY(VisibleAnywhere)
+	UPhysicsConstraintComponent* weapon_axis_attachment;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* weapon_motor;
+
+	UPROPERTY(VisibleAnywhere)
+	UPhysicsConstraintComponent* weapon_motor_attachment;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* weapon;
+
+	UPROPERTY(VisibleAnywhere)
+	UPhysicsConstraintComponent* weapon_attachment;
 
 	FVector2D movement_input;
 	FVector2D camera_input;
@@ -61,6 +82,24 @@ protected:
 	float zoom_factor;
 	bool zooming;
 
+	void fightModeOn();
+	void fightModeOff(); 
+	FRotator axis_target_rot;
+	FRotator arm_target_rot;
+	FRotator axis_rot_before_fight;
+	FRotator arm_rot_before_fight;
+	float arm_length_before_fight;
+	float target_arm_length;
+	
+	bool fight_mode;
+	int fight_mode_state;
+	float fight_t;
+	UPROPERTY(EditAnywhere)
+	float fight_mode_engage_time = 0.25;
+	// 0 disengaged
+	// 1 engaging
+	// 2 engaged
+	// 3 disengaging
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -70,6 +109,9 @@ public:
 
 	
 private:
+
+	void SetupJoints();
+
 	struct PIDData
 	{
 		
@@ -84,6 +126,7 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float wanted_hover_height = 0.0f;
-
 	PIDData hover_height;
+
+	PIDData sword_rotation;
 };
