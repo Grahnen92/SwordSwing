@@ -61,8 +61,7 @@ protected:
 	void moveForward(float AxisValue);
 	void moveRight(float AxisValue);
 	//cm/s
-	float target_speed = 1000;
-	float time_to_target_speed = 0.05f;
+	
 	
 	void jump();
 	bool jumping;
@@ -115,18 +114,64 @@ private:
 	struct PIDData
 	{
 		
-		float wanted;
+		float target;
 		float error = 0.0f;
 		float prev_err = 0.0f;
 		float integral = 0.0f;
 		float derivative;
 		float adjustment;
 		float max_adjustment;
+
+		float P;
+		float I;
+		float D;
 	};
 
+	struct PIDData2D
+	{
+
+		FVector2D target;
+		FVector2D error;
+		FVector2D prev_err;
+		FVector2D integral;
+		FVector2D derivative;
+		FVector2D adjustment;
+		FVector2D max_adjustment;
+
+		FVector2D P;
+		FVector2D I;
+		FVector2D D;
+	};
+
+	struct PIDData3D
+	{
+
+		FVector target;
+		FVector error;
+		FVector prev_err;
+		FVector integral;
+		FVector derivative;
+		FVector adjustment;
+		FVector max_adjustment;
+
+		FVector P;
+		FVector I;
+		FVector D;
+	};
+
+	//different PID data
 	UPROPERTY(EditAnywhere)
-	float wanted_hover_height = 0.0f;
+	float target_hover_height = 0.0f;
 	PIDData hover_height;
 
 	PIDData sword_rotation;
+	FVector target_wep_dir;
+
+	PIDData sword_incline;
+
+	UPROPERTY(EditAnywhere)
+	float target_speed = 1000;
+	UPROPERTY(EditAnywhere)
+	float time_to_target_speed = 0.05f;
+	PIDData2D movement_velocity;
 };
