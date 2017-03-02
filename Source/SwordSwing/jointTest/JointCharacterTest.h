@@ -164,10 +164,8 @@ private:
 	float target_hover_height = 0.0f;
 	PIDData hover_height;
 
-	PIDData sword_rotation;
+	PIDData wd;
 	FVector target_wep_dir;
-
-	PIDData sword_incline;
 
 	UPROPERTY(EditAnywhere)
 	float target_speed = 1000;
