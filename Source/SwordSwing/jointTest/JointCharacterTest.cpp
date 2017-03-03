@@ -49,11 +49,11 @@ void AJointCharacterTest::BeginPlay()
 	hover_height.D = 10.0f;
 
 	target_wep_dir = FVector::UpVector;
-	wd.target = 0.0f;
-	wd.max_adjustment = 1000000.f;
-	wd.P = 10.1f;
-	wd.I = 0.f;
-	wd.D = 0.1f;
+	wd.target = FVector2D::ZeroVector;
+	wd.max_adjustment = FVector2D(1000000.f, 1000000.f);
+	wd.P = FVector2D(1000.1f, 1000.1f);
+	wd.I = FVector2D(0.f, 0.f);
+	wd.D = FVector2D(100.0f, 100.1f);
 
 
 	movement_velocity.max_adjustment = FVector2D(1000000.f, 1000000.f);
@@ -118,8 +118,22 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 		//current_wep_dir.Z = 0.0f;
 		FVector2D camera_input_norm = camera_input.GetSafeNormal(0.000000001f);
 		target_wep_dir = (camera_axis->GetForwardVector()*camera_input.Y + camera_axis->GetRightVector()* camera_input.X + camera_axis->GetUpVector()*(1 - camera_input.Size()));
+		target_wep_dir.Normalize();
+
+		FVector target_rot_axis = FVector::CrossProduct(target_wep_dir.GetSafeNormal(), current_wep_dir).GetSafeNormal();
+		//TODO: project onto plane of weapon_direction
+		FVector current_rot_axis = weapon_motor->GetPhysicsAngularVelocity().GetSafeNormal();
+		current_rot_axis = current_rot_axis - FVector::DotProduct(current_rot_axis, current_wep_dir)*current_wep_dir;
+
+		FVector rot_correction_ref = FVector::CrossProduct(target_rot_axis, current_rot_axis.GetSafeNormal());
 		
-		wd.error = FMath::Acos(FVector::DotProduct(target_wep_dir.GetSafeNormal(), current_wep_dir))*180.f / 3.14f;
+		wd.error.X = FMath::Acos(FVector::DotProduct(target_wep_dir.GetSafeNormal(), current_wep_dir))*180.f / 3.14f;
+		
+		if (FVector::DotProduct(target_rot_axis.GetSafeNormal(), current_rot_axis.GetSafeNormal()) < 0.0001f)
+			wd.error.Y = 0.0f;
+		else
+			wd.error.Y = (FMath::Acos(FVector::DotProduct(target_rot_axis, current_rot_axis.GetSafeNormal()))*180.f / 3.14f)*current_rot_axis.Size();
+
 		wd.integral = wd.integral + wd.error * DeltaTime;
 		wd.derivative = (wd.error - wd.prev_err) / DeltaTime;
 
@@ -127,44 +141,59 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 						wd.I * wd.integral +
 						wd.D * wd.derivative;
 		wd.prev_err = wd.error;
-		weapon_motor->AddTorque(FVector::CrossProduct(target_wep_dir.GetSafeNormal(), current_wep_dir)*
-									-wd.adjustment*
+		weapon_motor->AddTorque(target_rot_axis*
+									-wd.adjustment.X*
 									(weapon->GetMass()*FMath::Pow(240.f, 2.0f)/3));
+		weapon_motor->AddTorque(rot_correction_ref*
+			-wd.adjustment.Y*
+			(weapon->GetMass()*FMath::Pow(240.f, 2.0f) / 3));
 		
 		//Draw Debug points ---------------------------------------------------------------------------------------------------
-		DrawDebugPoint(
+		//DrawDebugPoint(
+		//	GetWorld(),
+		//	weapon_motor->GetComponentLocation() + 100* current_wep_dir,
+		//	20,  					//size
+		//	FColor(255, 0, 0),  //pink
+		//	true,  				//persistent (never goes away)
+		//	0.03 					//point leaves a trail on moving object
+		//);
+
+		//DrawDebugPoint(
+		//	GetWorld(),
+		//	weapon_motor->GetComponentLocation() + 100 * target_wep_dir,
+		//	20,  					//size
+		//	FColor(0, 255, 0),  //pink
+		//	true,  				//persistent (never goes away)
+		//	0.03 					//point leaves a trail on moving object
+		//);
+
+		//DrawDebugPoint(
+		//	GetWorld(),
+		//	weapon_motor->GetComponentLocation() + 100 * target_wep_dir ,
+		//	20,  					//size
+		//	FColor(0, 255, 255),  //pink
+		//	true,  				//persistent (never goes away)
+		//	0.03 					//point leaves a trail on moving object
+		//);
+		DrawDebugLine(
 			GetWorld(),
-			weapon_motor->GetComponentLocation() + 100* current_wep_dir,
-			20,  					//size
-			FColor(255, 0, 0),  //pink
-			true,  				//persistent (never goes away)
-			0.03 					//point leaves a trail on moving object
-		);
-		DrawDebugPoint(
-			GetWorld(),
-			weapon_motor->GetComponentLocation() - 100* current_wep_dir,
-			20,  					//size
+			weapon_motor->GetComponentLocation() + 100 * current_wep_dir,
+			weapon_motor->GetComponentLocation() + 100 * current_wep_dir + target_rot_axis*100, 					//size
 			FColor(0, 0, 255),  //pink
 			true,  				//persistent (never goes away)
-			0.03 					//point leaves a trail on moving object
+			0.01, 					//point leaves a trail on moving object
+			10,
+			5.f
 		);
-
-		DrawDebugPoint(
+		DrawDebugLine(
 			GetWorld(),
-			weapon_motor->GetComponentLocation() + 100 * target_wep_dir,
-			20,  					//size
-			FColor(0, 255, 0),  //pink
+			weapon_motor->GetComponentLocation() + 100 * current_wep_dir,
+			weapon_motor->GetComponentLocation() + 100 * current_wep_dir + current_rot_axis * 100, 					//size
+			FColor(255, 0, 0),  //pink
 			true,  				//persistent (never goes away)
-			0.03 					//point leaves a trail on moving object
-		);
-
-		DrawDebugPoint(
-			GetWorld(),
-			weapon_motor->GetComponentLocation() + 100 * target_wep_dir,
-			20,  					//size
-			FColor(0, 255, 255),  //pink
-			true,  				//persistent (never goes away)
-			0.03 					//point leaves a trail on moving object
+			0.01, 					//point leaves a trail on moving object
+			10,
+			5.f
 		);
 		
 		
