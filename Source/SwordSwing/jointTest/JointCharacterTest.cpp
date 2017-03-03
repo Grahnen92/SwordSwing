@@ -147,7 +147,7 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 		FRotator tmp_rotator = target_wep_dir.Rotation() - current_wep_dir.Rotation();
 		wd.error.X = tmp_rotator.Roll;
 		wd.error.Y = tmp_rotator.Pitch;
-		//wd.error.Z = tmp_rotator.Yaw;
+		wd.error.Z = tmp_rotator.Yaw;
 		wd.integral = wd.integral + wd.error * DeltaTime;
 		wd.derivative = (wd.error - wd.prev_err) / DeltaTime;
 
