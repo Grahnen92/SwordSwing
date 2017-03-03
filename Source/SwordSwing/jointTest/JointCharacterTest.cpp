@@ -48,12 +48,12 @@ void AJointCharacterTest::BeginPlay()
 	hover_height.I = 5;
 	hover_height.D = 10.0f;
 
-	target_wep_dir = FVector::ZeroVector;
+	target_wep_dir = FVector::UpVector;
 	wd.target = 0.0f;
 	wd.max_adjustment = 1000000.f;
-	wd.P = 1000000000.1f;
+	wd.P = 10.1f;
 	wd.I = 0.f;
-	wd.D = 0.f;
+	wd.D = 0.1f;
 
 
 	movement_velocity.max_adjustment = FVector2D(1000000.f, 1000000.f);
