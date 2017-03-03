@@ -137,8 +137,7 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 			(weapon->GetMass()*FMath::Pow(240.f, 2.0f) / 3), 
 			weapon_motor->GetComponentLocation() + current_wep_dir*240.f);*/
 
-		weapon_motor->SetWorldRotation(target_wep_dir.Rotation());
-		//weapon_motor->SetAllPhysicsRotation(target_wep_dir.Rotation());
+		weapon_motor->SetAllPhysicsRotation(target_wep_dir.Rotation());
 		
 		
 		
