@@ -36,7 +36,7 @@ AJointCharacterTest::AJointCharacterTest()
 	weapon = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon"));
 	weapon->SetupAttachment(RootComponent);
 	weapon->SetRelativeLocation(FVector(180.f, 0.f, 110.f));
-	weapon->SetRelativeScale3D(FVector(2.0f, 0.1f, 0.1f));
+	weapon->SetRelativeScale3D(FVector(2.0f, 0.2f, 0.05f));
 
 	weapon_attachment = CreateDefaultSubobject<UPhysicsConstraintComponent>( TEXT("WeaponAttachment"));
 	weapon_attachment->SetupAttachment(weapon_motor);
@@ -76,9 +76,9 @@ void AJointCharacterTest::BeginPlay()
 	target_wep_dir = FVector::ZeroVector;
 	sword_rotation.target = 0.0f;
 	sword_rotation.max_adjustment = 1000000;
-	sword_rotation.P = 2.1f;
+	sword_rotation.P = 1000.1f;
 	sword_rotation.I = 0.f;
-	sword_rotation.D = 0.5f;
+	sword_rotation.D = 10.01f;
 
 	sword_incline.target = 0.0f;
 	sword_incline.max_adjustment = 1000000;
@@ -212,11 +212,7 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 			-sword_rotation.adjustment)*FMath::Max(FMath::Pow(camera_input.Size(), 5), 0.0000001f));*/
 		FVector rot_torque = weapon_motor->GetUpVector()*
 			-sword_rotation.adjustment*
-			FMath::Lerp((weapon->GetMass()*FMath::Pow(40.0f, 2) / 2.0f), weapon->GetMass()*FMath::Pow(250.0f, 2) / 3.0f, camera_input.Size());
-
-		/*FVector rot_torque = weapon_motor->GetUpVector()*
-			-sword_rotation.adjustment*
-			(weapon->GetMass()*FMath::Pow(250.0f, 2) / 3.0f);*/
+			FMath::Lerp(weapon->GetMass()*FMath::Pow(10.0f, 2) / 2.0f, weapon->GetMass()*FMath::Pow(250.0f, 2) / 3.0f, camera_input.Size());
 
 		weapon_motor->AddTorque(rot_torque);
 
@@ -550,9 +546,6 @@ void AJointCharacterTest::SetupJoints()
 	weapon_attachment->ConstraintInstance.AngularRotationOffset = FRotator(0.f, -45.f, 0.f);
 	weapon_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.0f);
 	weapon_attachment->SetDisableCollision(true);
-
-	weapon_motor->SetPhysicsMaxAngularVelocity(5000.f);
-	weapon->SetPhysicsMaxAngularVelocity(5000.f);
 
 	//weapon_attachment->SetAngularDriveMode(EAngularDriveMode::TwistAndSwing);
 	//weapon_attachment->SetAngularOrientationTarget(FRotator(0.f, 0.f, 0.f));
