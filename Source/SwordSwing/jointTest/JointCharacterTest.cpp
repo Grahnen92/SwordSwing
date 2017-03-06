@@ -74,17 +74,18 @@ void AJointCharacterTest::BeginPlay()
 	hover_height.D = 10.0f;
 
 	target_wep_dir = FVector::UpVector;
+	prev_target_wep_dir = FVector::ForwardVector;
 	sword_rotation.target = 0.0f;
 	sword_rotation.max_adjustment = 1000000;
-	sword_rotation.P = 1.1f;
+	sword_rotation.P = 5.1f;
 	sword_rotation.I = 0.f;
 	sword_rotation.D = 0.5f;
 
 	sword_incline.target = 0.0f;
 	sword_incline.max_adjustment = 1000000;
-	sword_incline.P = 1000.0f;
+	sword_incline.P = 2500;
 	sword_incline.I = 0.0f;
-	sword_incline.D = 0.1f;
+	sword_incline.D = 200.0f;
 
 	movement_velocity.max_adjustment = FVector2D(1000000.f, 1000000.f);
 	movement_velocity.P = FVector2D(5.f, 5.f);
@@ -144,26 +145,55 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 		}
 		
 		//calculations regarding the position of the weapon ----------------------------------------------------------
-		FVector current_wep_dir = weapon_motor->GetForwardVector();
+		FVector current_wep_dir = weapon_motor->GetForwardVector().GetSafeNormal();
 		current_wep_dir.Z = 0.0f;
 
 		FVector2D camera_input_norm = camera_input.GetSafeNormal(0.000000001f);
-		target_wep_dir = (camera_axis->GetForwardVector()*camera_input.Y + camera_axis->GetRightVector()* camera_input.X) + camera_axis->GetUpVector()*(1-camera_input.Size());
+		float scaled_inverted_cam_input_size = FMath::Pow(1 - camera_input.Size(), 2.0f);
+		float scaled_cam_input_size = FMath::Pow( camera_input.Size(), 2.0f);
+		target_wep_dir = (camera_axis->GetForwardVector()*camera_input.Y + camera_axis->GetRightVector()* camera_input.X) + camera_axis->GetUpVector()*scaled_inverted_cam_input_size;
+		target_wep_dir.Normalize();
 		FVector target_wep_dir_xy = target_wep_dir - FVector::DotProduct(target_wep_dir, camera_axis->GetUpVector())*camera_axis->GetUpVector();
 		FVector target_wep_dir_xz = target_wep_dir - FVector::DotProduct(target_wep_dir, camera_axis->GetRightVector())*camera_axis->GetRightVector();
+		FVector target_wep_dir_yz = target_wep_dir - FVector::DotProduct(target_wep_dir, camera_axis->GetForwardVector())*camera_axis->GetForwardVector();
+		FVector target_wep_dir_curr_wep_proj = target_wep_dir - FVector::DotProduct(target_wep_dir, weapon_motor->GetRightVector())*weapon_motor->GetRightVector();
+	
 
-		float target_weapon_incline = FMath::Acos(FVector::DotProduct(target_wep_dir_xz, weapon_motor->GetUpVector()))*180.f / 3.14f;
-		//if (FVector::CrossProduct(weapon->GetForwardVector(), current_wep_dir.GetSafeNormal()).Z < 0)
-		if (weapon->GetForwardVector().Z < 0)
-			target_weapon_incline = -target_weapon_incline;
+		float current_wep_incline = FMath::Acos(FVector::DotProduct(weapon_motor->GetUpVector(), weapon->GetUpVector()))*180.f / PI;
+		current_wep_incline = FMath::Fmod( current_wep_incline, 90.0f);
+
+		//float target_weapon_incline = FMath::Acos(FVector::DotProduct(target_wep_dir_xz, weapon->GetUpVector()))*180.f / PI;
+		////if (FVector::CrossProduct(weapon->GetForwardVector(), current_wep_dir.GetSafeNormal()).Z < 0)
+		//if (weapon->GetForwardVector().Z < 0)
+		//	target_weapon_incline = -target_weapon_incline;
 		
 		//Control weapon rotation -------------------------------------------------------------------------------------------------
+		
+		if (target_wep_dir_xy.IsNearlyZero()) {
+			//sword_rotation.error = 0.0f;
+			target_wep_dir_xy = prev_target_wep_dir;
+		}
+		else
+		{
+			prev_target_wep_dir = target_wep_dir_xy;
+		}
+		float tmp_forward_error = FMath::Acos(FVector::DotProduct(target_wep_dir_xy.GetSafeNormal(), current_wep_dir.GetSafeNormal()))*180.f / PI;
+		float tmp_backwards_error = FMath::Acos(FVector::DotProduct(target_wep_dir_xy.GetSafeNormal(), -current_wep_dir.GetSafeNormal()))*180.f / PI;
 
-
-		sword_rotation.error = FMath::Acos(FVector::DotProduct(target_wep_dir.GetSafeNormal(), current_wep_dir.GetSafeNormal()))*180.f / 3.14f;
-
-		if (FVector::CrossProduct(target_wep_dir.GetSafeNormal(), current_wep_dir.GetSafeNormal()).Z < 0)
-			sword_rotation.error = -sword_rotation.error;
+		if (tmp_forward_error < tmp_backwards_error)
+		{
+			sword_rotation.error = tmp_forward_error;
+			if (FVector::CrossProduct(target_wep_dir_xy.GetSafeNormal(), current_wep_dir.GetSafeNormal()).Z < 0)
+				sword_rotation.error = -sword_rotation.error;
+		}
+		else
+		{
+			sword_rotation.error = tmp_backwards_error;
+			if (FVector::CrossProduct(target_wep_dir_xy.GetSafeNormal(), -current_wep_dir.GetSafeNormal()).Z < 0)
+				sword_rotation.error = -sword_rotation.error;
+		}
+		//sword_rotation.error = FMath::Acos(FVector::DotProduct(target_wep_dir_xy.GetSafeNormal(), current_wep_dir.GetSafeNormal()))*180.f / PI;
+		
 
 		sword_rotation.integral = sword_rotation.integral + sword_rotation.error * DeltaTime;
 		sword_rotation.derivative = (sword_rotation.error - sword_rotation.prev_err) / DeltaTime;
@@ -213,27 +243,37 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 			-sword_rotation.adjustment)*FMath::Max(FMath::Pow(camera_input.Size(), 5), 0.0000001f));*/
 		FVector rot_torque = weapon_motor->GetUpVector()*
 			-sword_rotation.adjustment*
-			FMath::Lerp((weapon->GetMass()*FMath::Pow(40.0f, 2) / 2.0f), weapon->GetMass()*FMath::Pow(250.0f, 2) / 3.0f, camera_input.Size());
-
-		/*FVector rot_torque = weapon_motor->GetUpVector()*
-			-sword_rotation.adjustment*
-			(weapon->GetMass()*FMath::Pow(250.0f, 2) / 3.0f);*/
-
-		//weapon_motor->AddTorque(rot_torque);
-
-		//UE_LOG(LogTemp, Warning, TEXT("rot_torque.X: %f"), rot_torque.X);
-		//UE_LOG(LogTemp, Warning, TEXT("rot_torque.y: %f"), rot_torque.Y);
-		//UE_LOG(LogTemp, Warning, TEXT("rot_torque.z: %f"), rot_torque.Z);
-		
+			FMath::Lerp((weapon->GetMass()*FMath::Pow(40.0f, 2) / 2.0f), weapon->GetMass()*FMath::Pow(250.0f, 2) / 3.0f, FMath::Pow(current_wep_incline/90.f, 4.0f));
+		weapon_motor->AddTorque(rot_torque);
 			
 		
 		//Control weapon incline --------------------------------------------------------------------------------------------------
 		
 
 		
-		sword_incline.error = /*90.f*FMath::Pow(1-camera_input.Size(),4)*/  FMath::Acos(FVector::DotProduct(weapon->GetUpVector(), target_wep_dir_xz))*180.f / 3.14f;
-		if (weapon->GetUpVector().Z < 0)
-			sword_incline.error = -sword_incline.error;
+		//if (!target_wep_dir_xz.IsNearlyZero() || !target_wep_dir_yz.IsNearlyZero()) {
+		//	if(target_wep_dir_xz.IsNearlyZero())
+		//		target_wep_dir_xz = target_wep_dir_yz;
+		//	
+		//	sword_incline.error = /*90.f*FMath::Pow(1-camera_input.Size(),4)*/  -FMath::Acos(FVector::DotProduct(weapon->GetUpVector(), target_wep_dir_xz.GetSafeNormal()))*180.f / PI;
+		//	if (FVector::Coincident(FVector::CrossProduct(weapon->GetUpVector(), target_wep_dir_xz.GetSafeNormal()), weapon->GetRightVector(), 0.00001f))
+		//		sword_incline.error = -sword_incline.error;
+
+		//	/*if(weapon->GetUpVector().Z < 0.0f)
+		//	sword_incline.error = -sword_incline.error;*/
+		//}
+		//else {
+		//	sword_incline.error = 0.0f;
+		//}
+		if (!target_wep_dir_curr_wep_proj.IsNearlyZero())
+		{
+			sword_incline.error = /*90.f*FMath::Pow(1-camera_input.Size(),4)*/  -FMath::Acos(FVector::DotProduct(weapon->GetUpVector(), target_wep_dir_curr_wep_proj.GetSafeNormal()))*180.f / PI;
+				if (FVector::Coincident(FVector::CrossProduct(weapon->GetUpVector(), target_wep_dir_curr_wep_proj.GetSafeNormal()), weapon->GetRightVector(), 0.00001f))
+					sword_incline.error = -sword_incline.error;
+		}
+		else {
+				sword_incline.error = 0.0f;
+		}
 		
 		//sword_incline.error = 90.f - weapon_incline;
 
@@ -245,46 +285,36 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 								   sword_incline.D * sword_incline.derivative;
 		sword_incline.prev_err = sword_incline.error;
 
-		weapon_attachment->SetAngularVelocityTarget(FVector(0.0f, sword_incline.error, 0.0f));
-		weapon_attachment->SetAngularOrientationTarget(FRotator(0.0f, target_weapon_incline, 0.0f));
-		//weapon->AddTorque(weapon_motor->GetRightVector()*sword_incline.adjustment);
+		/*weapon_attachment->SetAngularVelocityTarget(FVector(0.0f, sword_incline.error, 0.0f));
+		weapon_attachment->SetAngularOrientationTarget(FRotator(0.0f, target_weapon_incline, 0.0f));*/
+		//weapon->AddTorque(weapon->GetRightVector()*sword_incline.adjustment);
 		
-		/*weapon->AddForceAtLocation(weapon->GetUpVector()*sword_incline.adjustment, weapon->GetComponentLocation() + 100 * weapon->GetUpVector());
-		weapon->AddForceAtLocation(weapon->GetUpVector()*-sword_incline.adjustment, weapon->GetComponentLocation() - 100 * weapon->GetUpVector());
-*/
-		
-		////Draw Debug points ---------------------------------------------------------------------------------------------------
-		//DrawDebugPoint(
-		//	GetWorld(),
-		//	weapon->GetComponentLocation() + 100*weapon->GetForwardVector(),
-		//	20,  					//size
-		//	FColor(255, 0, 0),  //pink
-		//	true,  				//persistent (never goes away)
-		//	0.03 					//point leaves a trail on moving object
-		//);
-		//DrawDebugPoint(
-		//	GetWorld(),
-		//	weapon->GetComponentLocation() - 100*weapon->GetForwardVector(),
-		//	20,  					//size
-		//	FColor(0, 0, 255),  //pink
-		//	true,  				//persistent (never goes away)
-		//	0.03 					//point leaves a trail on moving object
-		//);
+		weapon->AddForceAtLocation(weapon->GetForwardVector()*sword_incline.adjustment, weapon->GetComponentLocation() + 100 * weapon->GetUpVector());
+		weapon->AddForceAtLocation(weapon->GetForwardVector()*-sword_incline.adjustment, weapon->GetComponentLocation() - 200 * weapon->GetUpVector());
 
-		//DrawDebugPoint(
-		//	GetWorld(),
-		//	weapon_motor->GetComponentLocation() + 100 * current_wep_dir,
-		//	20,  					//size
-		//	FColor(0, 255, 0),  //pink
-		//	true,  				//persistent (never goes away)
-		//	0.03 					//point leaves a trail on moving object
-		//);
+		DrawDebugPoint(
+			GetWorld(),
+			weapon_motor->GetComponentLocation() + 100 * current_wep_dir,
+			20,  					//size
+			FColor(0, 255, 0),  //pink
+			true,  				//persistent (never goes away)
+			0.03 					//point leaves a trail on moving object
+		);
 
 		DrawDebugPoint(
 			GetWorld(),
 			weapon_motor->GetComponentLocation() + 100 * target_wep_dir,
 			20,  					//size
 			FColor(0, 255, 255),  //pink
+			true,  				//persistent (never goes away)
+			0.03 					//point leaves a trail on moving object
+		);
+
+		DrawDebugPoint(
+			GetWorld(),
+			weapon_motor->GetComponentLocation() + 100 * target_wep_dir_xy.GetSafeNormal(),
+			20,  					//size
+			FColor(255, 0, 0),  //pink
 			true,  				//persistent (never goes away)
 			0.03 					//point leaves a trail on moving object
 		);

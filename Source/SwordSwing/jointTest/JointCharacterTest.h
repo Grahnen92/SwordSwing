@@ -166,11 +166,12 @@ private:
 
 	PIDData sword_rotation;
 	FVector target_wep_dir;
+	FVector prev_target_wep_dir;
 
 	PIDData sword_incline;
 
 	UPROPERTY(EditAnywhere)
-	float target_speed = 1000;
+	float target_speed = 500;
 	UPROPERTY(EditAnywhere)
 	float time_to_target_speed = 0.05f;
 	PIDData2D movement_velocity;
