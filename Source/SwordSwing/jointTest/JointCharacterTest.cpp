@@ -77,15 +77,15 @@ void AJointCharacterTest::BeginPlay()
 	prev_target_wep_dir = FVector::ForwardVector;
 	sword_rotation.target = 0.0f;
 	sword_rotation.max_adjustment = 1000000;
-	sword_rotation.P = 5.1f;
+	sword_rotation.P = 50.1f;
 	sword_rotation.I = 0.f;
-	sword_rotation.D = 0.5f;
+	sword_rotation.D = 8.0f;
 
 	sword_incline.target = 0.0f;
 	sword_incline.max_adjustment = 1000000;
-	sword_incline.P = 2500;
+	sword_incline.P = 500;
 	sword_incline.I = 0.0f;
-	sword_incline.D = 200.0f;
+	sword_incline.D = 60.0f;
 
 	movement_velocity.max_adjustment = FVector2D(1000000.f, 1000000.f);
 	movement_velocity.P = FVector2D(5.f, 5.f);
@@ -239,7 +239,7 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 
 		FVector rot_torque = weapon_motor->GetUpVector()*
 			-sword_rotation.adjustment*
-			FMath::Lerp((weapon->GetMass()*FMath::Pow(40.0f, 2) / 2.0f), weapon->GetMass()*FMath::Pow(250.0f, 2) / 3.0f, FMath::Pow(current_wep_incline/90.f, 4.0f));
+			FMath::Lerp((weapon_motor->GetMass()*FMath::Pow(20.0f, 2) / 2.0f), weapon->GetMass()*FMath::Pow(250.0f, 2) / 3.0f, FMath::Pow(current_wep_incline/90.f, 6.0f));
 		weapon_motor->AddTorque(rot_torque);
 			
 		
@@ -263,15 +263,19 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 		//}
 		if (!target_wep_dir_curr_wep_proj.IsNearlyZero())
 		{
+			
 				
 			sword_incline.error = /*90.f*FMath::Pow(1-camera_input.Size(),4)*/  -FMath::Acos(FVector::DotProduct(weapon->GetUpVector(), target_wep_dir_curr_wep_proj.GetSafeNormal()))*180.f / PI;
 			if (FVector::Coincident(FVector::CrossProduct(weapon->GetUpVector(), target_wep_dir_curr_wep_proj.GetSafeNormal()), weapon->GetRightVector(), 0.00001f))
 			{
 				sword_incline.error = -sword_incline.error;
+					
 			}
+
+			if(weapon->GetUpVector().Z < 0.f && (weapon->GetForwardVector()*sword_incline.error).Z < 0.f)
+				sword_incline.error = -sword_incline.error;
 			
-			//if(sword_incline.error > 90.f && weapon->GetUpVector().Z < 0.0f)
-			//	sword_incline.error = -sword_incline.error;
+			
 
 		}
 		else {
