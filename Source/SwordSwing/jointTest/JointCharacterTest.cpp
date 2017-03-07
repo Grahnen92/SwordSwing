@@ -237,10 +237,6 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 
 		//FMatrix Rdiagonal_inertia = inertia_rotator*Tdiagonal_inertia*inertia_rotator.GetTransposed();
 
-		/*FVector rot_torque = Rdiagonal_inertia.Inverse().TransformVector(weapon_motor->GetUpVector()*
-			-sword_rotation.adjustment);*/
-		/*weapon_motor->AddTorque((weapon_motor->GetUpVector()*
-			-sword_rotation.adjustment)*FMath::Max(FMath::Pow(camera_input.Size(), 5), 0.0000001f));*/
 		FVector rot_torque = weapon_motor->GetUpVector()*
 			-sword_rotation.adjustment*
 			FMath::Lerp((weapon->GetMass()*FMath::Pow(40.0f, 2) / 2.0f), weapon->GetMass()*FMath::Pow(250.0f, 2) / 3.0f, FMath::Pow(current_wep_incline/90.f, 4.0f));
@@ -267,9 +263,16 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 		//}
 		if (!target_wep_dir_curr_wep_proj.IsNearlyZero())
 		{
+				
 			sword_incline.error = /*90.f*FMath::Pow(1-camera_input.Size(),4)*/  -FMath::Acos(FVector::DotProduct(weapon->GetUpVector(), target_wep_dir_curr_wep_proj.GetSafeNormal()))*180.f / PI;
-				if (FVector::Coincident(FVector::CrossProduct(weapon->GetUpVector(), target_wep_dir_curr_wep_proj.GetSafeNormal()), weapon->GetRightVector(), 0.00001f))
-					sword_incline.error = -sword_incline.error;
+			if (FVector::Coincident(FVector::CrossProduct(weapon->GetUpVector(), target_wep_dir_curr_wep_proj.GetSafeNormal()), weapon->GetRightVector(), 0.00001f))
+			{
+				sword_incline.error = -sword_incline.error;
+			}
+			
+			//if(sword_incline.error > 90.f && weapon->GetUpVector().Z < 0.0f)
+			//	sword_incline.error = -sword_incline.error;
+
 		}
 		else {
 				sword_incline.error = 0.0f;
