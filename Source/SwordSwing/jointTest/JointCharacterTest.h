@@ -17,6 +17,8 @@ public:
 	// Sets default values for this pawn's properties
 	AJointCharacterTest();
 
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -30,21 +32,25 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* rolling_body;
+	FBodyInstance* rolling_body_bi;
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* weapon_axis;
+	FBodyInstance* weapon_axis_bi;
 
 	UPROPERTY(VisibleAnywhere)
 	UPhysicsConstraintComponent* weapon_axis_attachment;
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* weapon_motor;
+	FBodyInstance* weapon_motor_bi;
 
 	UPROPERTY(VisibleAnywhere)
 	UPhysicsConstraintComponent* weapon_motor_attachment;
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* weapon;
+	FBodyInstance* weapon_bi;
 
 	UPROPERTY(VisibleAnywhere)
 	UPhysicsConstraintComponent* weapon_attachment;
@@ -56,11 +62,13 @@ protected:
 
 	void cameraCalculations(float DeltaTime);
 	void movementCalculations(float DeltaTime);
+	void swordCalculations(float DeltaTime);
 	void hover(float DeltaTime);
 
 	void moveForward(float AxisValue);
 	void moveRight(float AxisValue);
 	//cm/s
+	
 	
 	
 	void jump();
@@ -100,15 +108,28 @@ protected:
 	// 2 engaged
 	// 3 disengaging
 public:	
+
+	/** called when projectile hits something */
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 	
 private:
 
+	FCalculateCustomPhysics OnCalculateCustomHoverPhysics;
+	void customHoverPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	FCalculateCustomPhysics OnCalculateCustomWeaponPhysics;
+	void customWeaponPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	void weaponRotationPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	void weaponInclinePhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	void weaponPositionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	
 	void SetupJoints();
 
 	struct PIDData
@@ -161,12 +182,16 @@ private:
 
 	//different PID data
 	UPROPERTY(EditAnywhere)
-	float target_hover_height = 0.0f;
+	float target_hover_height = 200.0f;
 	PIDData hover_height;
 
+	PIDData3D sword_motor_pos;
+	
 	PIDData sword_rotation;
+	PIDData sword_rotation_speed;
 	FVector target_wep_dir;
 	FVector prev_target_wep_dir;
+	bool was_standing_still = true;
 
 	PIDData sword_incline;
 
