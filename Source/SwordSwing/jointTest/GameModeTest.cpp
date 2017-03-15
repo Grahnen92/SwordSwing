@@ -21,3 +21,7 @@ void AGameModeTest::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
+
+void AGameModeTest::SpawnPlayer() {
+	//this->GetInstigatorController
+}

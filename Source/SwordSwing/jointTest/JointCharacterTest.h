@@ -23,6 +23,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	//UPROPERTY(EditAnywhere)
+
+	//camera ------------------------------------------------------------------------
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* camera_spring_arm;
 	UPROPERTY(VisibleAnywhere)
@@ -30,9 +32,13 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* camera_axis;
 
+	//Upper body ------------------------------------------------------------------------
+
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* rolling_body;
 	FBodyInstance* rolling_body_bi;
+
+	//weapon ------------------------------------------------------------------------
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* weapon_axis;
@@ -54,6 +60,53 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	UPhysicsConstraintComponent* weapon_attachment;
+
+	//legs -----------------------------------------------------------------------
+	
+	UPROPERTY(VisibleAnywhere)
+	UCapsuleComponent* pelvis;
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* pelvis_visu;
+	FBodyInstance* pelvis_bi;
+	UPROPERTY(VisibleAnywhere)
+	UPhysicsConstraintComponent* pelvis_attachment;
+
+	//right leg ------------------------------------------------------------------------
+	UPROPERTY(VisibleAnywhere)
+	USphereComponent* r_hip_motor;
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* r_hip_motor_vis;
+	FBodyInstance* r_hip_motor_bi;
+	UPROPERTY(VisibleAnywhere)
+	UPhysicsConstraintComponent* r_hip_attachment;
+
+	UPROPERTY(VisibleAnywhere)
+	UCapsuleComponent* r_thigh;
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* r_thigh_vis;
+	FBodyInstance* r_thigh_bi;
+
+	UPROPERTY(VisibleAnywhere)
+	UPhysicsConstraintComponent* r_thigh_attachment;
+
+	UPROPERTY(VisibleAnywhere)
+	USphereComponent* r_knee_motor;
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* r_knee_motor_vis;
+	FBodyInstance* r_knee_motor_bi;
+
+	UPROPERTY(VisibleAnywhere)
+	UPhysicsConstraintComponent* r_knee_attachment;
+
+	UPROPERTY(VisibleAnywhere)
+	UCapsuleComponent* r_shin;
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* r_shin_vis;
+	FBodyInstance* r_shin_bi;
+
+	UPROPERTY(VisibleAnywhere)
+	UPhysicsConstraintComponent* r_shin_attachment;
+
 
 	FVector2D movement_input;
 	FVector2D camera_input;
@@ -126,11 +179,15 @@ private:
 	void customHoverPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateCustomWeaponPhysics;
 	void customWeaponPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	FCalculateCustomPhysics OnCalculateCustomWalkingPhysics;
+	void customWalkingPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	void weaponRotationPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	void weaponInclinePhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	void weaponPositionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	
-	void SetupJoints();
+	void initWeapon();
+
+	void initLegs();
 
 	struct PIDData
 	{
@@ -182,7 +239,7 @@ private:
 
 	//different PID data
 	UPROPERTY(EditAnywhere)
-	float target_hover_height = 200.0f;
+	float target_hover_height = 140;
 	PIDData hover_height;
 
 	PIDData3D sword_motor_pos;
