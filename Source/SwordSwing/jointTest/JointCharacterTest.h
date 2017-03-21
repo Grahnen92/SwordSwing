@@ -35,88 +35,182 @@ protected:
 	//Upper body ------------------------------------------------------------------------
 
 	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* rolling_body;
-	FBodyInstance* rolling_body_bi;
+	UBoxComponent* torso;
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* torso_vis;
+	FBodyInstance* torso_bi;
+
+	UPROPERTY(VisibleAnywhere)
+	UCapsuleComponent* spine;
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* spine_vis;
+	FBodyInstance* spine_bi;
+	UPROPERTY(Category = "UpperBody", VisibleAnywhere)
+	UPhysicsConstraintComponent* spine_attachment;
 
 	//weapon ------------------------------------------------------------------------
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UStaticMeshComponent* weapon_axis;
 	FBodyInstance* weapon_axis_bi;
-
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UPhysicsConstraintComponent* weapon_axis_attachment;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UStaticMeshComponent* weapon_motor;
 	FBodyInstance* weapon_motor_bi;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UPhysicsConstraintComponent* weapon_motor_attachment;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UStaticMeshComponent* weapon;
 	FBodyInstance* weapon_bi;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UPhysicsConstraintComponent* weapon_attachment;
 
 	//legs -----------------------------------------------------------------------
 	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UCapsuleComponent* pelvis;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UStaticMeshComponent* pelvis_visu;
 	FBodyInstance* pelvis_bi;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UPhysicsConstraintComponent* pelvis_attachment;
 
 	//right leg ------------------------------------------------------------------------
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	USceneComponent* right_leg_axis;
+	
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	USphereComponent* r_hip_motor;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UStaticMeshComponent* r_hip_motor_vis;
 	FBodyInstance* r_hip_motor_bi;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UPhysicsConstraintComponent* r_hip_attachment;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UCapsuleComponent* r_thigh;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UStaticMeshComponent* r_thigh_vis;
 	FBodyInstance* r_thigh_bi;
-
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UPhysicsConstraintComponent* r_thigh_attachment;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	USphereComponent* r_thigh_hydraulic;
+	FBodyInstance* r_thigh_hydraulic_bi;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UStaticMeshComponent* r_thigh_hydraulic_vis;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UPhysicsConstraintComponent* r_thigh_hydraulic_attachment;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UPhysicsConstraintComponent* r_thigh_hydraulic_piston;
+
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	USphereComponent* r_knee_motor;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UStaticMeshComponent* r_knee_motor_vis;
 	FBodyInstance* r_knee_motor_bi;
-
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UPhysicsConstraintComponent* r_knee_attachment;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UCapsuleComponent* r_shin;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UStaticMeshComponent* r_shin_vis;
 	FBodyInstance* r_shin_bi;
-
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UPhysicsConstraintComponent* r_shin_attachment;
 
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	USphereComponent* r_shin_hydraulic;
+	FBodyInstance* r_shin_hydraulic_bi;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UStaticMeshComponent* r_shin_hydraulic_vis;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UPhysicsConstraintComponent* r_shin_hydraulic_attachment;
 
-	FVector2D movement_input;
-	FVector2D camera_input;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UCapsuleComponent* r_toe;
+	FBodyInstance* r_toe_bi;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UStaticMeshComponent* r_toe_vis;
+	//UPROPERTY(Category = "Legs", VisibleAnywhere)
+	//UPhysicsConstraintComponent* r_toe_attachment;
+	//left leg ------------------------------------------------------------------------
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	USceneComponent* left_leg_axis;
 
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	USphereComponent* l_hip_motor;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UStaticMeshComponent* l_hip_motor_vis;
+	FBodyInstance* l_hip_motor_bi;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UPhysicsConstraintComponent* l_hip_attachment;
 
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UCapsuleComponent* l_thigh;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UStaticMeshComponent* l_thigh_vis;
+	FBodyInstance* l_thigh_bi;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UPhysicsConstraintComponent* l_thigh_attachment;
+
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	USphereComponent* l_thigh_hydraulic;
+	FBodyInstance* l_thigh_hydraulic_bi;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UStaticMeshComponent* l_thigh_hydraulic_vis;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UPhysicsConstraintComponent* l_thigh_hydraulic_attachment;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UPhysicsConstraintComponent* l_thigh_hydraulic_piston;
+
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	USphereComponent* l_knee_motor;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UStaticMeshComponent* l_knee_motor_vis;
+	FBodyInstance* l_knee_motor_bi;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UPhysicsConstraintComponent* l_knee_attachment;
+
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UCapsuleComponent* l_shin;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UStaticMeshComponent* l_shin_vis;
+	FBodyInstance* l_shin_bi;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UPhysicsConstraintComponent* l_shin_attachment;
+
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	USphereComponent* l_shin_hydraulic;
+	FBodyInstance* l_shin_hydraulic_bi;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UStaticMeshComponent* l_shin_hydraulic_vis;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UPhysicsConstraintComponent* l_shin_hydraulic_attachment;
+
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UCapsuleComponent* l_toe;
+	FBodyInstance* l_toe_bi;
+	UPROPERTY(Category = "Legs", VisibleAnywhere)
+	UStaticMeshComponent* l_toe_vis;
+	//UPROPERTY(Category = "Legs", VisibleAnywhere)
+	//UPhysicsConstraintComponent* l_toe_attachment;
+
+	
+	
 
 	void cameraCalculations(float DeltaTime);
+	FVector2D camera_input;
 	void movementCalculations(float DeltaTime);
-	void swordCalculations(float DeltaTime);
-	void hover(float DeltaTime);
+	FVector2D movement_input;
+	FVector target_direction;
 
 	void moveForward(float AxisValue);
 	void moveRight(float AxisValue);
@@ -177,17 +271,28 @@ private:
 
 	FCalculateCustomPhysics OnCalculateCustomHoverPhysics;
 	void customHoverPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	FCalculateCustomPhysics OnCalculateCustomStabilizerPhysics;
+	void customStabilizerPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateCustomWeaponPhysics;
 	void customWeaponPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateCustomWalkingPhysics;
 	void customWalkingPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-	void weaponRotationPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-	void weaponInclinePhysics(float DeltaTime, FBodyInstance* BodyInstance);
-	void weaponPositionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+
 	
+	void initCamera();
+
+	void initUpperBody();
+	void initUpperBodyJoints();
+
 	void initWeapon();
+	void initWeaponJoints();
 
 	void initLegs();
+	void initLegJoints();
+
+	void initPIDs();
+
+	void initCustomPhysics();
 
 	struct PIDData
 	{
@@ -237,20 +342,41 @@ private:
 		FVector D;
 	};
 
-	//different PID data
 	UPROPERTY(EditAnywhere)
-	float target_hover_height = 140;
+	float target_hover_height = 200;
 	PIDData hover_height;
 
 	PIDData3D sword_motor_pos;
-	
 	PIDData sword_rotation;
 	PIDData sword_rotation_speed;
+	PIDData sword_incline;
 	FVector target_wep_dir;
 	FVector prev_target_wep_dir;
 	bool was_standing_still = true;
 
-	PIDData sword_incline;
+	//torso_twist_controller
+	PIDData3D ttc;
+	//torso_position_controller
+	PIDData2D pose_controller;
+
+	//spine_swing_controller
+	PIDData3D ssc;
+	//spine_twist_controller
+	PIDData3D stc;
+
+	//pelvis_twist_controller
+	PIDData3D ptc;
+
+	//r_thigh_direction_controller
+	PIDData3D rtdc;
+	//r_knee_extension_controller
+	PIDData rkec;
+	PIDData3D r_toe_position_controller;
+	//l_thigh_direction_controller
+	PIDData3D ltdc;
+	//l_knee_extension_controller
+	PIDData lkec;
+	PIDData3D l_toe_position_controller;
 
 	UPROPERTY(EditAnywhere)
 	float target_speed = 500;
