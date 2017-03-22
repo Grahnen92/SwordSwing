@@ -49,11 +49,19 @@ void AJointCharacterTest::BeginPlay()
 	hover_height.D = 10.0f;
 
 	target_wep_dir = FVector::UpVector;
-	wd.target = FVector2D::ZeroVector;
-	wd.max_adjustment = FVector2D(1000000.f, 1000000.f);
-	wd.P = FVector2D(1000.1f, 1000.1f);
-	wd.I = FVector2D(0.f, 0.f);
-	wd.D = FVector2D(100.0f, 100.1f);
+	wd.target = FVector::ZeroVector;
+	wd.max_adjustment = FVector(1000000.f, 1000000.f, 1000000.f);
+	wd.P = FVector(0.f, 5.0f, 0.f);
+	wd.I = FVector(0.f, 0.f, 0.f);
+	wd.D = FVector(0.f, 0.000000f, 0.f);
+	wd.integral = FVector::ZeroVector;
+
+	ws.target = 0.f;
+	ws.max_adjustment = 1000000.f, 1000000.f;
+	ws.P =1000.1f;
+	ws.I = 0.f;
+	ws.D = 100.0f;
+	ws.integral = 0.f;
 
 
 	movement_velocity.max_adjustment = FVector2D(1000000.f, 1000000.f);
@@ -67,8 +75,17 @@ void AJointCharacterTest::BeginPlay()
 	arm_target_rot = FRotator(-65.f, 0.f, 0.f);
 	target_arm_length = 1000.f;
 
-	
-	
+	FVector tit = weapon->GetBodyInstance()->GetBodyInertiaTensor();
+	wep_inertia.SetAxis(0, FVector(tit.X, 0.f, 0.f));
+	wep_inertia.SetAxis(1, FVector(0.f, tit.Y, 0.f));
+	wep_inertia.SetAxis(2, FVector(0.f, 0.f, tit.Z));
+	FVector d = FVector(0.f, 0.f, 100.f);
+	FMatrix tmp_d;
+	tmp_d.SetAxis(0, FVector(0.f, d.Z, -d.Y));
+	tmp_d.SetAxis(1, FVector(-d.Z, 0.f, d.X));
+	tmp_d.SetAxis(2, FVector(d.Y, d.X, 0.f));
+	wep_inertia = wep_inertia + (tmp_d*tmp_d)*(-weapon->GetMass());
+	FVector::DotProduct(wep_inertia.TransformVector(FVector::UpVector),FVector::UpVector);
 }
 
 // Called every frame
@@ -80,6 +97,27 @@ void AJointCharacterTest::Tick(float DeltaTime)
 	movementCalculations(DeltaTime);
 	//hover(DeltaTime);
 	//UE_LOG(LogTemp, Warning, TEXT("tick!"));
+
+	
+	/*UE_LOG(LogTemp, Warning, TEXT("inerta: %s"), *weapon->GetBodyInstance()->GetMassSpaceToWorldSpace().TransformVector(weapon->GetBodyInstance()->GetBodyInertiaTensor()).ToString());
+	UE_LOG(LogTemp, Warning, TEXT("inerta: %f"), (1.f /12.f)*weapon->GetMass()*(200.f *200.f + 10.f *10.f));
+	UE_LOG(LogTemp, Warning, TEXT("inerta: %f"), (1.f / 12.f)*weapon->GetMass()*(10.f *10.f + 10.f *10.f));
+	UE_LOG(LogTemp, Warning, TEXT("inerta: %f"), (1.f / 12.f)*weapon->GetMass()*(10.f *10.f + 200.f *200.f));
+	*/
+	FVector tmp_u = FVector(0.f, 0.f, 1.f);
+	FVector tmp_r = FVector(0.f, 1.f, 0.f);
+	FVector tmp_f = FVector(1.f, 0.f, 0.f);
+	FVector tmp_u_f = (tmp_u + tmp_f).GetSafeNormal();
+	FVector tmp_r_f = (tmp_r + tmp_f).GetSafeNormal();
+	FVector tmp_u_r = (tmp_u + tmp_r).GetSafeNormal();
+	/*UE_LOG(LogTemp, Warning, TEXT("inerta up: %f"), FVector::DotProduct(wep_inertia.TransformVector(tmp_u), tmp_u));
+	UE_LOG(LogTemp, Warning, TEXT("inerta right: %f"), FVector::DotProduct(wep_inertia.TransformVector(tmp_r), tmp_r));
+	UE_LOG(LogTemp, Warning, TEXT("inerta forward: %f"), FVector::DotProduct(wep_inertia.TransformVector(tmp_f), tmp_f));
+	UE_LOG(LogTemp, Warning, TEXT("inerta uf: %f"), FVector::DotProduct(wep_inertia.TransformVector(tmp_u_f), tmp_u_f));
+	UE_LOG(LogTemp, Warning, TEXT("inerta rf: %f"), FVector::DotProduct(wep_inertia.TransformVector(tmp_r_f), tmp_r_f));
+	UE_LOG(LogTemp, Warning, TEXT("inerta ur: %f"), FVector::DotProduct(wep_inertia.TransformVector(tmp_u_r), tmp_u_r));*/
+	//UE_LOG(LogTemp, Warning, TEXT("motorcom: %s"), *weapon_motor->GetBodyInstance()->GetCOMPosition().ToString());
+
 
 
 }
@@ -118,21 +156,17 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 		//current_wep_dir.Z = 0.0f;
 		FVector2D camera_input_norm = camera_input.GetSafeNormal(0.000000001f);
 		target_wep_dir = (camera_axis->GetForwardVector()*camera_input.Y + camera_axis->GetRightVector()* camera_input.X + camera_axis->GetUpVector()*(1 - camera_input.Size()));
+		//target_wep_dir = (camera_axis->GetForwardVector()*camera_input.Y + camera_axis->GetRightVector()*(1 - camera_input.Size()) + camera_axis->GetUpVector()* camera_input.X);
+
 		target_wep_dir.Normalize();
-
+		wd.error.X = FMath::Acos(FVector::DotProduct(target_wep_dir.GetSafeNormal(), current_wep_dir))*180.f / PI;
 		FVector target_rot_axis = FVector::CrossProduct(target_wep_dir.GetSafeNormal(), current_wep_dir).GetSafeNormal();
-		//TODO: project onto plane of weapon_direction
-		FVector current_rot_axis = weapon_motor->GetPhysicsAngularVelocity().GetSafeNormal();
-		current_rot_axis = current_rot_axis - FVector::DotProduct(current_rot_axis, current_wep_dir)*current_wep_dir;
 
-		FVector rot_correction_ref = FVector::CrossProduct(target_rot_axis, current_rot_axis.GetSafeNormal());
-		
-		wd.error.X = FMath::Acos(FVector::DotProduct(target_wep_dir.GetSafeNormal(), current_wep_dir))*180.f / 3.14f;
-		
-		if (FVector::DotProduct(target_rot_axis.GetSafeNormal(), current_rot_axis.GetSafeNormal()) < 0.0001f)
-			wd.error.Y = 0.0f;
-		else
-			wd.error.Y = (FMath::Acos(FVector::DotProduct(target_rot_axis, current_rot_axis.GetSafeNormal()))*180.f / 3.14f)*current_rot_axis.Size();
+		FVector current_rot_vel = weapon_motor->GetPhysicsAngularVelocity();
+		//FVector current_rot_vel_proj_on_target_dir = (FVector::DotProduct(current_rot_vel, target_wep_dir)/target_wep_dir.Size())*target_wep_dir.GetSafeNormal();
+		//FVector current_rot_vel_proj_on_current_dir = (FVector::DotProduct(current_rot_vel, current_wep_dir) / current_wep_dir.Size())*current_wep_dir.GetSafeNormal();
+		//wd.error.Y = FVector::DotProduct(current_rot_vel.GetSafeNormal(), target_rot_axis);
+		wd.error.Y = -current_rot_vel.Size();
 
 		wd.integral = wd.integral + wd.error * DeltaTime;
 		wd.derivative = (wd.error - wd.prev_err) / DeltaTime;
@@ -142,43 +176,62 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 						wd.D * wd.derivative;
 		wd.prev_err = wd.error;
 		weapon_motor->AddTorque(target_rot_axis*
-									-wd.adjustment.X*
-									(weapon->GetMass()*FMath::Pow(240.f, 2.0f)/3));
-		weapon_motor->AddTorque(rot_correction_ref*
-			-wd.adjustment.Y*
-			(weapon->GetMass()*FMath::Pow(240.f, 2.0f) / 3));
+									-wd.adjustment.X*FVector::DotProduct(wep_inertia.TransformVector(FVector::ForwardVector), FVector::ForwardVector));
+		float tmp_angle = FMath::Acos(FVector::DotProduct(current_rot_vel.GetSafeNormal(), current_wep_dir))*180.f / PI;
+		float current_inertia;
+		if (tmp_angle > 3.f) 
+		{
+			FVector inertia_offset = FVector::UpVector.RotateAngleAxis(tmp_angle,
+				FVector::CrossProduct(current_rot_vel.GetSafeNormal(), current_wep_dir).GetSafeNormal());
+			current_inertia = FVector::DotProduct(wep_inertia.TransformVector(inertia_offset), inertia_offset);
+		}
+		else
+		{
+			current_inertia = FVector::DotProduct(wep_inertia.TransformVector(FVector::UpVector), FVector::UpVector);
+		}
 		
+		UE_LOG(LogTemp, Warning, TEXT("current_inertia: %f"), current_inertia);
+		weapon_motor->AddAngularImpulse(wep_inertia.TransformVector(current_rot_vel.GetSafeNormal()*
+			wd.adjustment.Y));
+		
+		
+		/*FMatrix tmp_rot_mat;
+		tmp_rot_mat.SetIdentity();
+		FVector tmp_cross = FVector::CrossProduct(FVector::UpVector, target_wep_dir);
+		FMatrix tmp_cross_mat;
+		tmp_cross_mat.SetAxis(0, FVector(0.f, tmp_cross.Z, -tmp_cross.Y));
+		tmp_cross_mat.SetAxis(1, FVector( -tmp_cross.Z, 0.f,  tmp_cross.X));
+		tmp_cross_mat.SetAxis(2, FVector(tmp_cross.Y, -tmp_cross.X, 0.f));
+		tmp_rot_mat = tmp_rot_mat + tmp_cross_mat + tmp_cross_mat*tmp_cross_mat*(1 / (1 + FVector::DotProduct(FVector::UpVector, target_wep_dir)));
+		weapon_motor->SetWorldRotation(tmp_rot_mat.Rotator());
+		weapon_motor->SetWorldLocation(weapon_axis->GetCenterOfMass());
+		UE_LOG(LogTemp, Warning, TEXT("motorcom: %s"), *target_wep_dir.Rotation().ToString());
+		UE_LOG(LogTemp, Warning, TEXT("motorcom: %s"), *camera_input.ToString());*/
+
+
 		//Draw Debug points ---------------------------------------------------------------------------------------------------
-		//DrawDebugPoint(
-		//	GetWorld(),
-		//	weapon_motor->GetComponentLocation() + 100* current_wep_dir,
-		//	20,  					//size
-		//	FColor(255, 0, 0),  //pink
-		//	true,  				//persistent (never goes away)
-		//	0.03 					//point leaves a trail on moving object
-		//);
+		DrawDebugPoint(
+			GetWorld(),
+			weapon_motor->GetComponentLocation() + 100* current_wep_dir,
+			20,  					//size
+			FColor(255, 0, 0),  //pink
+			true,  				//persistent (never goes away)
+			0.03 					//point leaves a trail on moving object
+		);
 
-		//DrawDebugPoint(
-		//	GetWorld(),
-		//	weapon_motor->GetComponentLocation() + 100 * target_wep_dir,
-		//	20,  					//size
-		//	FColor(0, 255, 0),  //pink
-		//	true,  				//persistent (never goes away)
-		//	0.03 					//point leaves a trail on moving object
-		//);
+		DrawDebugPoint(
+			GetWorld(),
+			weapon_motor->GetComponentLocation() + 100 * target_wep_dir,
+			20,  					//size
+			FColor(0, 255, 0),  //pink
+			true,  				//persistent (never goes away)
+			0.03 					//point leaves a trail on moving object
+		);
 
-		//DrawDebugPoint(
-		//	GetWorld(),
-		//	weapon_motor->GetComponentLocation() + 100 * target_wep_dir ,
-		//	20,  					//size
-		//	FColor(0, 255, 255),  //pink
-		//	true,  				//persistent (never goes away)
-		//	0.03 					//point leaves a trail on moving object
-		//);
 		DrawDebugLine(
 			GetWorld(),
-			weapon_motor->GetComponentLocation() + 100 * current_wep_dir,
-			weapon_motor->GetComponentLocation() + 100 * current_wep_dir + target_rot_axis*100, 					//size
+			weapon_motor->GetComponentLocation()  + 100 * current_wep_dir,
+			weapon_motor->GetComponentLocation()  + 100 * current_wep_dir.GetSafeNormal() + target_rot_axis*100, 					//size
 			FColor(0, 0, 255),  //pink
 			true,  				//persistent (never goes away)
 			0.01, 					//point leaves a trail on moving object
@@ -187,8 +240,8 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 		);
 		DrawDebugLine(
 			GetWorld(),
-			weapon_motor->GetComponentLocation() + 100 * current_wep_dir,
-			weapon_motor->GetComponentLocation() + 100 * current_wep_dir + current_rot_axis * 100, 					//size
+			weapon_motor->GetComponentLocation() + FVector::RightVector*40.f,
+			weapon_motor->GetComponentLocation() + FVector::RightVector*40.f + current_rot_vel.GetSafeNormal() * 100, 					//size
 			FColor(255, 0, 0),  //pink
 			true,  				//persistent (never goes away)
 			0.01, 					//point leaves a trail on moving object
@@ -453,10 +506,10 @@ void AJointCharacterTest::SetupJoints()
 	weapon_motor_attachment->SetRelativeLocation(FVector(0.f, 0.f, 50.f));
 
 	weapon = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon"));
-	weapon->SetupAttachment(RootComponent);
+	
 	weapon->SetRelativeLocation(FVector(0.f, 0.f, 155.f));
 	weapon->SetRelativeScale3D(FVector(0.1f, 0.1f, 2.0f));
-
+	weapon->SetupAttachment(RootComponent);
 	weapon_attachment = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("WeaponAttachment"));
 	weapon_attachment->SetupAttachment(weapon_motor);
 

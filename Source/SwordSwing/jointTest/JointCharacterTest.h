@@ -164,8 +164,11 @@ private:
 	float target_hover_height = 0.0f;
 	PIDData hover_height;
 
-	PIDData2D wd;
+	PIDData3D wd;
 	FVector target_wep_dir;
+	PIDData ws;
+
+	FMatrix wep_inertia;
 
 	UPROPERTY(EditAnywhere)
 	float target_speed = 1000;
