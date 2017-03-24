@@ -51,24 +51,61 @@ protected:
 	//weapon ------------------------------------------------------------------------
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UStaticMeshComponent* weapon_axis;
+	USphereComponent* weapon_axis;
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UStaticMeshComponent* weapon_axis_vis;
 	FBodyInstance* weapon_axis_bi;
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UPhysicsConstraintComponent* weapon_axis_attachment;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UStaticMeshComponent* weapon_motor;
-	FBodyInstance* weapon_motor_bi;
+	USphereComponent* weapon_handle_1;
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UStaticMeshComponent* weapon_handle_1_vis;
+	FBodyInstance* weapon_handle_1_bi;
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UPhysicsConstraintComponent* weapon_handle_1_attachment;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UPhysicsConstraintComponent* weapon_motor_attachment;
+	USphereComponent* weapon_handle_2;
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UStaticMeshComponent* weapon_handle_2_vis;
+	FBodyInstance* weapon_handle_2_bi;
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UPhysicsConstraintComponent* weapon_handle_2_attachment;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UStaticMeshComponent* weapon;
+	UCapsuleComponent* weapon;
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UStaticMeshComponent* weapon_vis;
 	FBodyInstance* weapon_bi;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UPhysicsConstraintComponent* weapon_attachment;
+
+	FVector offset_wep_inertia;
+
+	void fightModeOn();
+	void fightModeOff();
+	void releaseWeapon();
+	bool holding_weapon = true;
+
+	FRotator axis_target_rot;
+	FRotator arm_target_rot;
+	FRotator axis_rot_before_fight;
+	FRotator arm_rot_before_fight;
+	float arm_length_before_fight;
+	float target_arm_length;
+
+	bool fight_mode;
+	int fight_mode_state;
+	float fight_t;
+	UPROPERTY(EditAnywhere)
+	float fight_mode_engage_time = 0.25;
+	// 0 disengaged
+	// 1 engaging
+	// 2 engaged
+	// 3 disengaging
 
 	//legs -----------------------------------------------------------------------
 	
@@ -101,16 +138,6 @@ protected:
 	UPhysicsConstraintComponent* r_thigh_attachment;
 
 	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	USphereComponent* r_thigh_hydraulic;
-	FBodyInstance* r_thigh_hydraulic_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* r_thigh_hydraulic_vis;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* r_thigh_hydraulic_attachment;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* r_thigh_hydraulic_piston;
-
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	USphereComponent* r_knee_motor;
 	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UStaticMeshComponent* r_knee_motor_vis;
@@ -125,14 +152,6 @@ protected:
 	FBodyInstance* r_shin_bi;
 	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UPhysicsConstraintComponent* r_shin_attachment;
-
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	USphereComponent* r_shin_hydraulic;
-	FBodyInstance* r_shin_hydraulic_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* r_shin_hydraulic_vis;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* r_shin_hydraulic_attachment;
 
 	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UCapsuleComponent* r_toe;
@@ -162,16 +181,6 @@ protected:
 	UPhysicsConstraintComponent* l_thigh_attachment;
 
 	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	USphereComponent* l_thigh_hydraulic;
-	FBodyInstance* l_thigh_hydraulic_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* l_thigh_hydraulic_vis;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* l_thigh_hydraulic_attachment;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* l_thigh_hydraulic_piston;
-
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	USphereComponent* l_knee_motor;
 	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UStaticMeshComponent* l_knee_motor_vis;
@@ -186,14 +195,6 @@ protected:
 	FBodyInstance* l_shin_bi;
 	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UPhysicsConstraintComponent* l_shin_attachment;
-
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	USphereComponent* l_shin_hydraulic;
-	FBodyInstance* l_shin_hydraulic_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* l_shin_hydraulic_vis;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* l_shin_hydraulic_attachment;
 
 	UPROPERTY(Category = "Legs", VisibleAnywhere)
 	UCapsuleComponent* l_toe;
@@ -236,24 +237,7 @@ protected:
 	float zoom_factor;
 	bool zooming;
 
-	void fightModeOn();
-	void fightModeOff(); 
-	FRotator axis_target_rot;
-	FRotator arm_target_rot;
-	FRotator axis_rot_before_fight;
-	FRotator arm_rot_before_fight;
-	float arm_length_before_fight;
-	float target_arm_length;
-	
-	bool fight_mode;
-	int fight_mode_state;
-	float fight_t;
-	UPROPERTY(EditAnywhere)
-	float fight_mode_engage_time = 0.25;
-	// 0 disengaged
-	// 1 engaging
-	// 2 engaged
-	// 3 disengaging
+
 public:	
 
 	/** called when projectile hits something */
@@ -350,9 +334,14 @@ private:
 	PIDData sword_rotation;
 	PIDData sword_rotation_speed;
 	PIDData sword_incline;
+	PIDData sword_twist;
+	FVector sword_twist_solder;
+	FVector sword_twist_target;
 	FVector target_wep_dir;
 	FVector prev_target_wep_dir;
+	FVector prev_target_wep_dir_xy;
 	bool was_standing_still = true;
+	bool wep_extended = false;
 
 	//torso_twist_controller
 	PIDData3D ttc;
