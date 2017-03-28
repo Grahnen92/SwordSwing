@@ -1,7 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SwordSwing.h"
+#include "AudioDevice.h"
+#include "ActiveSound.h"
 #include "JointCharacterTest.h"
+
 
 
 // Sets default values
@@ -32,46 +35,42 @@ void AJointCharacterTest::BeginPlay()
 	
 	initPIDs();
 	initCustomPhysics();
-	
 }
 
 // Called every frame
 void AJointCharacterTest::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	weapon_axis->SetWorldLocation(torso->GetCenterOfMass());
-
-	if (fight_mode) 
-	{
-		if (holding_weapon)
-		{
-			weapon_handle_1_bi->AddCustomPhysics(OnCalculateCustomWeaponPhysics);
-		}
-	}
-		
-
+	
+	
 	cameraCalculations(DeltaTime);
-	movementCalculations(DeltaTime);
 
-	torso_bi->AddCustomPhysics(OnCalculateCustomHoverPhysics);
-	torso_bi->AddCustomPhysics(OnCalculateCustomStabilizerPhysics);
+	if (alive)
+	{
+		camera_axis->SetWorldLocation(torso->GetCenterOfMass());
+		weapon_axis->SetWorldLocation(torso->GetCenterOfMass() + FVector(0.f, 0.f, -15.f));
 
-	pelvis_bi->AddCustomPhysics(OnCalculateCustomWalkingPhysics);
-	
-	//weapon_vis->AddLocalRotation(FRotator(0.f, DeltaTime*15.f, 0.f));
-	/*weapon_vis->SetRelativeRotation(FRotator(0.f, GetWorld()->TimeSeconds*30.f, 0.f), true);*/
-	//FTransform test = FTransform(FRotator(0.f, DeltaTime*15.f, 0.f));
-	//weapon_vis->GetBodyInstance()->SetBodyTransform(FTransform(FRotator(0.f, GetWorld()->TimeSeconds, 0.f)), false);
-	
-	//UE_LOG(LogTemp, Warning, TEXT("weapon_bi->GetBodyMass() %f "), weapon_bi->GetBodyMass());
-	//UE_LOG(LogTemp, Warning, TEXT("rotation %s "), *weapon_vis->GetRelativeTransform().GetRotation().ToString());
+		if (fight_mode)
+		{
+			if (holding_weapon)
+			{
+				weapon_handle_1_bi->AddCustomPhysics(OnCalculateCustomWeaponPhysics);
+			}
+		}
+
+		movementCalculations(DeltaTime);
+
+		torso_bi->AddCustomPhysics(OnCalculateCustomHoverPhysics);
+		torso_bi->AddCustomPhysics(OnCalculateCustomStabilizerPhysics);
+
+		pelvis_bi->AddCustomPhysics(OnCalculateCustomWalkingPhysics);
+	}
 }
 
 
 
 void AJointCharacterTest::cameraCalculations(float DeltaTime) 
 {
-	camera_axis->SetWorldLocation(torso->GetCenterOfMass());
 
 	if (fight_mode) {
 		if (fight_mode_state == 1) 
@@ -180,10 +179,49 @@ void AJointCharacterTest::movementCalculations(float DeltaTime)
 	}
 }
 
-void AJointCharacterTest::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+void AJointCharacterTest::OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-		UE_LOG(LogTemp, Warning, TEXT("hit: %f"), NormalImpulse.Size());
-		UE_LOG(LogTemp, Warning, TEXT("ded"));
+	UE_LOG(LogTemp, Warning, TEXT("hit: %f"), NormalImpulse.Size());
+	if (NormalImpulse.Size() > 16000.f)
+	{
+		TArray<USceneComponent*> tmp_child_comps;
+		HitComp->GetChildrenComponents(true, tmp_child_comps);
+		for (int i = 0; i < tmp_child_comps.Num(); i++)
+		{
+			/*UE_LOG(LogTemp, Warning, TEXT(" %s"), *tmp_child_comps[i]->GetFullName());
+			if (tmp_child_comps[i]->GetFullName().Contains("Attachment"))
+			{
+				UPhysicsConstraintComponent* tmp_constraint = dynamic_cast<UPhysicsConstraintComponent*>(tmp_child_comps[i]);
+				tmp_constraint->BreakConstraint();
+			}*/
+			//tmp_child_comps[i]->DestroyComponent();
+
+			spine_attachment->BreakConstraint();
+			
+		}
+
+		releaseWeapon();
+
+		alive = false;
+
+		//HitComp->DestroyComponent();
+	}
+
+}
+
+void AJointCharacterTest::OnSwordHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	FVector hit_vel = weapon_bi->GetUnrealWorldVelocity() + FVector::CrossProduct(weapon_bi->GetUnrealWorldAngularVelocity(), Hit.Location - weapon_handle_1_bi->GetCOMPosition());
+	/*UE_LOG(LogTemp, Warning, TEXT("hit_vel: %f"), hit_vel.Size());
+	UE_LOG(LogTemp, Warning, TEXT("NormalImpulse: %f"), NormalImpulse.Size());
+	UE_LOG(LogTemp, Warning, TEXT("----------------"));*/
+	if (hit_vel.Size() > 11000.f && NormalImpulse.Size() > 4000.f)
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("hit_vel: %f"), hit_vel.Size());
+		weapon_wood_impact_audio->VolumeMultiplier = NormalImpulse.Size() / 30000.f;
+		weapon_wood_impact_audio->Activate();
+	}
+	
 }
 
 void AJointCharacterTest::customHoverPhysics(float DeltaTime, FBodyInstance* BodyInstance)
@@ -400,7 +438,7 @@ void AJointCharacterTest::customWalkingPhysics(float DeltaTime, FBodyInstance* B
 void AJointCharacterTest::customWeaponPhysics(float DeltaTime, FBodyInstance* BodyInstance)
 {
 	//calculations regarding the position of the weapon ----------------------------------------------------------
-	weapon_axis_bi->SetBodyTransform(FTransform(torso_bi->GetUnrealWorldTransform().GetTranslation()), true);
+	weapon_axis_bi->SetBodyTransform(FTransform(torso_bi->GetCOMPosition() + FVector(0.f, 0.f, -15.f)), true);
 	FVector wa_pos = weapon_axis_bi->GetUnrealWorldTransform().GetLocation();
 
 	FVector wh1_pos = weapon_handle_1_bi->GetUnrealWorldTransform().GetLocation();
@@ -595,7 +633,7 @@ void AJointCharacterTest::customWeaponPhysics(float DeltaTime, FBodyInstance* Bo
 	
 	sword_twist_target = sword_twist_target.GetSafeNormal() - FVector::DotProduct(sword_twist_target.GetSafeNormal(), weapon_vis->GetUpVector())*weapon_vis->GetUpVector();
 	sword_twist_target = sword_twist_target.GetSafeNormal();
-	FVector tmp_forward_ref = weapon_vis->GetForwardVector();
+	FVector tmp_forward_ref = weapon_blade->GetForwardVector();
 
 	sword_twist.error = FMath::Acos(FVector::DotProduct(tmp_forward_ref, sword_twist_target))*180.f / PI;
 	float tmp_forward_angle_ref = FMath::Acos(FVector::DotProduct(-tmp_forward_ref, sword_twist_target))*180.f / PI;
@@ -607,7 +645,7 @@ void AJointCharacterTest::customWeaponPhysics(float DeltaTime, FBodyInstance* Bo
 	}
 	//weapon_vis->SetRelativeRotation(FRotator(0.f, sword_twist.error, 0.f));
 	FVector tmp_ref_vec = FVector::CrossProduct(tmp_forward_ref, sword_twist_target);
-	FVector tmp_vis_u = weapon_vis->GetUpVector();
+	FVector tmp_vis_u = weapon_blade->GetUpVector();
 	if (!FVector::Coincident(tmp_ref_vec, tmp_vis_u, 0.0001f))
 		sword_twist.error = -sword_twist.error;
 
@@ -619,16 +657,17 @@ void AJointCharacterTest::customWeaponPhysics(float DeltaTime, FBodyInstance* Bo
 		sword_twist.D * sword_twist.derivative;
 	sword_twist.prev_err = sword_twist.error;
 
-	weapon_vis->AddLocalRotation(FRotator(0.f, sword_twist.adjustment, 0.f));
-	//UE_LOG(LogTemp, Warning, TEXT("sword_twist.error: %f"), sword_twist.error);
-	//UE_LOG(LogTemp, Warning, TEXT("sword_twist.adjustment: %f"), sword_twist.adjustment);
-	/*UE_LOG(LogTemp, Warning, TEXT("------------------: %s"));
-	UE_LOG(LogTemp, Warning, TEXT("tmp_vel_proj: %s"), *tmp_vel_proj.ToString());
-	UE_LOG(LogTemp, Warning, TEXT("tmp_ref_vec: %s"), *tmp_ref_vec.ToString());
-	UE_LOG(LogTemp, Warning, TEXT("tmp_vis_u-: %s"), *tmp_vis_u.ToString());*/
-
+	weapon_blade->AddLocalRotation(FRotator(0.f, sword_twist.adjustment, 0.f));
 
 	
+	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (FMath::Pow(weapon_bi->GetUnrealWorldAngularVelocity().Size(),2) / FMath::Pow(weapon_bi->MaxAngularVelocity, 2))*16000.f;
+	weapon_swish_audio->active_sound->LowPassFilterFrequency = (weapon_bi->GetUnrealWorldAngularVelocity().Size() / weapon_bi->MaxAngularVelocity)*12000.f;
+	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (FMath::Sqrt(weapon_bi->GetUnrealWorldAngularVelocity().Size()) / FMath::Sqrt(weapon_bi->MaxAngularVelocity))*5000.f;
+	
+	//weapon_swish_audio->active_sound->VolumeMultiplier = FMath::Loge(weapon_bi->GetUnrealWorldAngularVelocity().Size()) / FMath::Loge(weapon_bi->MaxAngularVelocity);
+	//weapon_swish_audio->active_sound->VolumeMultiplier = weapon_bi->GetUnrealWorldAngularVelocity().Size() / weapon_bi->MaxAngularVelocity;
+	weapon_swish_audio->active_sound->VolumeMultiplier = (FMath::Pow(weapon_bi->GetUnrealWorldAngularVelocity().Size(),2) / FMath::Pow(weapon_bi->MaxAngularVelocity, 2));
+
 
 	//DrawDebugLine(
 	//	GetWorld(),
@@ -912,10 +951,27 @@ void AJointCharacterTest::initWeapon()
 	weapon_attachment = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("WeaponAttachment"));
 	weapon_attachment->SetupAttachment(weapon_handle_1);
 
-	
+	weapon_blade = CreateDefaultSubobject<UBoxComponent>(TEXT("WeaponBlade"));
+	weapon_blade->SetupAttachment(weapon);
+	weapon_blade->SetRelativeLocation(FVector(0.f, 0.f, 75));
+	weapon_blade->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
+	weapon_blade->SetBoxExtent(FVector(10.f, 2.f, 75.f));
+	weapon_blade_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponBladeVis"));
+	weapon_blade_vis->SetupAttachment(weapon_blade);
 
 	weapon_handle_1->SetPhysicsMaxAngularVelocity(5000.f);
 	weapon->SetPhysicsMaxAngularVelocity(5000.f);
+
+	weapon_swish_audio = CreateDefaultSubobject<UAudioComponent>(TEXT("WeaponSwishAudio"));
+	weapon_swish_audio->SetupAttachment(weapon);
+	weapon_swish_audio->bEnableLowPassFilter = true;
+	weapon_swish_audio->LowPassFilterFrequency = 10.f;
+	//weapon_audio->bEQFilterApplied = true;
+	weapon_swish_audio->VolumeMultiplier = 0.0f;
+
+	weapon_wood_impact_audio = CreateDefaultSubobject<UAudioComponent>(TEXT("WeaponWoodImpactAudio"));
+	weapon_wood_impact_audio->SetupAttachment(weapon_blade);
+	weapon_wood_impact_audio->VolumeMultiplier = 0.5f;
 }
 
 void AJointCharacterTest::initWeaponJoints()
@@ -1304,9 +1360,9 @@ void AJointCharacterTest::initPIDs()
 
 	sword_incline.target = 0.0f;
 	sword_incline.max_adjustment = 1000000;
-	sword_incline.P = 1500;
+	sword_incline.P = 1000;
 	sword_incline.I = 0.0f;
-	sword_incline.D = 180.0f;
+	sword_incline.D = 100;
 	sword_incline.integral = 0.f;
 
 	sword_twist.target = 0.0f;
@@ -1406,7 +1462,10 @@ void AJointCharacterTest::initCustomPhysics()
 		ti.Z + weapon_bi->GetBodyMass()*(tp.X*tp.X + tp.Y*tp.Y));
 
 	//rolling_body->OnComponentHit.AddDynamic(this, &AJointCharacterTest::OnHit);
-	weapon_axis->OnComponentHit.AddDynamic(this, &AJointCharacterTest::OnHit);
+	torso->OnComponentHit.AddDynamic(this, &AJointCharacterTest::OnBodyHit);
+	spine->OnComponentHit.AddDynamic(this, &AJointCharacterTest::OnBodyHit);
+
+	weapon_blade->OnComponentHit.AddDynamic(this, &AJointCharacterTest::OnSwordHit);
 
 	OnCalculateCustomWalkingPhysics.BindUObject(this, &AJointCharacterTest::customWalkingPhysics);
 	pelvis_bi = pelvis->GetBodyInstance();

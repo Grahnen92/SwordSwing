@@ -32,6 +32,8 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* camera_axis;
 
+	bool alive = true;
+
 	//Upper body ------------------------------------------------------------------------
 
 	UPROPERTY(VisibleAnywhere)
@@ -49,7 +51,6 @@ protected:
 	UPhysicsConstraintComponent* spine_attachment;
 
 	//weapon ------------------------------------------------------------------------
-
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	USphereComponent* weapon_axis;
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
@@ -81,6 +82,12 @@ protected:
 	FBodyInstance* weapon_bi;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UBoxComponent* weapon_blade;
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UStaticMeshComponent* weapon_blade_vis;
+	FBodyInstance* weapon_blade_bi;
+
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UPhysicsConstraintComponent* weapon_attachment;
 
 	FVector offset_wep_inertia;
@@ -106,6 +113,11 @@ protected:
 	// 1 engaging
 	// 2 engaged
 	// 3 disengaging
+
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UAudioComponent* weapon_swish_audio;
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UAudioComponent* weapon_wood_impact_audio;
 
 	//legs -----------------------------------------------------------------------
 	
@@ -242,7 +254,12 @@ public:
 
 	/** called when projectile hits something */
 	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	void OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	/** called when projectile hits something */
+	UFUNCTION()
+	void OnSwordHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
