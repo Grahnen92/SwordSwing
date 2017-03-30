@@ -35,6 +35,8 @@ void AJointCharacterTest::BeginPlay()
 	
 	initPIDs();
 	initCustomPhysics();
+
+	weapon_trail->BeginTrails(FName("top_trail"), FName("bot_trail"), ETrailWidthMode::ETrailWidthMode_FromCentre, 1.0f);
 }
 
 // Called every frame
@@ -181,7 +183,6 @@ void AJointCharacterTest::movementCalculations(float DeltaTime)
 
 void AJointCharacterTest::OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	UE_LOG(LogTemp, Warning, TEXT("hit: %f"), NormalImpulse.Size());
 	if (NormalImpulse.Size() > 16000.f)
 	{
 		TArray<USceneComponent*> tmp_child_comps;
@@ -199,6 +200,8 @@ void AJointCharacterTest::OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherA
 			spine_attachment->BreakConstraint();
 			
 		}
+
+		weapon_swish_audio->Deactivate();
 
 		releaseWeapon();
 
@@ -218,10 +221,9 @@ void AJointCharacterTest::OnSwordHit(UPrimitiveComponent* HitComp, AActor* Other
 	if (hit_vel.Size() > 11000.f && NormalImpulse.Size() > 4000.f)
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("hit_vel: %f"), hit_vel.Size());
-		weapon_wood_impact_audio->VolumeMultiplier = NormalImpulse.Size() / 30000.f;
+		FMath::Min(weapon_wood_impact_audio->VolumeMultiplier = NormalImpulse.Size() / 40000.f, 0.6f);
 		weapon_wood_impact_audio->Activate();
 	}
-	
 }
 
 void AJointCharacterTest::customHoverPhysics(float DeltaTime, FBodyInstance* BodyInstance)
@@ -515,23 +517,45 @@ void AJointCharacterTest::customWeaponPhysics(float DeltaTime, FBodyInstance* Bo
 
 	//UE_LOG(LogTemp, Warning, TEXT("target_ang_speed: %f"), target_ang_speed);
 
-	float tmp_forward_error = (FMath::Acos(FVector::DotProduct(target_wep_dir_xy.GetSafeNormal(), current_wep_dir))*180.f / PI);// +target_ang_speed;
-	float tmp_backwards_error = (FMath::Acos(FVector::DotProduct(target_wep_dir_xy.GetSafeNormal(), -current_wep_dir))*180.f / PI);// +target_ang_speed;
-
-	if (tmp_forward_error < tmp_backwards_error)
+	if (wep_extended) 
 	{
-		sword_rotation.error = tmp_forward_error;
-		if (FVector::CrossProduct(target_wep_dir_xy.GetSafeNormal(), current_wep_dir).Z < 0)
-			sword_rotation.error = -sword_rotation.error;
+		if (rot_forward) 
+		{
+			float tmp_forward_error = (FMath::Acos(FVector::DotProduct(target_wep_dir_xy.GetSafeNormal(), current_wep_dir))*180.f / PI);// +target_ang_speed;
+			sword_rotation.error = tmp_forward_error;
+			if (FVector::CrossProduct(target_wep_dir_xy.GetSafeNormal(), current_wep_dir).Z < 0)
+				sword_rotation.error = -sword_rotation.error;
+		}
+		else
+		{
+			float tmp_backwards_error = (FMath::Acos(FVector::DotProduct(target_wep_dir_xy.GetSafeNormal(), -current_wep_dir))*180.f / PI);// +target_ang_speed;
+			sword_rotation.error = tmp_backwards_error;
+			if (FVector::CrossProduct(target_wep_dir_xy.GetSafeNormal(), -current_wep_dir).Z < 0)
+				sword_rotation.error = -sword_rotation.error;
+		}
 	}
 	else
 	{
-		sword_rotation.error = tmp_backwards_error;
-		if (FVector::CrossProduct(target_wep_dir_xy.GetSafeNormal(), -current_wep_dir).Z < 0)
-			sword_rotation.error = -sword_rotation.error;
-	}
-	//UE_LOG(LogTemp, Warning, TEXT("sword_rotation.error: %f"), sword_rotation.error);
+		float tmp_forward_error = (FMath::Acos(FVector::DotProduct(target_wep_dir_xy.GetSafeNormal(), current_wep_dir))*180.f / PI);// +target_ang_speed;
+		float tmp_backwards_error = (FMath::Acos(FVector::DotProduct(target_wep_dir_xy.GetSafeNormal(), -current_wep_dir))*180.f / PI);// +target_ang_speed;
 
+		if (tmp_forward_error < tmp_backwards_error)
+		{
+			rot_forward = true;
+			sword_rotation.error = tmp_forward_error;
+			if (FVector::CrossProduct(target_wep_dir_xy.GetSafeNormal(), current_wep_dir).Z < 0)
+				sword_rotation.error = -sword_rotation.error;
+		}
+		else
+		{
+			rot_forward = false;
+			sword_rotation.error = tmp_backwards_error;
+			if (FVector::CrossProduct(target_wep_dir_xy.GetSafeNormal(), -current_wep_dir).Z < 0)
+				sword_rotation.error = -sword_rotation.error;
+		}
+		//UE_LOG(LogTemp, Warning, TEXT("sword_rotation.error: %f"), sword_rotation.error);
+	}
+	
 	sword_rotation.integral = sword_rotation.integral + sword_rotation.error * DeltaTime;
 	sword_rotation.derivative = (sword_rotation.error - sword_rotation.prev_err) / DeltaTime;
 
@@ -576,6 +600,7 @@ void AJointCharacterTest::customWeaponPhysics(float DeltaTime, FBodyInstance* Bo
 			}
 			else 
 			{
+				target_wep_dir_curr_wep_proj = w_up;
 				target_wep_dir_curr_wep_proj.Z = 0.f;
 				target_wep_dir_curr_wep_proj.Normalize();
 
@@ -659,14 +684,14 @@ void AJointCharacterTest::customWeaponPhysics(float DeltaTime, FBodyInstance* Bo
 
 	weapon_blade->AddLocalRotation(FRotator(0.f, sword_twist.adjustment, 0.f));
 
-	
+	weapon_swish_audio->active_sound->LowPassFilterFrequency = (weapon_bi->GetUnrealWorldVelocity() + weapon_bi->GetUnrealWorldAngularVelocity()).Size();
 	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (FMath::Pow(weapon_bi->GetUnrealWorldAngularVelocity().Size(),2) / FMath::Pow(weapon_bi->MaxAngularVelocity, 2))*16000.f;
-	weapon_swish_audio->active_sound->LowPassFilterFrequency = (weapon_bi->GetUnrealWorldAngularVelocity().Size() / weapon_bi->MaxAngularVelocity)*12000.f;
+	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (weapon_bi->GetUnrealWorldAngularVelocity().Size() / weapon_bi->MaxAngularVelocity)*12000.f;
 	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (FMath::Sqrt(weapon_bi->GetUnrealWorldAngularVelocity().Size()) / FMath::Sqrt(weapon_bi->MaxAngularVelocity))*5000.f;
 	
 	//weapon_swish_audio->active_sound->VolumeMultiplier = FMath::Loge(weapon_bi->GetUnrealWorldAngularVelocity().Size()) / FMath::Loge(weapon_bi->MaxAngularVelocity);
 	//weapon_swish_audio->active_sound->VolumeMultiplier = weapon_bi->GetUnrealWorldAngularVelocity().Size() / weapon_bi->MaxAngularVelocity;
-	weapon_swish_audio->active_sound->VolumeMultiplier = (FMath::Pow(weapon_bi->GetUnrealWorldAngularVelocity().Size(),2) / FMath::Pow(weapon_bi->MaxAngularVelocity, 2));
+	weapon_swish_audio->active_sound->VolumeMultiplier = FMath::Min(FMath::Pow(weapon_bi->GetUnrealWorldAngularVelocity().Size(),2) / FMath::Pow(weapon_bi->MaxAngularVelocity, 2), 0.4f);
 
 
 	//DrawDebugLine(
@@ -822,6 +847,8 @@ void AJointCharacterTest::fightModeOn()
 		//weapon_axis_attachment->SetConstraintReferencePosition(EConstraintFrame::Frame2, FVector(0.f, -20.f, 0.f));
 
 		weapon->SetEnableGravity(true);
+
+		weapon_swish_audio->Deactivate();
 	}
 }
 
@@ -958,6 +985,9 @@ void AJointCharacterTest::initWeapon()
 	weapon_blade->SetBoxExtent(FVector(10.f, 2.f, 75.f));
 	weapon_blade_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponBladeVis"));
 	weapon_blade_vis->SetupAttachment(weapon_blade);
+
+	weapon_trail = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("WeaponTrail"));
+	weapon_trail->SetupAttachment(weapon_blade_vis);
 
 	weapon_handle_1->SetPhysicsMaxAngularVelocity(5000.f);
 	weapon->SetPhysicsMaxAngularVelocity(5000.f);

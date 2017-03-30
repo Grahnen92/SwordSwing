@@ -88,6 +88,10 @@ protected:
 	FBodyInstance* weapon_blade_bi;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UParticleSystemComponent* weapon_trail;
+	
+
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UPhysicsConstraintComponent* weapon_attachment;
 
 	FVector offset_wep_inertia;
@@ -352,13 +356,16 @@ private:
 	PIDData sword_rotation_speed;
 	PIDData sword_incline;
 	PIDData sword_twist;
+
 	FVector sword_twist_solder;
 	FVector sword_twist_target;
 	FVector target_wep_dir;
 	FVector prev_target_wep_dir;
 	FVector prev_target_wep_dir_xy;
+
 	bool was_standing_still = true;
 	bool wep_extended = false;
+	bool rot_forward = true;
 
 	//torso_twist_controller
 	PIDData3D ttc;
