@@ -21,23 +21,6 @@ public:
 
 	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
 	class USceneComponent * root;
-	
-	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
-	class UProceduralMeshComponent * mesh_frag_1;
-	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
-	class UProceduralMeshComponent * mesh_frag_2;
-	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
-	class UProceduralMeshComponent * mesh_frag_3;
-	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
-	class UProceduralMeshComponent * mesh_frag_4;
-	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
-	class UProceduralMeshComponent * mesh_frag_5;
-	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
-	class UProceduralMeshComponent * mesh_frag_6;
-	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
-	class UProceduralMeshComponent * mesh_frag_7;
-	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
-	class UProceduralMeshComponent * mesh_frag_8;
 
 	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
 	TArray< class UProceduralMeshComponent*> mesh_frags;
