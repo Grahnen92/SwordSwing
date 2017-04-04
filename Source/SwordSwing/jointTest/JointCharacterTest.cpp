@@ -2,6 +2,7 @@
 
 #include "SwordSwing.h"
 #include "AudioDevice.h"
+
 #include "ActiveSound.h"
 #include "JointCharacterTest.h"
 
@@ -218,11 +219,23 @@ void AJointCharacterTest::OnSwordHit(UPrimitiveComponent* HitComp, AActor* Other
 	/*UE_LOG(LogTemp, Warning, TEXT("hit_vel: %f"), hit_vel.Size());
 	UE_LOG(LogTemp, Warning, TEXT("NormalImpulse: %f"), NormalImpulse.Size());
 	UE_LOG(LogTemp, Warning, TEXT("----------------"));*/
+	FLatentActionInfo actionInfo;
+	actionInfo.CallbackTarget = this;
+	if(hit_vel.Size() > 3500.f)
+		GetController()->CastToPlayerController()->PlayDynamicForceFeedback(0.2f, 0.2f, false, true, false, true, EDynamicForceFeedbackAction::Start, actionInfo);
+	
 	if (hit_vel.Size() > 11000.f && NormalImpulse.Size() > 4000.f)
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("hit_vel: %f"), hit_vel.Size());
 		FMath::Min(weapon_wood_impact_audio->VolumeMultiplier = NormalImpulse.Size() / 40000.f, 0.6f);
+		weapon_wood_impact_audio->Deactivate();
 		weapon_wood_impact_audio->Activate();
+
+		
+		
+		GetController()->CastToPlayerController()->ClientPlayForceFeedback(weapon_impact, false, FName("SwordImpact"));
+
+		//GetController()->CastToPlayerController()->DynamicForceFeedbacks
 	}
 }
 
@@ -1002,6 +1015,10 @@ void AJointCharacterTest::initWeapon()
 	weapon_wood_impact_audio = CreateDefaultSubobject<UAudioComponent>(TEXT("WeaponWoodImpactAudio"));
 	weapon_wood_impact_audio->SetupAttachment(weapon_blade);
 	weapon_wood_impact_audio->VolumeMultiplier = 0.5f;
+
+	static ConstructorHelpers::FObjectFinder<UForceFeedbackEffect> SwordImpactObj(TEXT("/Game/JointCharacter/sword_impact"));
+	
+	weapon_impact =  SwordImpactObj.Object;
 }
 
 void AJointCharacterTest::initWeaponJoints()

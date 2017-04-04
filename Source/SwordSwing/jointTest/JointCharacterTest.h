@@ -4,6 +4,7 @@
 
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 
+//#include "ForceFeedbackComponent.h"
 #include "GameFramework/Pawn.h"
 #include "JointCharacterTest.generated.h"
 
@@ -88,11 +89,12 @@ protected:
 	FBodyInstance* weapon_blade_bi;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UParticleSystemComponent* weapon_trail;
-	
+	UPhysicsConstraintComponent* weapon_attachment;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UPhysicsConstraintComponent* weapon_attachment;
+	UParticleSystemComponent* weapon_trail;
+
+	UForceFeedbackEffect* weapon_impact;
 
 	FVector offset_wep_inertia;
 

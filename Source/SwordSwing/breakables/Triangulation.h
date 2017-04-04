@@ -1545,6 +1545,9 @@ namespace triangulation {
 		calcNormals(&vertexArray, &triangleArray, &normalArray, &tangentArray);
 
 		_mesh->CreateMeshSection_LinearColor(_mesh->GetNumSections(), vertexArray, triangleArray, normalArray, UV0, Colors, tangentArray, true);
+		TArray<TArray<FVector>> tmp_convex;
+		tmp_convex.Add(vertexArray);
+		_mesh->SetCollisionConvexMeshes(tmp_convex);
 		//debugpoint
 		UE_LOG(LogTemp, Warning, TEXT("finished..."));
 		UE_LOG(LogTemp, Warning, TEXT("tris %f"), triangleArray.Num());
