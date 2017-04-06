@@ -28,6 +28,8 @@ public:
 
 	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
 	UStaticMeshComponent* baseModel;
+	UMaterialInterface* base_material;
+
 	ScalarField<float>* base_model_sf;
 	FVector mid_point;
 	FVector increased_extent;

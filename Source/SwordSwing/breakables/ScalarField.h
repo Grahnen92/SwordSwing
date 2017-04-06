@@ -387,28 +387,7 @@ public:
 						{
 							_sf_out->data[i2][j2][k2] = interp_val_1;
 						}
-						//i1 = std::round(((xyz1.X - _sf1->offset.X) / _sf1->dim.X)*resxm1_1 + resxm1d2_1);
-						//j1 = std::round(((xyz1.Y - _sf1->offset.Y) / _sf1->dim.Y)*resym1_1 + resym1d2_1);
-						//k1 = std::round(((xyz1.Z - _sf1->offset.Z) / _sf1->dim.Z)*reszm1_1 + reszm1d2_1);
-
-						////inside bounds of original model
-						//if (i1 >= 0 && i1 < _sf1->res.X && j1 >= 0 && j1 < _sf1->res.Y && k1 >= 0 && k1 < _sf1->res.Z)
-						//{
-						//	//inside original model
-						//	if (_sf1->data[i1][j1][k1] >= _sf1->iso_value) 
-						//	{
-						//		_sf_out->data[i2][j2][k2] = std::fmin(_sf1->data[i1][j1][k1], _sf2->data[i2][j2][k2]);
-						//	}
-						//	else
-						//	{
-						//		_sf_out->data[i2][j2][k2] = _sf1->data[i1][j1][k1];
-						//	}
-						//}
-						//else
-						//{
-						//	//TODO: Ugly fix. Research if there is a better way.
-						//	_sf_out->data[i2][j2][k2] = _sf2->data[0][0][0];
-						//}
+		
 					}
 					else
 					{

@@ -2,11 +2,20 @@
 
 
 #include "SwordSwing.h"
+
 #include <string>
+#include <list>
+
 #include "MeshGenerator.h"
 #include "Triangulation.h"
+
+#include "voronoi/Voronoi.h"
+#include "voronoi/VEdge.h"
+#include "voronoi/VSite.h"
+
 #include "RawMesh.h"
 #include "Components/StaticMeshComponent.h"
+
 
 FMatrix axisRotMatrix(float _a, FVector _axis) {
 	FMatrix result;
@@ -46,12 +55,80 @@ AMeshGenerator::AMeshGenerator()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	baseModel->OnComponentHit.AddDynamic(this, &AMeshGenerator::OnOriginalModelHit);
+	
+
 }
 
 // Called when the game starts or when spawned
 void AMeshGenerator::BeginPlay()
 {
 	Super::BeginPlay();
+
+	//TODO: this 
+	Voronoi v;
+	std::list<VSite> v_points;
+	v_points.push_back(VSite(5, 50));
+	v_points.push_back(VSite(50, 95));
+	v_points.push_back(VSite(95, 50));
+	int vWidth = 100;
+	int vHeight = 100;
+	std::list<VEdge>* edg = v.GetEdges(&v_points, vWidth, vHeight);
+
+	DrawDebugLine(
+		GetWorld(),
+		FVector(0, 0, 100),
+		FVector(0, vHeight, 100),					//size
+		FColor(255, 0, 0),  //pink
+		true,  				//persistent (never goes away)
+		0.0, 					//point leaves a trail on moving object
+		100,
+		1.f
+	);
+	DrawDebugLine(
+		GetWorld(),
+		FVector(0, vHeight, 100),
+		FVector(vWidth, vHeight, 100),					//size
+		FColor(255, 0, 0),  //pink
+		true,  				//persistent (never goes away)
+		0.0, 					//point leaves a trail on moving object
+		100,
+		1.f
+	);
+	DrawDebugLine(
+		GetWorld(),
+		FVector(vWidth, vHeight, 100),
+		FVector(vWidth, 0, 100),					//size
+		FColor(255, 0, 0),  //pink
+		true,  				//persistent (never goes away)
+		0.0, 					//point leaves a trail on moving object
+		100,
+		1.f
+	);
+	DrawDebugLine(
+		GetWorld(),
+		FVector(vWidth, 0, 100),
+		FVector(0,0, 100),					//size
+		FColor(255, 0, 0),  //pink
+		true,  				//persistent (never goes away)
+		0.0, 					//point leaves a trail on moving object
+		100,
+		1.f
+	);
+
+	while(edg->size() > 0)
+	{
+		DrawDebugLine(
+			GetWorld(),
+			FVector(edg->back().start.X, edg->back().start.Y, 100),
+			FVector(edg->back().start.X, edg->back().start.Y, 100) + FVector(edg->back().direction.X, edg->back().direction.Y, 0),					//size
+			FColor(255, 0, 0),  //pink
+			true,  				//persistent (never goes away)
+			0.0, 					//point leaves a trail on moving object
+			100,
+			1.f
+		);
+		edg->pop_back();
+	}
 
 	//Create signed distance function and level set from a model ===============================================================================
 	FStaticMeshSourceModel* sourceM = &baseModel->GetStaticMesh()->SourceModels[0];
@@ -80,6 +157,8 @@ void AMeshGenerator::BeginPlay()
 	base_model_sf = new ScalarField<float>(res, increased_extent);
 	base_model_sf->setIsoValue(0.0f);
 	base_model_sf->meshToLeveSet(&rawMesh, mid_point);
+
+	base_material = baseModel->GetMaterial(0);
 }
 
 // Called every frame
@@ -96,7 +175,7 @@ void AMeshGenerator::OnOriginalModelHit(UPrimitiveComponent* HitComp, AActor* Ot
 		FVector test_mid = baseModel->GetCenterOfMass();
 
 		//Create signed distance function and level set for fragments ===============================================================================
-		frag_sf.Add( new ScalarField<float>(resolution, increased_extent.Z / 1.0f));
+		frag_sf.Add( new ScalarField<float>(resolution, increased_extent.Z + (increased_extent.Z / resolution)));
 		frag_sf[0]->setIsoValue(0.0f);
 		frag_sf[0]->cubeSignedDistance(FVector::ZeroVector);
 
@@ -153,6 +232,8 @@ void AMeshGenerator::CreateFragment(FMatrix _collision_rot, FVector _collision_l
 	mesh_frags[mf_i]->AttachTo(baseModel);
 	mesh_frags[mf_i]->InitializeComponent();
 	mesh_frags[mf_i]->bUseComplexAsSimpleCollision = false;
+
+	mesh_frags[mf_i]->SetMaterial(0, base_material);
 
 	ScalarField<float> merging_sf;
 	ScalarField<float>::mergeLevelSets(base_model_sf, frag_sf[0], _collision_rot, _collision_loc, _frag_offset, &merging_sf);
