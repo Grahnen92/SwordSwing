@@ -5,17 +5,13 @@
 
 VSite::VSite()
 {
-	pos = FVector2D::ZeroVector;
 }
 
-VSite::VSite(float x, float y)
+VSite::VSite(FVector2D& _coords)
 {
-	pos = FVector2D(x, y);
+	pos = _coords;
 }
-VSite::VSite(FVector2D& _pos)
-{
-	pos = _pos;
-}
+
 
 VSite::~VSite()
 {

@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-#include "VParabolic.h"
+#include "VParabola.h"
 #include "VSite.h"
 
 /**
@@ -11,42 +11,32 @@ class SWORDSWING_API VEvent
 {
 public:
 	VEvent();
+	VEvent(VSite* _s);
+	VEvent(VSite* _r, VSite* _m, VSite* _l, FVector2D _ccm);
 	~VEvent();
 
-	FVector2D point;
-	VSite* site;
-	bool		pe;
-	double		y;
-	VParabolic* arch;
-
-	VEvent(VSite* s, bool pev)
+	bool operator <(const VEvent& rhs)
 	{
-		if (pev)
-		{
-			site = s;
-			point = s->pos;
-		}
-			
-		else
-		{
-			point = s->pos;
-			site = nullptr;
-		}
-			
-		pe = pev;
-		y = s->pos.Y;
+		return pos.Y < rhs.pos.Y;
 	}
 
-	VEvent(FVector2D&& s, bool pev)
+	bool operator >(const VEvent& rhs)
 	{
-		site = nullptr;
-		point = s;
-		pe = pev;
-		y = s.Y;
+		return rhs.pos.Y < pos.Y;
 	}
+	
+	FVector2D pos;
+
+	bool point_event;
+	VSite* s;
+
+	VSite* sr;
+	VSite* sm;
+	VSite* sl;
 
 	struct CompareEvent : public std::binary_function<VEvent*, VEvent*, bool>
 	{
-		bool operator()(const VEvent* l, const VEvent* r) const { return (l->y < r->y); }
+		bool operator()(const VEvent* l, const VEvent* r) const { return (l->pos.Y < r->pos.Y); }
 	};
+	
 };

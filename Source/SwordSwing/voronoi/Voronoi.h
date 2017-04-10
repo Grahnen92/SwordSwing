@@ -2,13 +2,14 @@
 
 #pragma once
 #include "VSite.h"
-#include "VEdge.h"
-#include "VParabolic.h"
+#include "VHalfEdge.h"
+#include "VParabola.h"
 #include "VEvent.h"
 
 #include <queue>
 #include <set>
 #include <list>
+#include <vector>
 
 /**
  * 
@@ -18,28 +19,27 @@ class SWORDSWING_API Voronoi
 public:
 	Voronoi();
 	~Voronoi();
-	
-	std::list<VEdge>* GetEdges(std::list<VSite>* s, int w, int h);
 
+	void CalculateDiagram(TArray<FVector2D>* _sites);
+
+	void setDims(float x, float y) 
+	{
+		dims.X = x; dims.Y = y;
+	}
 private:
 
-	std::list<VEdge> edges;
-	std::list<VSite>* sites;
+	void addParabola(VSite * _s);
+	VParabola* findParabolaAtX(float _x);
 
-	double w, h;
-	VParabolic* root;
-	double line_y;
+	std::vector<VSite> sites;
+	std::vector<FVector2D> vertices;
+	std::vector<VHalfEdge> edges;
 
-	std::set<VEvent *> deleted;
-	std::list<FVector2D> vertices;
-	std::priority_queue<VEvent *, std::vector<VEvent *>, VEvent::CompareEvent> queue;
+	VParabola* root;
 
-	void		InsertParabola(VSite * p);
-	void		RemoveParabola(VEvent * e);
-	void		FinishEdge(VParabolic * n);
-	double		GetXOfEdge(VParabolic * par, double y);
-	VParabolic * GetParabolaByX(double xx);
-	double		GetY(VSite * p, double x);
-	void		CheckCircle(VParabolic * b);
-	FVector2D* 	GetEdgeIntersection(VEdge * a, VEdge * b);
+	std::priority_queue<VEvent*, std::vector<VEvent*>, VEvent::CompareEvent > event_queue;
+
+	float directrix_y;
+
+	FVector2D dims;
 };

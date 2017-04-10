@@ -10,8 +10,6 @@
 #include "Triangulation.h"
 
 #include "voronoi/Voronoi.h"
-#include "voronoi/VEdge.h"
-#include "voronoi/VSite.h"
 
 #include "RawMesh.h"
 #include "Components/StaticMeshComponent.h"
@@ -66,69 +64,12 @@ void AMeshGenerator::BeginPlay()
 
 	//TODO: this 
 	Voronoi v;
-	std::list<VSite> v_points;
-	v_points.push_back(VSite(5, 50));
-	v_points.push_back(VSite(50, 95));
-	v_points.push_back(VSite(95, 50));
-	int vWidth = 100;
-	int vHeight = 100;
-	std::list<VEdge>* edg = v.GetEdges(&v_points, vWidth, vHeight);
-
-	DrawDebugLine(
-		GetWorld(),
-		FVector(0, 0, 100),
-		FVector(0, vHeight, 100),					//size
-		FColor(255, 0, 0),  //pink
-		true,  				//persistent (never goes away)
-		0.0, 					//point leaves a trail on moving object
-		100,
-		1.f
-	);
-	DrawDebugLine(
-		GetWorld(),
-		FVector(0, vHeight, 100),
-		FVector(vWidth, vHeight, 100),					//size
-		FColor(255, 0, 0),  //pink
-		true,  				//persistent (never goes away)
-		0.0, 					//point leaves a trail on moving object
-		100,
-		1.f
-	);
-	DrawDebugLine(
-		GetWorld(),
-		FVector(vWidth, vHeight, 100),
-		FVector(vWidth, 0, 100),					//size
-		FColor(255, 0, 0),  //pink
-		true,  				//persistent (never goes away)
-		0.0, 					//point leaves a trail on moving object
-		100,
-		1.f
-	);
-	DrawDebugLine(
-		GetWorld(),
-		FVector(vWidth, 0, 100),
-		FVector(0,0, 100),					//size
-		FColor(255, 0, 0),  //pink
-		true,  				//persistent (never goes away)
-		0.0, 					//point leaves a trail on moving object
-		100,
-		1.f
-	);
-
-	while(edg->size() > 0)
-	{
-		DrawDebugLine(
-			GetWorld(),
-			FVector(edg->back().start.X, edg->back().start.Y, 100),
-			FVector(edg->back().start.X, edg->back().start.Y, 100) + FVector(edg->back().direction.X, edg->back().direction.Y, 0),					//size
-			FColor(255, 0, 0),  //pink
-			true,  				//persistent (never goes away)
-			0.0, 					//point leaves a trail on moving object
-			100,
-			1.f
-		);
-		edg->pop_back();
-	}
+	TArray<FVector2D> tmp_voro_sites;
+	tmp_voro_sites.Add(FVector2D(50.f, 95.f));
+	tmp_voro_sites.Add(FVector2D(5.f, 55.f));
+	tmp_voro_sites.Add(FVector2D(95.f, 50.f));
+	v.setDims(100.f, 100.f);
+	v.CalculateDiagram(&tmp_voro_sites);
 
 	//Create signed distance function and level set from a model ===============================================================================
 	FStaticMeshSourceModel* sourceM = &baseModel->GetStaticMesh()->SourceModels[0];

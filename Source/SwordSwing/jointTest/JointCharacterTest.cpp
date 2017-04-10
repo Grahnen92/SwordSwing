@@ -1016,7 +1016,7 @@ void AJointCharacterTest::initWeapon()
 	weapon_wood_impact_audio->SetupAttachment(weapon_blade);
 	weapon_wood_impact_audio->VolumeMultiplier = 0.5f;
 
-	static ConstructorHelpers::FObjectFinder<UForceFeedbackEffect> SwordImpactObj(TEXT("/Game/JointCharacter/sword_impact"));
+	static ConstructorHelpers::FObjectFinder<UForceFeedbackEffect> SwordImpactObj(TEXT("/Game/JointCharacter/weapon/sword_impact"));
 	
 	weapon_impact =  SwordImpactObj.Object;
 }

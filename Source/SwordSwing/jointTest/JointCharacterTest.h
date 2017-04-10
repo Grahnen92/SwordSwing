@@ -258,11 +258,9 @@ protected:
 
 public:	
 
-	/** called when projectile hits something */
 	UFUNCTION()
 	void OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
-	/** called when projectile hits something */
 	UFUNCTION()
 	void OnSwordHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
