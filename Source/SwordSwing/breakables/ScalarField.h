@@ -202,6 +202,72 @@ public:
 		}
 	}
 
+	void cubeSignedDistance(FVector _offset)
+	{
+		offset = _offset;
+		//TODO: this is unsafe if the resolution or dimension are not cubed
+		//cube_half_length
+		float chl = dim.X / 2.0f - (dim.X / res.X);
+		FVector origin(0.0f, 0.0f, 0.0f);
+		FVector p1;
+		FVector p2;
+		FVector dist_vec;
+
+		float x, y, z;
+		for (int i = 0; i < res.X; i++)
+		{
+			for (int j = 0; j < res.Y; j++)
+			{
+				for (int k = 0; k < res.Z; k++)
+				{
+					x = ((i - (res.X / 2)) / res.X)*dim.X + (dim.X / res.X)*0.5f;
+					y = ((j - (res.Y / 2)) / res.Y)*dim.Y + (dim.Y / res.Y)*0.5f;
+					z = ((k - (res.Z / 2)) / res.Z)*dim.Z + (dim.Z / res.Z)*0.5f;
+
+					float x_dist_max = x - chl;
+					float x_dist_min = x - (-chl);
+					float x_dist;
+					if (FMath::Abs(x_dist_max) < FMath::Abs(x_dist_min))
+					{
+						x_dist = x_dist_max;
+					}
+					else 
+					{
+						x_dist = -x_dist_min;
+					}
+					x_dist = -x_dist;
+
+					float y_dist_max = y - chl;
+					float y_dist_min = y - (-chl);
+					float y_dist;
+					if (FMath::Abs(y_dist_max) < FMath::Abs(y_dist_min))
+					{
+						y_dist = y_dist_max;
+					}
+					else
+					{
+						y_dist = -y_dist_min;
+					}
+					y_dist = -y_dist;
+
+					float z_dist_max = z - chl;
+					float z_dist_min = z - (-chl);
+					float z_dist;
+					if (FMath::Abs(z_dist_max) < FMath::Abs(z_dist_min))
+					{
+						z_dist = z_dist_max;
+					}
+					else
+					{
+						z_dist = -z_dist_min;
+					}
+					z_dist = -z_dist;
+
+					data[i][j][k] = FMath::Min3(x_dist, y_dist, z_dist);
+				}
+			}
+		}
+	}
 
 
 	void meshToLeveSet(FRawMesh* _rm, FVector& _offset)
@@ -263,7 +329,7 @@ public:
 	}
 
 	//_rel_transform is the transform that puts the origin of sf2 at a certain point relative to the origin of sf1
-	static void mergeLevelSets(ScalarField* _sf1, ScalarField* _sf2, FMatrix _rel_transform, ScalarField* _sf_out)
+	static void mergeLevelSets(ScalarField* _sf1, ScalarField* _sf2, FMatrix _rel_rotation, FVector rel_position, FVector frag_offset, ScalarField* _sf_out)
 	{
 		_sf_out->deAllocateData();
 		_sf_out->res = _sf2->res;
@@ -308,9 +374,9 @@ public:
 
 
 
-						xyz2 = FVector(x, y, z);
+						xyz2 = FVector(x, y, z) + frag_offset;
 
-						xyz1 = _rel_transform.TransformPosition(xyz2);
+						xyz1 = _rel_rotation.TransformPosition(xyz2) + rel_position;
 						interp_val_1 = _sf1->getTLIValue(xyz1);
 							//inside original model
 						if (interp_val_1 >= _sf1->iso_value) 
@@ -321,28 +387,7 @@ public:
 						{
 							_sf_out->data[i2][j2][k2] = interp_val_1;
 						}
-						//i1 = std::round(((xyz1.X - _sf1->offset.X) / _sf1->dim.X)*resxm1_1 + resxm1d2_1);
-						//j1 = std::round(((xyz1.Y - _sf1->offset.Y) / _sf1->dim.Y)*resym1_1 + resym1d2_1);
-						//k1 = std::round(((xyz1.Z - _sf1->offset.Z) / _sf1->dim.Z)*reszm1_1 + reszm1d2_1);
-
-						////inside bounds of original model
-						//if (i1 >= 0 && i1 < _sf1->res.X && j1 >= 0 && j1 < _sf1->res.Y && k1 >= 0 && k1 < _sf1->res.Z)
-						//{
-						//	//inside original model
-						//	if (_sf1->data[i1][j1][k1] >= _sf1->iso_value) 
-						//	{
-						//		_sf_out->data[i2][j2][k2] = std::fmin(_sf1->data[i1][j1][k1], _sf2->data[i2][j2][k2]);
-						//	}
-						//	else
-						//	{
-						//		_sf_out->data[i2][j2][k2] = _sf1->data[i1][j1][k1];
-						//	}
-						//}
-						//else
-						//{
-						//	//TODO: Ugly fix. Research if there is a better way.
-						//	_sf_out->data[i2][j2][k2] = _sf2->data[0][0][0];
-						//}
+		
 					}
 					else
 					{

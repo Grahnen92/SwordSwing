@@ -3,6 +3,7 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
+#include "ScalarField.h"
 #include "ProceduralMeshComponent.h"
 #include "MeshGenerator.generated.h"
 
@@ -17,20 +18,36 @@ public:
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	
-	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
-		class UProceduralMeshComponent * mesh;
 
 	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
-		UStaticMeshComponent* baseModel;
+	class USceneComponent * root;
+
+	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
+	TArray< class UProceduralMeshComponent*> mesh_frags;
+
+
+	UPROPERTY(Category = "Mesh", BlueprintReadWrite, VisibleAnywhere)
+	UStaticMeshComponent* baseModel;
+	UMaterialInterface* base_material;
+
+	ScalarField<float>* base_model_sf;
+	FVector mid_point;
+	FVector increased_extent;
+	
 
 	UPROPERTY(Category = "Mesh", BlueprintReadWrite, EditAnywhere)
-		int32 resolution = 4;
+	int32 resolution = 30;
 	// Called every frame
 	virtual void Tick( float DeltaSeconds ) override;
 
+	/** called when projectile hits something */
+	UFUNCTION()
+	void OnOriginalModelHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
 private:
 	
-	
+	void CreateFragment(FMatrix _collision_rot, FVector _collision_loc, FVector _frag_offset);
+
+	TArray<ScalarField<float>*> frag_sf;
 	
 };
