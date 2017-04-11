@@ -45,7 +45,6 @@ void AJointCharacterTest::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
-	
 	cameraCalculations(DeltaTime);
 
 	if (alive)
@@ -105,7 +104,6 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 				
 			}
 		}
-		
 		
 	}
 	else {
