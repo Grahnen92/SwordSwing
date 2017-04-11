@@ -61,20 +61,12 @@ protected:
 	UPhysicsConstraintComponent* weapon_axis_attachment;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	USphereComponent* weapon_handle_1;
+	USphereComponent* grip;
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UStaticMeshComponent* weapon_handle_1_vis;
-	FBodyInstance* weapon_handle_1_bi;
+	UStaticMeshComponent* grip_vis;
+	FBodyInstance* grip_bi;
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UPhysicsConstraintComponent* weapon_handle_1_attachment;
-
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	USphereComponent* weapon_handle_2;
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UStaticMeshComponent* weapon_handle_2_vis;
-	FBodyInstance* weapon_handle_2_bi;
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UPhysicsConstraintComponent* weapon_handle_2_attachment;
+	UPhysicsConstraintComponent* grip_attachment;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UCapsuleComponent* weapon;
@@ -102,6 +94,8 @@ protected:
 	void fightModeOff();
 	void releaseWeapon();
 	bool holding_weapon = true;
+	bool holding_object = false;
+	UObject* held_object;
 
 	FRotator axis_target_rot;
 	FRotator arm_target_rot;
@@ -227,6 +221,7 @@ protected:
 
 	void cameraCalculations(float DeltaTime);
 	FVector2D camera_input;
+	float scaled_inverted_cam_input_size = 0.f;
 	void movementCalculations(float DeltaTime);
 	FVector2D movement_input;
 	FVector target_direction;
@@ -280,6 +275,8 @@ private:
 	void customStabilizerPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateCustomWeaponPhysics;
 	void customWeaponPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	FCalculateCustomPhysics OnCalculateCustomInitGripPhysics;
+	void customInitGripPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateCustomWalkingPhysics;
 	void customWalkingPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 
@@ -351,6 +348,7 @@ private:
 	float target_hover_height = 200;
 	PIDData hover_height;
 
+	//Weapon control --------------------------------------------------------------
 	PIDData3D sword_motor_pos;
 	PIDData sword_rotation;
 	PIDData sword_rotation_speed;
