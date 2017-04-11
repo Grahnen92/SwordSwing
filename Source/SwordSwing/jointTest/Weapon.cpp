@@ -62,6 +62,9 @@ void AWeapon::initWeapon()
 	weapon_shaft->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
 	weapon_shaft->SetCapsuleHalfHeight(75);
 	weapon_shaft->SetCapsuleRadius(2.5f);
+	weapon_shaft->SetSimulatePhysics(true);
+	weapon_shaft->SetEnableGravity(false);
+	//weapon_shaft->SetMassOverrideInKg(NAME_None, 10.f, true);
 	weapon_shaft_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponShaftVis"));
 	weapon_shaft_vis->SetupAttachment(weapon_shaft);
 
@@ -70,6 +73,9 @@ void AWeapon::initWeapon()
 	weapon_head->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
 	weapon_head->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
 	weapon_head->SetBoxExtent(FVector(10.f, 2.f, 75.f));
+	weapon_head->SetSimulatePhysics(false);
+	weapon_head->SetEnableGravity(false);
+	weapon_head->SetMassOverrideInKg(NAME_None, 10.f, true);
 	weapon_head_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponHeadVis"));
 	weapon_head_vis->SetupAttachment(weapon_head);
 

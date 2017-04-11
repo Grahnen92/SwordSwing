@@ -269,10 +269,20 @@ public:
 	
 private:
 
-	FCalculateCustomPhysics OnCalculateCustomHoverPhysics;
+	FCalculateCustomPhysics OnCalculateCustomHoverPhysics; //HOVER
 	void customHoverPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-	FCalculateCustomPhysics OnCalculateCustomStabilizerPhysics;
+	FCalculateCustomPhysics OnCalculateCustomStabilizerPhysics;//MOVEMENT
 	void customStabilizerPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	FCalculateCustomPhysics OnCalculateControlGripPhysics; //GRIP
+	void ControlGripPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	FCalculateCustomPhysics OnCalculateControlGripPositionPhysics; //GRIP POSITION
+	void ControlGripPositionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	FCalculateCustomPhysics OnCalculateControlGripDirectionPhysics; //GRIP DIRECTION
+	void ControlGripDirectionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	FCalculateCustomPhysics OnCalculateControlGripInclinePhysics; //GRIP INCLINE
+	void ControlGripInclinePhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	FCalculateCustomPhysics OnCalculateControlWeaponTwistPhysics; // WEAPON TWist
+	void ControlWeaponTwistPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateCustomWeaponPhysics;
 	void customWeaponPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateCustomInitGripPhysics;
@@ -344,26 +354,47 @@ private:
 		FVector D;
 	};
 
-	UPROPERTY(EditAnywhere)
-	float target_hover_height = 200;
-	PIDData hover_height;
+	
 
 	//Weapon control --------------------------------------------------------------
+	//weapon control states
+	bool was_standing_still = true;
+	bool wep_extended = false;
+	bool rot_forward = true;
+
+	//weapon control pids
 	PIDData3D sword_motor_pos;
 	PIDData sword_rotation;
 	PIDData sword_rotation_speed;
 	PIDData sword_incline;
 	PIDData sword_twist;
 
+	//general variables used across several function
 	FVector sword_twist_solder;
 	FVector sword_twist_target;
 	FVector target_wep_dir;
 	FVector prev_target_wep_dir;
 	FVector prev_target_wep_dir_xy;
+	FVector target_wep_dir_xy;
+	FVector target_wep_dir_curr_wep_proj;
+	
+	//variables used for readability across several function
+	FVector wa_pos;
+	FVector grip_pos;
+	FVector grip_forward;
+	FVector grip_right;
+	FVector grip_up;
+	FVector w_pos;
+	FVector w_forward;
+	FVector w_right;
+	FVector w_up;
+	FVector current_wep_dir;
 
-	bool was_standing_still = true;
-	bool wep_extended = false;
-	bool rot_forward = true;
+	//Movement control --------------------------------------------------------------
+
+	UPROPERTY(EditAnywhere)
+	float target_hover_height = 200;
+	PIDData hover_height;
 
 	//torso_twist_controller
 	PIDData3D ttc;
