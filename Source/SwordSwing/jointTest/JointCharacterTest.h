@@ -283,13 +283,12 @@ private:
 	void ControlGripInclinePhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateControlWeaponTwistPhysics; // WEAPON TWist
 	void ControlWeaponTwistPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-	FCalculateCustomPhysics OnCalculateCustomWeaponPhysics;
-	void customWeaponPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateCustomInitGripPhysics;
 	void customInitGripPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateCustomWalkingPhysics;
 	void customWalkingPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 
+	void weaponSwishAudioMix();
 	
 	void initCamera();
 
