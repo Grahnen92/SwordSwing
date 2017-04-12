@@ -25,6 +25,9 @@ protected:
 	FBodyInstance* weapon_shaft_bi;
 
 	UPROPERTY(Category = "WeaponPart", VisibleAnywhere)
+	USceneComponent* weapon_handle_point;
+
+	UPROPERTY(Category = "WeaponPart", VisibleAnywhere)
 	UBoxComponent* weapon_head;
 	UPROPERTY(Category = "WeaponPart", VisibleAnywhere)
 	UStaticMeshComponent* weapon_head_vis;
@@ -33,9 +36,9 @@ protected:
 	UPROPERTY(Category = "WeaponPart", VisibleAnywhere)
 	UParticleSystemComponent* weapon_trail;
 
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UPROPERTY(Category = "WeaponPart", VisibleAnywhere)
 	UAudioComponent* weapon_swish_audio;
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UPROPERTY(Category = "WeaponPart", VisibleAnywhere)
 	UAudioComponent* weapon_wood_impact_audio;
 
 	UForceFeedbackEffect* weapon_impact;

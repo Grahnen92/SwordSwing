@@ -5,6 +5,8 @@
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 
 //#include "ForceFeedbackComponent.h"
+
+#include "Weapon.h"
 #include "GameFramework/Pawn.h"
 #include "JointCharacterTest.generated.h"
 
@@ -92,8 +94,11 @@ protected:
 
 	void fightModeOn();
 	void fightModeOff();
-	void releaseWeapon();
+	void grab();
+	void abortGrab();
+	bool grabbing_weapon = false;
 	bool holding_weapon = true;
+	AWeapon* held_weapon;
 	bool holding_object = false;
 	UObject* held_object;
 

@@ -55,6 +55,7 @@ void AWeapon::OnSwordHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrim
 
 void AWeapon::initWeapon()
 {
+	this->Tags.Add("weapon");
 	weapon_shaft = CreateDefaultSubobject<UCapsuleComponent>(TEXT("WeaponShaft"));
 	//weapon->SetupAttachment(weapon_axis);
 	RootComponent = weapon_shaft;
@@ -67,6 +68,11 @@ void AWeapon::initWeapon()
 	//weapon_shaft->SetMassOverrideInKg(NAME_None, 10.f, true);
 	weapon_shaft_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponShaftVis"));
 	weapon_shaft_vis->SetupAttachment(weapon_shaft);
+
+	weapon_handle_point = CreateDefaultSubobject<USceneComponent>(TEXT("WeaponHandle"));
+	weapon_handle_point->SetupAttachment(weapon_shaft);
+	weapon_handle_point->SetRelativeLocation(FVector(0.f, 0.f, -75.f));
+	weapon_handle_point->ComponentTags.Add("handle_point");
 
 	weapon_head = CreateDefaultSubobject<UBoxComponent>(TEXT("WeaponHead"));
 	weapon_head->SetupAttachment(weapon_shaft);

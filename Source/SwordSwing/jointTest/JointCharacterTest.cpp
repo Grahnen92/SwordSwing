@@ -210,7 +210,7 @@ void AJointCharacterTest::OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherA
 
 		weapon_swish_audio->Deactivate();
 
-		releaseWeapon();
+		grab();
 
 		alive = false;
 
@@ -726,7 +726,8 @@ void AJointCharacterTest::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	InputComponent->BindAction("FightMode", IE_Pressed, this, &AJointCharacterTest::fightModeOn);
 	InputComponent->BindAction("FightMode", IE_Released, this, &AJointCharacterTest::fightModeOff);
 
-	InputComponent->BindAction("Throw", IE_Pressed, this, &AJointCharacterTest::releaseWeapon);
+	InputComponent->BindAction("Grab", IE_Pressed, this, &AJointCharacterTest::grab);
+	InputComponent->BindAction("Grab", IE_Released, this, &AJointCharacterTest::abortGrab);
 
 	InputComponent->BindAction("ZoomIn", IE_Pressed, this, &AJointCharacterTest::zoomIn);
 	InputComponent->BindAction("ZoomIn", IE_Released, this, &AJointCharacterTest::zoomOut);
@@ -855,7 +856,7 @@ void AJointCharacterTest::fightModeOff()
 
 }
 
-void AJointCharacterTest::releaseWeapon()
+void AJointCharacterTest::grab()
 {
 
 	if (holding_weapon)
@@ -887,25 +888,57 @@ void AJointCharacterTest::releaseWeapon()
 		int one = 1;
 		TSet<AActor*>::TIterator it =  overlaps.CreateIterator();
 		//(*it)->AttachToComponent(grip);
-		weapon_attachment->ConstraintActor2 = (*it);
-		weapon_attachment->SetConstrainedComponents(grip, NAME_None, dynamic_cast<UPrimitiveComponent*>((*it)->GetComponentByClass(UStaticMeshComponent::StaticClass())), NAME_None );
-		weapon_attachment->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 0.0f);
-		weapon_attachment->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0.0f);
-		weapon_attachment->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0.0f);
-		weapon_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
-		weapon_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 90.f);
-		weapon_attachment->ConstraintInstance.AngularRotationOffset = FRotator(0.f, 0.f, 0.f);
-		weapon_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.0f);
-		weapon_attachment->SetDisableCollision(true);
+		held_weapon = dynamic_cast<AWeapon*>((*it));
+		if (held_weapon)
+		{
+			grabbing_weapon = true;
+			USceneComponent* tmp_handle = dynamic_cast<USceneComponent*>(held_weapon->GetComponentByClass(USceneComponent::StaticClass()));
+			held_weapon->SetActorLocation(grip->GetComponentLocation() + (held_weapon->GetActorLocation() - tmp_handle->GetComponentLocation()));
+			held_weapon->SetActorRotation(grip->GetComponentRotation());
 
-		/*grip_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
-		grip_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
-		grip_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.0f);*/
+			weapon_attachment->ConstraintActor2 = (*it);
+			weapon_attachment->SetConstrainedComponents(grip, NAME_None, dynamic_cast<UPrimitiveComponent*>((*it)->GetComponentByClass(UCapsuleComponent::StaticClass())), NAME_None);
+			weapon_attachment->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 0.0f);
+			weapon_attachment->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0.0f);
+			weapon_attachment->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0.0f);
+			weapon_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+			weapon_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 90.f);
+			weapon_attachment->ConstraintInstance.AngularRotationOffset = FRotator(0.f, 0.f, 0.f);
+			weapon_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+			weapon_attachment->SetDisableCollision(true);
 
-		holding_object = true;
+			grabbing_weapon = false;
+			holding_object = true;
+
+		}
+		else
+		{
+			weapon_attachment->ConstraintActor2 = (*it);
+			weapon_attachment->SetConstrainedComponents(grip, NAME_None, dynamic_cast<UPrimitiveComponent*>((*it)->GetComponentByClass(UStaticMeshComponent::StaticClass())), NAME_None);
+			weapon_attachment->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 0.0f);
+			weapon_attachment->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0.0f);
+			weapon_attachment->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0.0f);
+			weapon_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+			weapon_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 90.f);
+			weapon_attachment->ConstraintInstance.AngularRotationOffset = FRotator(0.f, 0.f, 0.f);
+			weapon_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+			weapon_attachment->SetDisableCollision(true);
+
+			/*grip_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+			grip_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+			grip_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.0f);*/
+
+			holding_object = true;
+		}
+	
+		
 	}
 
 	
+}
+void AJointCharacterTest::abortGrab()
+{
+	grabbing_weapon = false;
 }
 
 
