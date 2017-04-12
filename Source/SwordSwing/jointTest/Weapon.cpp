@@ -25,6 +25,24 @@ void AWeapon::BeginPlay()
 void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	//DrawDebugPoint(
+	//	GetWorld(),
+	//	weapon_handle_point->GetComponentLocation(),
+	//	20,  					//size
+	//	FColor(255, 0, 255),  //pink
+	//	false,  				//persistent (never goes away)
+	//	0.03 					//point leaves a trail on moving object
+	//);
+
+	//DrawDebugPoint(
+	//	GetWorld(),
+	//	GetActorLocation(),
+	//	20,  					//size
+	//	FColor(255, 0, 0),  //pink
+	//	false,  				//persistent (never goes away)
+	//	0.03 					//point leaves a trail on moving object
+	//);
 }
 
 void AWeapon::OnSwordHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -57,6 +75,7 @@ void AWeapon::initWeapon()
 {
 	this->Tags.Add("weapon");
 	weapon_shaft = CreateDefaultSubobject<UCapsuleComponent>(TEXT("WeaponShaft"));
+	weapon_shaft->ComponentTags.Add("shaft");
 	//weapon->SetupAttachment(weapon_axis);
 	RootComponent = weapon_shaft;
 	
@@ -65,6 +84,7 @@ void AWeapon::initWeapon()
 	weapon_shaft->SetCapsuleRadius(2.5f);
 	weapon_shaft->SetSimulatePhysics(true);
 	weapon_shaft->SetEnableGravity(false);
+	weapon_shaft->SetPhysicsMaxAngularVelocity(5000.f);
 	//weapon_shaft->SetMassOverrideInKg(NAME_None, 10.f, true);
 	weapon_shaft_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponShaftVis"));
 	weapon_shaft_vis->SetupAttachment(weapon_shaft);
@@ -75,12 +95,14 @@ void AWeapon::initWeapon()
 	weapon_handle_point->ComponentTags.Add("handle_point");
 
 	weapon_head = CreateDefaultSubobject<UBoxComponent>(TEXT("WeaponHead"));
+	weapon_head->ComponentTags.Add("head");
 	weapon_head->SetupAttachment(weapon_shaft);
 	weapon_head->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
 	weapon_head->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
 	weapon_head->SetBoxExtent(FVector(10.f, 2.f, 75.f));
 	weapon_head->SetSimulatePhysics(false);
 	weapon_head->SetEnableGravity(false);
+	weapon_head->SetPhysicsMaxAngularVelocity(5000.f);
 	weapon_head->SetMassOverrideInKg(NAME_None, 10.f, true);
 	weapon_head_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponHeadVis"));
 	weapon_head_vis->SetupAttachment(weapon_head);
@@ -88,7 +110,7 @@ void AWeapon::initWeapon()
 	weapon_trail = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("WeaponHeadTrail"));
 	weapon_trail->SetupAttachment(weapon_head_vis);
 
-	weapon_shaft->SetPhysicsMaxAngularVelocity(5000.f);
+	
 
 	weapon_swish_audio = CreateDefaultSubobject<UAudioComponent>(TEXT("WeaponSwishAudioTest"));
 	weapon_swish_audio->SetupAttachment(weapon_shaft);

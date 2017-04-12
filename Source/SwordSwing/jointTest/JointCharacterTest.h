@@ -63,18 +63,20 @@ protected:
 	UPhysicsConstraintComponent* weapon_axis_attachment;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	USphereComponent* grip;
+	USphereComponent* grip_h;
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UStaticMeshComponent* grip_vis;
-	FBodyInstance* grip_bi;
+	UStaticMeshComponent* grip_h_vis;
+	FBodyInstance* grip_h_bi;
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UPhysicsConstraintComponent* grip_attachment;
+	UPhysicsConstraintComponent* grip_h_attachment;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UCapsuleComponent* weapon;
+	USphereComponent* grip_v;
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UStaticMeshComponent* weapon_vis;
-	FBodyInstance* weapon_bi;
+	UStaticMeshComponent* grip_v_vis;
+	FBodyInstance* grip_v_bi;
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UPhysicsConstraintComponent* grip_v_attachment;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UBoxComponent* weapon_blade;
@@ -82,8 +84,7 @@ protected:
 	UStaticMeshComponent* weapon_blade_vis;
 	FBodyInstance* weapon_blade_bi;
 
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UPhysicsConstraintComponent* weapon_attachment;
+	
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UParticleSystemComponent* weapon_trail;
@@ -384,14 +385,14 @@ private:
 	
 	//variables used for readability across several function
 	FVector wa_pos;
-	FVector grip_pos;
-	FVector grip_forward;
-	FVector grip_right;
-	FVector grip_up;
-	FVector w_pos;
-	FVector w_forward;
-	FVector w_right;
-	FVector w_up;
+	FVector gh_pos;
+	FVector gh_forward;
+	FVector gh_right;
+	FVector gh_up;
+	FVector gv_pos;
+	FVector gv_forward;
+	FVector gv_right;
+	FVector gv_up;
 	FVector current_wep_dir;
 
 	//Movement control --------------------------------------------------------------

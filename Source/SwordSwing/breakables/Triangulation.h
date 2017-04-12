@@ -19,7 +19,7 @@ namespace triangulation {
 
 	template <typename scalar_value>
 	void marchingCubes(UProceduralMeshComponent* _mesh, ScalarField<scalar_value>* _sf, FVector& _mid_point = FVector(0.0f, 0.0f, 0.0f)) {
-		UE_LOG(LogTemp, Warning, TEXT("generating mesh..."));
+		//UE_LOG(LogTemp, Warning, TEXT("generating mesh..."));
 		int cubeIndex;
 
 		float xyz[8][3];
@@ -1549,12 +1549,12 @@ namespace triangulation {
 		tmp_convex.Add(vertexArray);
 		_mesh->SetCollisionConvexMeshes(tmp_convex);
 		//debugpoint
-		UE_LOG(LogTemp, Warning, TEXT("finished..."));
+		/*UE_LOG(LogTemp, Warning, TEXT("finished..."));
 		UE_LOG(LogTemp, Warning, TEXT("tris %f"), triangleArray.Num());
 		UE_LOG(LogTemp, Warning, TEXT("verts %f"), vertexArray.Num());
 
 		UE_LOG(LogTemp, Warning, TEXT("edgeTable %f"), edgeTable[130]);
-		UE_LOG(LogTemp, Warning, TEXT("triTable %f"), triTable[0][0]);
+		UE_LOG(LogTemp, Warning, TEXT("triTable %f"), triTable[0][0]);*/
 
 		//cleanup
 		for (int i = 0; i < 2; i++)
