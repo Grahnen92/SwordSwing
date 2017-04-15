@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SwordSwing.h"
+#include "JointCharacterTest.h"
+#include "ActiveSound.h"
 #include "Weapon.h"
 
 
@@ -18,13 +20,14 @@ void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 
-	weapon_head->OnComponentHit.AddDynamic(this, &AWeapon::OnSwordHit);
+	weapon_head->OnComponentHit.AddDynamic(this, &AWeapon::OnWeaponHit);
 }
 
 // Called every frame
 void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	weaponSwishAudioMix();
 
 	//DrawDebugPoint(
 	//	GetWorld(),
@@ -45,30 +48,47 @@ void AWeapon::Tick(float DeltaTime)
 	//);
 }
 
-void AWeapon::OnSwordHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+void AWeapon::OnWeaponHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	//FVector hit_vel = weapon_bi->GetUnrealWorldVelocity() + FVector::CrossProduct(weapon_bi->GetUnrealWorldAngularVelocity(), Hit.Location - weapon_handle_1_bi->GetCOMPosition());
-	///*UE_LOG(LogTemp, Warning, TEXT("hit_vel: %f"), hit_vel.Size());
-	//UE_LOG(LogTemp, Warning, TEXT("NormalImpulse: %f"), NormalImpulse.Size());
-	//UE_LOG(LogTemp, Warning, TEXT("----------------"));*/
-	//FLatentActionInfo actionInfo;
-	//actionInfo.CallbackTarget = this;
-	//if (hit_vel.Size() > 3500.f)
-	//	GetController()->CastToPlayerController()->PlayDynamicForceFeedback(0.2f, 0.2f, false, true, false, true, EDynamicForceFeedbackAction::Start, actionInfo);
+	FVector hit_vel = weapon_head->GetBodyInstance()->GetUnrealWorldVelocity() + FVector::CrossProduct(weapon_head->GetBodyInstance()->GetUnrealWorldAngularVelocity(), Hit.Location - weapon_head->GetBodyInstance()->GetCOMPosition());
 
-	//if (hit_vel.Size() > 11000.f && NormalImpulse.Size() > 4000.f)
-	//{
-	//	//UE_LOG(LogTemp, Warning, TEXT("hit_vel: %f"), hit_vel.Size());
-	//	FMath::Min(weapon_wood_impact_audio->VolumeMultiplier = NormalImpulse.Size() / 40000.f, 0.6f);
-	//	weapon_wood_impact_audio->Deactivate();
-	//	weapon_wood_impact_audio->Activate();
+	if (holder)
+	{
+		if (hit_vel.Size() > 3500.f)
+		{
+			FLatentActionInfo actionInfo;
+			actionInfo.CallbackTarget = this;
+			holder->GetController()->CastToPlayerController()->PlayDynamicForceFeedback(0.2f, 0.2f, false, true, false, true, EDynamicForceFeedbackAction::Start, actionInfo);
+		}
+	}
 
 
+	if (hit_vel.Size() > 11000.f && NormalImpulse.Size() > 4000.f)
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("hit_vel: %f"), hit_vel.Size());
+		FMath::Min(weapon_wood_impact_audio->VolumeMultiplier = NormalImpulse.Size() / 40000.f, 0.6f);
+		weapon_wood_impact_audio->Deactivate();
+		weapon_wood_impact_audio->Activate();
 
-	//	GetController()->CastToPlayerController()->ClientPlayForceFeedback(weapon_impact, false, FName("SwordImpact"));
 
-	//	//GetController()->CastToPlayerController()->DynamicForceFeedbacks
-	//}
+		if (holder)
+		{
+			holder->GetController()->CastToPlayerController()->ClientPlayForceFeedback(weapon_impact, false, FName("SwordImpact"));
+			//GetController()->CastToPlayerController()->DynamicForceFeedbacks
+		}
+	}
+}
+
+void AWeapon::weaponSwishAudioMix()
+{
+	weapon_swish_audio->active_sound->LowPassFilterFrequency = (weapon_head->GetPhysicsLinearVelocity() + weapon_head->GetPhysicsAngularVelocity()).Size();
+	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (FMath::Pow(weapon_bi->GetUnrealWorldAngularVelocity().Size(),2) / FMath::Pow(weapon_bi->MaxAngularVelocity, 2))*16000.f;
+	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (weapon_bi->GetUnrealWorldAngularVelocity().Size() / weapon_bi->MaxAngularVelocity)*12000.f;
+	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (FMath::Sqrt(weapon_bi->GetUnrealWorldAngularVelocity().Size()) / FMath::Sqrt(weapon_bi->MaxAngularVelocity))*5000.f;
+
+	//weapon_swish_audio->active_sound->VolumeMultiplier = FMath::Loge(weapon_bi->GetUnrealWorldAngularVelocity().Size()) / FMath::Loge(weapon_bi->MaxAngularVelocity);
+	//weapon_swish_audio->active_sound->VolumeMultiplier = weapon_bi->GetUnrealWorldAngularVelocity().Size() / weapon_bi->MaxAngularVelocity;
+	weapon_swish_audio->active_sound->VolumeMultiplier = FMath::Min(FMath::Pow(weapon_head->GetPhysicsAngularVelocity().Size(), 2) / FMath::Pow(weapon_head->GetBodyInstance()->MaxAngularVelocity, 2), 0.4f);
 }
 
 void AWeapon::initWeapon()
@@ -85,7 +105,7 @@ void AWeapon::initWeapon()
 	weapon_shaft->SetSimulatePhysics(true);
 	weapon_shaft->SetEnableGravity(false);
 	weapon_shaft->SetPhysicsMaxAngularVelocity(5000.f);
-	//weapon_shaft->SetMassOverrideInKg(NAME_None, 10.f, true);
+	weapon_shaft->SetMassOverrideInKg(NAME_None, 2.f, true);
 	weapon_shaft_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponShaftVis"));
 	weapon_shaft_vis->SetupAttachment(weapon_shaft);
 
@@ -113,17 +133,42 @@ void AWeapon::initWeapon()
 	
 
 	weapon_swish_audio = CreateDefaultSubobject<UAudioComponent>(TEXT("WeaponSwishAudioTest"));
-	weapon_swish_audio->SetupAttachment(weapon_shaft);
+	weapon_swish_audio->SetupAttachment(weapon_head);
 	weapon_swish_audio->bEnableLowPassFilter = true;
 	weapon_swish_audio->LowPassFilterFrequency = 10.f;
 	//weapon_audio->bEQFilterApplied = true;
 	weapon_swish_audio->VolumeMultiplier = 0.0f;
 
 	weapon_wood_impact_audio = CreateDefaultSubobject<UAudioComponent>(TEXT("WeaponWoodImpactAudioTest"));
-	weapon_wood_impact_audio->SetupAttachment(weapon_head);
+	weapon_wood_impact_audio->SetupAttachment(weapon_shaft);
 	weapon_wood_impact_audio->VolumeMultiplier = 0.5f;
 
 	static ConstructorHelpers::FObjectFinder<UForceFeedbackEffect> SwordImpactObj(TEXT("/Game/JointCharacter/weapon/sword_impact"));
 
 	weapon_impact = SwordImpactObj.Object;
+}
+
+UCapsuleComponent* AWeapon::getShaftComponent()
+{
+	return weapon_shaft;
+}
+UBoxComponent* AWeapon::getHeadComponent()
+{
+	return weapon_head;
+}
+USceneComponent* AWeapon::getAttachmentPoint()
+{
+	return weapon_handle_point;
+}
+
+void AWeapon::initGrabbed(AJointCharacterTest* _holder)
+{
+	holder = _holder;
+	weapon_trail->BeginTrails(FName("top_trail"), FName("bot_trail"), ETrailWidthMode::ETrailWidthMode_FromCentre, 1.0f);
+}
+
+void AWeapon::deInitGrabbed()
+{
+	holder = nullptr;
+	//weapon_head->OnComponentHit.RemoveAll(this);
 }

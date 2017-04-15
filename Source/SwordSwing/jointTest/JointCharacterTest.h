@@ -97,6 +97,7 @@ protected:
 	void fightModeOff();
 	void grab();
 	void abortGrab();
+	void calculateWepInertia();
 	bool grabbing_weapon = false;
 	bool holding_weapon = true;
 	AWeapon* held_weapon;

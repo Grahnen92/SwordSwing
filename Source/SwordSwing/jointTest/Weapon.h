@@ -5,6 +5,8 @@
 #include "GameFramework/Actor.h"
 #include "Weapon.generated.h"
 
+class AJointCharacterTest;
+
 UCLASS()
 class SWORDSWING_API AWeapon : public AActor
 {
@@ -17,6 +19,8 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+
 
 	UPROPERTY(Category = "WeaponPart", VisibleAnywhere)
 	UCapsuleComponent* weapon_shaft;
@@ -44,15 +48,27 @@ protected:
 	UForceFeedbackEffect* weapon_impact;
 
 	bool held = false;
-	APawn* holder;
+	AJointCharacterTest* holder;
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION()
-	void OnSwordHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	void OnWeaponHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
+	UCapsuleComponent* getShaftComponent();
+	UBoxComponent* getHeadComponent();
+	USceneComponent* getAttachmentPoint();
+
+	void initGrabbed(AJointCharacterTest* _holder);
+	void deInitGrabbed();
+
+private:
+
+	void weaponSwishAudioMix();
 	void initWeapon();
+
+	
 	
 };
