@@ -36,8 +36,6 @@ void AJointCharacterTest::BeginPlay()
 	
 	initPIDs();
 	initCustomPhysics();
-
-	weapon_trail->BeginTrails(FName("top_trail"), FName("bot_trail"), ETrailWidthMode::ETrailWidthMode_FromCentre, 1.0f);
 }
 
 // Called every frame
@@ -56,6 +54,17 @@ void AJointCharacterTest::Tick(float DeltaTime)
 	//	0.03 					//point leaves a trail on moving object
 	//);
 
+	DrawDebugLine(
+		GetWorld(),
+		grip_v->GetComponentLocation(),
+		grip_v->GetComponentLocation() - 200 * FVector::UpVector, 					//size
+		FColor(255, 0, 0),  //pink
+		true,  				//persistent (never goes away)
+		0.03, 					//point leaves a trail on moving object
+		10,
+		5.f
+	);
+
 	if (alive)
 	{
 		camera_axis->SetWorldLocation(torso->GetCenterOfMass());
@@ -64,8 +73,6 @@ void AJointCharacterTest::Tick(float DeltaTime)
 		if (fight_mode)
 		{
 			grip_h_bi->AddCustomPhysics(OnCalculateControlGripPhysics);
-
-
 			/*grip_h_bi->AddCustomPhysics(OnCalculateControltGripPhysics);
 			grip_h_bi->AddCustomPhysics(OnCalculateCustomInitGripPhysics);
 			grip_h_bi->AddCustomPhysics(OnCalculateControlGripPositionPhysics);
@@ -217,40 +224,12 @@ void AJointCharacterTest::OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherA
 			
 		}
 
-		weapon_swish_audio->Deactivate();
-
 		grab();
 
 		alive = false;
 
 		//HitComp->DestroyComponent();
 	}
-
-}
-
-void AJointCharacterTest::OnSwordHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
-{
-	//FVector hit_vel = grip_v_bi->GetUnrealWorldVelocity() + FVector::CrossProduct(grip_v_bi->GetUnrealWorldAngularVelocity(), Hit.Location - grip_h_bi->GetCOMPosition());
-	///*UE_LOG(LogTemp, Warning, TEXT("hit_vel: %f"), hit_vel.Size());
-	//UE_LOG(LogTemp, Warning, TEXT("NormalImpulse: %f"), NormalImpulse.Size());
-	//UE_LOG(LogTemp, Warning, TEXT("----------------"));*/
-	//FLatentActionInfo actionInfo;
-	//actionInfo.CallbackTarget = this;
-	//if(hit_vel.Size() > 3500.f)
-	//	GetController()->CastToPlayerController()->PlayDynamicForceFeedback(0.2f, 0.2f, false, true, false, true, EDynamicForceFeedbackAction::Start, actionInfo);
-	//
-	//if (hit_vel.Size() > 11000.f && NormalImpulse.Size() > 4000.f)
-	//{
-	//	//UE_LOG(LogTemp, Warning, TEXT("hit_vel: %f"), hit_vel.Size());
-	//	FMath::Min(weapon_wood_impact_audio->VolumeMultiplier = NormalImpulse.Size() / 40000.f, 0.6f);
-	//	weapon_wood_impact_audio->Deactivate();
-	//	weapon_wood_impact_audio->Activate();
-
-	//	
-	//	
-	//	GetController()->CastToPlayerController()->ClientPlayForceFeedback(weapon_impact, false, FName("SwordImpact"));
-	//	//GetController()->CastToPlayerController()->DynamicForceFeedbacks
-	//}
 }
 
 void AJointCharacterTest::customHoverPhysics(float DeltaTime, FBodyInstance* BodyInstance)
@@ -466,6 +445,11 @@ void AJointCharacterTest::customWalkingPhysics(float DeltaTime, FBodyInstance* B
 
 void AJointCharacterTest::ControlGripPhysics(float DeltaTime, FBodyInstance* BodyInstance)
 {
+	if (grabbing_weapon)
+	{
+		weaponGrabControl(DeltaTime, BodyInstance);
+		target_wep_dir = held_weapon->getShaftComponent()->GetBodyInstance()->GetUnrealWorldTransform().GetUnitAxis(EAxis::Z);
+	}
 	customInitGripPhysics(DeltaTime, BodyInstance);
 	ControlGripPositionPhysics(DeltaTime, BodyInstance);
 	ControlGripDirectionPhysics(DeltaTime, BodyInstance);
@@ -508,19 +492,19 @@ void AJointCharacterTest::customInitGripPhysics(float DeltaTime, FBodyInstance* 
 void AJointCharacterTest::ControlGripPositionPhysics(float DeltaTime, FBodyInstance* BodyInstance)
 {
 	if (wep_extended)
-		sword_motor_pos.error = ((wa_pos + grip_h_attachment->RelativeLocation) + target_wep_dir_xy.GetSafeNormal() * 70.f) - gh_pos;
+		gpc.error = ((wa_pos) + target_wep_dir_xy.GetSafeNormal() * 70.f) - gh_pos;
 	else
-		sword_motor_pos.error = ((wa_pos + grip_h_attachment->RelativeLocation) + target_wep_dir * 70.f) - gh_pos;
+		gpc.error = ((wa_pos) + target_wep_dir * 70.f) - gh_pos;
 
-	sword_motor_pos.integral = sword_motor_pos.integral + sword_motor_pos.error * DeltaTime;
-	sword_motor_pos.derivative = (sword_motor_pos.error - sword_motor_pos.prev_err) / DeltaTime;
+	gpc.integral = gpc.integral + gpc.error * DeltaTime;
+	gpc.derivative = (gpc.error - gpc.prev_err) / DeltaTime;
 
-	sword_motor_pos.adjustment = sword_motor_pos.P * sword_motor_pos.error +
-		sword_motor_pos.I * sword_motor_pos.integral +
-		sword_motor_pos.D * sword_motor_pos.derivative;
-	sword_motor_pos.prev_err = sword_motor_pos.error;
+	gpc.adjustment = gpc.P * gpc.error +
+		gpc.I * gpc.integral +
+		gpc.D * gpc.derivative;
+	gpc.prev_err = gpc.error;
 
-	grip_h_bi->AddImpulse(sword_motor_pos.adjustment*(grip_h_bi->GetBodyMass() + grip_v_bi->GetBodyMass()), false);
+	grip_h_bi->AddImpulse(gpc.adjustment*(grip_h_bi->GetBodyMass() + grip_v_bi->GetBodyMass()), false);
 }
 
 void AJointCharacterTest::ControlGripDirectionPhysics(float DeltaTime, FBodyInstance* BodyInstance)
@@ -529,7 +513,7 @@ void AJointCharacterTest::ControlGripDirectionPhysics(float DeltaTime, FBodyInst
 	float target_ang_speed;
 
 	if (target_wep_dir_xy.IsNearlyZero()) {
-		//sword_rotation.error = 0.0f;
+		//grc.error = 0.0f;
 		target_wep_dir_xy = prev_target_wep_dir_xy;
 		was_standing_still = true;
 		target_ang_speed = 0.f;
@@ -558,16 +542,16 @@ void AJointCharacterTest::ControlGripDirectionPhysics(float DeltaTime, FBodyInst
 		if (rot_forward)
 		{
 			float tmp_forward_error = (FMath::Acos(FVector::DotProduct(target_wep_dir_xy.GetSafeNormal(), current_wep_dir))*180.f / PI);// +target_ang_speed;
-			sword_rotation.error = tmp_forward_error;
+			grc.error = tmp_forward_error;
 			if (FVector::CrossProduct(target_wep_dir_xy.GetSafeNormal(), current_wep_dir).Z < 0)
-				sword_rotation.error = -sword_rotation.error;
+				grc.error = -grc.error;
 		}
 		else
 		{
 			float tmp_backwards_error = (FMath::Acos(FVector::DotProduct(target_wep_dir_xy.GetSafeNormal(), -current_wep_dir))*180.f / PI);// +target_ang_speed;
-			sword_rotation.error = tmp_backwards_error;
+			grc.error = tmp_backwards_error;
 			if (FVector::CrossProduct(target_wep_dir_xy.GetSafeNormal(), -current_wep_dir).Z < 0)
-				sword_rotation.error = -sword_rotation.error;
+				grc.error = -grc.error;
 		}
 	}
 	else
@@ -578,27 +562,27 @@ void AJointCharacterTest::ControlGripDirectionPhysics(float DeltaTime, FBodyInst
 		if (tmp_forward_error < tmp_backwards_error)
 		{
 			rot_forward = true;
-			sword_rotation.error = tmp_forward_error;
+			grc.error = tmp_forward_error;
 			if (FVector::CrossProduct(target_wep_dir_xy.GetSafeNormal(), current_wep_dir).Z < 0)
-				sword_rotation.error = -sword_rotation.error;
+				grc.error = -grc.error;
 		}
 		else
 		{
 			rot_forward = false;
-			sword_rotation.error = tmp_backwards_error;
+			grc.error = tmp_backwards_error;
 			if (FVector::CrossProduct(target_wep_dir_xy.GetSafeNormal(), -current_wep_dir).Z < 0)
-				sword_rotation.error = -sword_rotation.error;
+				grc.error = -grc.error;
 		}
 		//UE_LOG(LogTemp, Warning, TEXT("sword_rotation.error: %f"), sword_rotation.error);
 	}
 
-	sword_rotation.integral = sword_rotation.integral + sword_rotation.error * DeltaTime;
-	sword_rotation.derivative = (sword_rotation.error - sword_rotation.prev_err) / DeltaTime;
+	grc.integral = grc.integral + grc.error * DeltaTime;
+	grc.derivative = (grc.error - grc.prev_err) / DeltaTime;
 
-	sword_rotation.adjustment = sword_rotation.P * sword_rotation.error +
-		sword_rotation.I * sword_rotation.integral +
-		sword_rotation.D * sword_rotation.derivative;
-	sword_rotation.prev_err = sword_rotation.error;
+	grc.adjustment = grc.P * grc.error +
+		grc.I * grc.integral +
+		grc.D * grc.derivative;
+	grc.prev_err = grc.error;
 
 	float z_inertia = (FMath::Pow(grip_h->GetUnscaledSphereRadius(), 2)*grip_h_bi->GetBodyMass()*2.f / 5.f);
 	if (holding_weapon)
@@ -609,7 +593,7 @@ void AJointCharacterTest::ControlGripDirectionPhysics(float DeltaTime, FBodyInst
 		//z_inertia = z_inertia + (FMath::Pow(grip_h->GetUnscaledSphereRadius(), 2)*grip_h_bi->GetBodyMass()*2.f / 5.f);// +(FMath::Pow(weapon_handle_2->GetUnscaledSphereRadius(), 2)*weapon_handle_2_bi->GetBodyMass()*2.f / 5.f);																														//UE_LOG(LogTemp, Warning, TEXT("z_inertia: %f"), z_inertia);
 
 	}
-	FVector rot_torque = gh_up*-sword_rotation.adjustment*z_inertia;
+	FVector rot_torque = gh_up*-grc.adjustment*z_inertia;
 	/*UE_LOG(LogTemp, Warning, TEXT("rot_torque.Size(): %f"), rot_torque.Size());
 	UE_LOG(LogTemp, Warning, TEXT("DeltaTime: %f"), DeltaTime);*/
 	//FMath::Lerp((grip_h->GetMass()*FMath::Pow(40.0f, 2) / 2.0f), weapon->GetMass()*FMath::Pow(250.0f, 2) / 3.0f, FMath::Pow(current_wep_incline / 90.f, 3));
@@ -640,35 +624,35 @@ void AJointCharacterTest::ControlGripInclinePhysics(float DeltaTime, FBodyInstan
 		{
 			target_wep_dir_curr_wep_proj = FVector::UpVector;
 		}
-		else if (FMath::Acos(FVector::DotProduct(gh_up, target_wep_dir_curr_wep_proj.GetSafeNormal()))*180.f / PI > 80 && FMath::Abs(sword_incline.error) < 5.0f)
+		else if (FMath::Acos(FVector::DotProduct(gh_up, target_wep_dir_curr_wep_proj.GetSafeNormal()))*180.f / PI > 80 && FMath::Abs(gic.error) < 5.0f)
 		{
 			wep_extended = true;
 		}
 
 
-		sword_incline.error = -FMath::Acos(FVector::DotProduct(gv_up, target_wep_dir_curr_wep_proj.GetSafeNormal()))*180.f / PI;
+		gic.error = -FMath::Acos(FVector::DotProduct(gv_up, target_wep_dir_curr_wep_proj.GetSafeNormal()))*180.f / PI;
 		if (FVector::Coincident(FVector::CrossProduct(gv_up, target_wep_dir_curr_wep_proj.GetSafeNormal()), gv_right, 0.00001f))
-			sword_incline.error = -sword_incline.error;
+			gic.error = -gic.error;
 
-		if (gv_up.Z < 0.f && (gv_forward*sword_incline.error).Z < 0.f)
-			sword_incline.error = -sword_incline.error;
+		if (gv_up.Z < 0.f && (gv_forward*gic.error).Z < 0.f)
+			gic.error = -gic.error;
 	}
 	else {
-		sword_incline.error = 0.0f;
+		gic.error = 0.0f;
 	}
 
-	sword_incline.integral = sword_incline.integral + sword_incline.error * DeltaTime;
-	sword_incline.derivative = (sword_incline.error - sword_incline.prev_err) / DeltaTime;
+	gic.integral = gic.integral + gic.error * DeltaTime;
+	gic.derivative = (gic.error - gic.prev_err) / DeltaTime;
 
-	sword_incline.adjustment = sword_incline.P * sword_incline.error +
-		sword_incline.I * sword_incline.integral +
-		sword_incline.D * sword_incline.derivative;
-	sword_incline.prev_err = sword_incline.error;
+	gic.adjustment = gic.P * gic.error +
+		gic.I * gic.integral +
+		gic.D * gic.derivative;
+	gic.prev_err = gic.error;
 
 	//weapon->AddTorque(weapon->GetRightVector()*sword_incline.adjustment);	
 
-	grip_v_bi->AddForceAtPosition(gv_forward*sword_incline.adjustment, gv_pos + 100 * gv_up, false);
-	grip_v_bi->AddForceAtPosition(gv_forward*-sword_incline.adjustment, gv_pos - 100 * gv_up, false);
+	grip_v_bi->AddForceAtPosition(gv_forward*gic.adjustment, gv_pos + 100 * gv_up, false);
+	grip_v_bi->AddForceAtPosition(gv_forward*-gic.adjustment, gv_pos - 100 * gv_up, false);
 	
 	FVector centripetal = current_wep_dir; centripetal.Z = 0.f; centripetal.Normalize();
 	FVector tmp_dist = (grip_v_bi->GetCOMPosition() - grip_h_bi->GetCOMPosition());
@@ -680,64 +664,51 @@ void AJointCharacterTest::ControlGripInclinePhysics(float DeltaTime, FBodyInstan
 }
 void AJointCharacterTest::ControlWeaponTwistPhysics(float DeltaTime, FBodyInstance* BodyInstance)
 {
-	FVector tmp_vel_proj = gv_up - sword_twist_solder;
+	FVector tmp_vel_proj = gv_up - weapon_twist_solder;
 	if (tmp_vel_proj.Size() > 0.05f)
 	{
-		sword_twist_target = tmp_vel_proj.GetSafeNormal();
-		sword_twist_solder = sword_twist_solder + tmp_vel_proj*(0.05f / tmp_vel_proj.Size());
+		weapon_twist_target = tmp_vel_proj.GetSafeNormal();
+		weapon_twist_solder = weapon_twist_solder + tmp_vel_proj*(0.05f / tmp_vel_proj.Size());
 	}
 
 
-	sword_twist_target = sword_twist_target.GetSafeNormal() - FVector::DotProduct(sword_twist_target.GetSafeNormal(), gv_up)*gv_up;
-	sword_twist_target = sword_twist_target.GetSafeNormal();
+	weapon_twist_target = weapon_twist_target.GetSafeNormal() - FVector::DotProduct(weapon_twist_target.GetSafeNormal(), gv_up)*gv_up;
+	weapon_twist_target = weapon_twist_target.GetSafeNormal();
 	FVector tmp_forward_ref;
-	if(held_weapon)
-		tmp_forward_ref = held_weapon->getHeadComponent()->GetForwardVector();
-	else
-		tmp_forward_ref = weapon_blade->GetForwardVector();
+
+	tmp_forward_ref = held_weapon->getHeadComponent()->GetForwardVector();
+
 
 	//held_weapon->getforwa
 
-	sword_twist.error = FMath::Acos(FVector::DotProduct(tmp_forward_ref, sword_twist_target))*180.f / PI;
-	float tmp_forward_angle_ref = FMath::Acos(FVector::DotProduct(-tmp_forward_ref, sword_twist_target))*180.f / PI;
+	wtc.error = FMath::Acos(FVector::DotProduct(tmp_forward_ref, weapon_twist_target))*180.f / PI;
+	float tmp_forward_angle_ref = FMath::Acos(FVector::DotProduct(-tmp_forward_ref, weapon_twist_target))*180.f / PI;
 
-	if (tmp_forward_angle_ref < sword_twist.error)
+	if (tmp_forward_angle_ref < wtc.error)
 	{
-		sword_twist.error = tmp_forward_angle_ref;
+		wtc.error = tmp_forward_angle_ref;
 		tmp_forward_ref = -tmp_forward_ref;
 	}
 	//weapon_vis->SetRelativeRotation(FRotator(0.f, sword_twist.error, 0.f));
-	FVector tmp_ref_vec = FVector::CrossProduct(tmp_forward_ref, sword_twist_target);
+	FVector tmp_ref_vec = FVector::CrossProduct(tmp_forward_ref, weapon_twist_target);
 	FVector tmp_vis_u = gv_up;
 	if (!FVector::Coincident(tmp_ref_vec, tmp_vis_u, 0.0001f))
-		sword_twist.error = -sword_twist.error;
+		wtc.error = -wtc.error;
 
-	sword_twist.integral = sword_twist.integral + sword_twist.error * DeltaTime;
-	sword_twist.derivative = (sword_twist.error - sword_twist.prev_err) / DeltaTime;
+	wtc.integral = wtc.integral + wtc.error * DeltaTime;
+	wtc.derivative = (wtc.error - wtc.prev_err) / DeltaTime;
 
-	sword_twist.adjustment = sword_twist.P * sword_twist.error +
-		sword_twist.I * sword_twist.integral +
-		sword_twist.D * sword_twist.derivative;
-	sword_twist.prev_err = sword_twist.error;
+	wtc.adjustment = wtc.P * wtc.error +
+		wtc.I * wtc.integral +
+		wtc.D * wtc.derivative;
+	wtc.prev_err = wtc.error;
 
-	if (held_weapon)
-		held_weapon->getHeadComponent()->AddLocalRotation(FRotator(0.f, sword_twist.adjustment, 0.f));
-	else
-		weapon_blade->AddLocalRotation(FRotator(0.f, sword_twist.adjustment, 0.f));
+
+	held_weapon->getHeadComponent()->AddLocalRotation(FRotator(0.f, wtc.adjustment, 0.f));
+
 
 }
 
-void AJointCharacterTest::weaponSwishAudioMix()
-{
-	weapon_swish_audio->active_sound->LowPassFilterFrequency = (grip_v_bi->GetUnrealWorldVelocity() + grip_v_bi->GetUnrealWorldAngularVelocity()).Size();
-	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (FMath::Pow(weapon_bi->GetUnrealWorldAngularVelocity().Size(),2) / FMath::Pow(weapon_bi->MaxAngularVelocity, 2))*16000.f;
-	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (weapon_bi->GetUnrealWorldAngularVelocity().Size() / weapon_bi->MaxAngularVelocity)*12000.f;
-	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (FMath::Sqrt(weapon_bi->GetUnrealWorldAngularVelocity().Size()) / FMath::Sqrt(weapon_bi->MaxAngularVelocity))*5000.f;
-
-	//weapon_swish_audio->active_sound->VolumeMultiplier = FMath::Loge(weapon_bi->GetUnrealWorldAngularVelocity().Size()) / FMath::Loge(weapon_bi->MaxAngularVelocity);
-	//weapon_swish_audio->active_sound->VolumeMultiplier = weapon_bi->GetUnrealWorldAngularVelocity().Size() / weapon_bi->MaxAngularVelocity;
-	weapon_swish_audio->active_sound->VolumeMultiplier = FMath::Min(FMath::Pow(grip_v_bi->GetUnrealWorldAngularVelocity().Size(), 2) / FMath::Pow(grip_v_bi->MaxAngularVelocity, 2), 0.4f);
-}
 // Called to bind functionality to input
 void AJointCharacterTest::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -835,7 +806,6 @@ void AJointCharacterTest::fightModeOn()
 
 
 		grip_v->SetEnableGravity(false);
-		weapon_swish_audio->Activate();
 	}
 	else
 	{
@@ -855,8 +825,6 @@ void AJointCharacterTest::fightModeOn()
 		//weapon_axis_attachment->SetConstraintReferencePosition(EConstraintFrame::Frame2, FVector(0.f, -20.f, 0.f));
 
 		grip_v->SetEnableGravity(true);
-
-		weapon_swish_audio->Deactivate();
 	}
 }
 
@@ -891,25 +859,13 @@ void AJointCharacterTest::grab()
 		grip_v->UpdateBodySetup();
 		UE_LOG(LogTemp, Warning, TEXT("grip_vmass after unweld: %f"), grip_v_bi->GetBodyMass());
 		
-		if (held_weapon)
-		{
-			held_weapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-			held_weapon->getShaftComponent()->SetSimulatePhysics(true);
-			held_weapon->getShaftComponent()->SetEnableGravity(true);
-			held_weapon->getShaftComponent()->SetPhysicsLinearVelocity(grip_v->GetPhysicsLinearVelocity());
-			held_weapon->getShaftComponent()->SetPhysicsAngularVelocity(grip_v->GetPhysicsAngularVelocity());
+		held_weapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		held_weapon->getShaftComponent()->SetSimulatePhysics(true);
+		held_weapon->getShaftComponent()->SetEnableGravity(true);
+		held_weapon->getShaftComponent()->SetPhysicsLinearVelocity(grip_v->GetPhysicsLinearVelocity());
+		held_weapon->getShaftComponent()->SetPhysicsAngularVelocity(grip_v->GetPhysicsAngularVelocity());
 
-			held_weapon->deInitGrabbed();
-		}
-		else
-		{
-			weapon_blade->UpdateBodySetup();
-			UE_LOG(LogTemp, Warning, TEXT("weapon_mass after unweld: %f"), weapon_blade->GetBodyInstance()->GetBodyMass());
-			weapon_blade->SetSimulatePhysics(true);
-			weapon_blade->SetEnableGravity(true);
-			weapon_blade->SetPhysicsLinearVelocity(grip_v->GetPhysicsLinearVelocity());
-			weapon_blade->SetPhysicsAngularVelocity(grip_v->GetPhysicsAngularVelocity());
-		}
+		held_weapon->deInitGrabbed();
 
 		/*grip_v_attachment->BreakConstraint();
 		grip_v->SetEnableGravity(true);*/
@@ -924,13 +880,19 @@ void AJointCharacterTest::grab()
 		grip_v->UnWeldChildren();
 		grip_v->UpdateBodySetup();
 		holding_object = false;
-		
-		
 		return;
 	}
 
 	TSet<AActor*> overlaps;
 	grip_v->GetOverlappingActors(overlaps);
+
+	TArray<FHitResult> traces;
+	FCollisionQueryParams RV_TraceParams = FCollisionQueryParams(FName(TEXT("RV_Trace")), true, this);
+	RV_TraceParams.bTraceComplex = true;
+	RV_TraceParams.bTraceAsyncScene = true;
+	RV_TraceParams.bReturnPhysicalMaterial = false;
+
+	GetWorld()->LineTraceMultiByChannel(traces, grip_h->GetComponentLocation() + FVector::UpVector*150.f, grip_h->GetComponentLocation() - FVector::UpVector*200.f, ECollisionChannel::ECC_PhysicsBody, RV_TraceParams);
 
 	if (overlaps.Num() > 0)
 	{
@@ -992,14 +954,83 @@ void AJointCharacterTest::grab()
 	
 		
 	}
+	else if (traces.Num() > 0)
+	{
+		held_weapon = dynamic_cast<AWeapon*>(traces[0].GetActor());
+		if (held_weapon)
+		{
+			grabbing_weapon = true;
+			held_weapon->getShaftComponent()->SetEnableGravity(false);
+			held_weapon->getShaftComponent()->SetAngularDamping(1.0f);
+			held_weapon->getShaftComponent()->SetLinearDamping(1.0f);
+		}
+	}
 
-	
 }
+
+void AJointCharacterTest::attachWeapon(AWeapon* _wep)
+{
+	UE_LOG(LogTemp, Warning, TEXT("----------------------"));
+
+	UE_LOG(LogTemp, Warning, TEXT("grip_v mass before weld: %f"), grip_v_bi->GetBodyMass());
+	UE_LOG(LogTemp, Warning, TEXT("grip_v inertia before weld: %s"), *grip_v_bi->GetBodyInertiaTensor().ToString());
+
+	UCapsuleComponent* tmp_shaft = dynamic_cast<UCapsuleComponent*>(held_weapon->GetRootComponent());
+	//tmp_shaft->SetSimulatePhysics(false);
+	UE_LOG(LogTemp, Warning, TEXT("tmp_shaft mass before weld: %f"), tmp_shaft->GetBodyInstance()->GetBodyMass());
+	UE_LOG(LogTemp, Warning, TEXT("tmp_shaft inertia before weld: %s"), *tmp_shaft->GetBodyInstance()->GetBodyInertiaTensor().ToString());
+
+	USceneComponent* tmp_handle = dynamic_cast<USceneComponent*>(held_weapon->GetComponentsByTag(USceneComponent::StaticClass(), "handle_point").Top());
+	held_weapon->SetActorRotation(grip_v->GetComponentRotation());
+	FVector handle_offset = held_weapon->GetActorLocation() - tmp_handle->GetComponentLocation();
+	held_weapon->SetActorLocation(grip_v->GetComponentLocation() + (handle_offset));
+
+	//UBoxComponent* tmp_head = dynamic_cast<UBoxComponent*>(held_weapon->GetComponentsByTag(UBoxComponent::StaticClass(), "head").Top());
+
+	//tmp_shaft->GetBodyInstance()->Weld(grip_v_bi, )
+	held_weapon->AttachRootComponentTo(grip_v, NAME_None, EAttachLocation::KeepWorldPosition, true);
+	//tmp_shaft->WeldTo(grip_v);
+	grip_v->UpdateBodySetup();
+	calculateWepInertia();
+
+	UE_LOG(LogTemp, Warning, TEXT("grip_v mass after weld: %f"), grip_v_bi->GetBodyMass());
+	UE_LOG(LogTemp, Warning, TEXT("grip_v inertia after weld: %s"), *grip_v_bi->GetBodyInertiaTensor().ToString());
+
+	UE_LOG(LogTemp, Warning, TEXT("----------------------"));
+	holding_weapon = true;
+}
+
+void AJointCharacterTest::weaponGrabControl(float DeltaTime, FBodyInstance* BodyInstance)
+{
+	FBodyInstance* tmp_shaft = held_weapon->getShaftComponent()->GetBodyInstance();
+	USceneComponent* tmp_attachment = held_weapon->getAttachmentPoint();
+
+	wgc.error = gv_pos - tmp_attachment->GetComponentLocation();
+
+	if (wgc.error.Size() < 7.f && grc.error < 7.f)
+	{
+		held_weapon->getShaftComponent()->SetAngularDamping(0.0f);
+		held_weapon->getShaftComponent()->SetLinearDamping(0.01f);
+		attachWeapon(held_weapon);
+		grabbing_weapon = false;
+	}
+
+	wgc.integral = wgc.integral + wgc.error * DeltaTime;
+	wgc.derivative = (wgc.error - wgc.prev_err) / DeltaTime;
+
+	wgc.adjustment = wgc.P * wgc.error +
+		wgc.I * wgc.integral +
+		wgc.D * wgc.derivative;
+	wgc.prev_err = wgc.error;
+	//TODO: compensate for gravity
+	
+	tmp_shaft->AddForceAtPosition(wgc.adjustment*(tmp_shaft->GetBodyMass()), tmp_attachment->GetComponentLocation(), false);
+}
+
 void AJointCharacterTest::abortGrab()
 {
 	grabbing_weapon = false;
 }
-
 
 void AJointCharacterTest::initCamera()
 {
@@ -1098,35 +1129,6 @@ void AJointCharacterTest::initWeapon()
 	grip_v_vis->SetupAttachment(grip_v);
 	grip_v_attachment = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("grip_vAttachment"));
 	grip_v_attachment->SetupAttachment(grip_h);
-
-	weapon_blade = CreateDefaultSubobject<UBoxComponent>(TEXT("WeaponBlade"));
-	weapon_blade->SetupAttachment(grip_v);
-	weapon_blade->SetRelativeLocation(FVector(0.f, 0.f, 75));
-	weapon_blade->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
-	weapon_blade->SetBoxExtent(FVector(10.f, 2.f, 75.f));
-	weapon_blade->SetSimulatePhysics(false);
-	weapon_blade->SetEnableGravity(false);
-	weapon_blade->SetMassOverrideInKg(NAME_None, 12.f, true);
-	weapon_blade_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponBladeVis"));
-	weapon_blade_vis->SetupAttachment(weapon_blade);
-
-	weapon_trail = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("WeaponTrail"));
-	weapon_trail->SetupAttachment(weapon_blade_vis);
-
-	weapon_swish_audio = CreateDefaultSubobject<UAudioComponent>(TEXT("WeaponSwishAudio"));
-	weapon_swish_audio->SetupAttachment(grip_v);
-	weapon_swish_audio->bEnableLowPassFilter = true;
-	weapon_swish_audio->LowPassFilterFrequency = 10.f;
-	//weapon_audio->bEQFilterApplied = true;
-	weapon_swish_audio->VolumeMultiplier = 0.0f;
-
-	weapon_wood_impact_audio = CreateDefaultSubobject<UAudioComponent>(TEXT("WeaponWoodImpactAudio"));
-	weapon_wood_impact_audio->SetupAttachment(weapon_blade);
-	weapon_wood_impact_audio->VolumeMultiplier = 0.5f;
-
-	static ConstructorHelpers::FObjectFinder<UForceFeedbackEffect> SwordImpactObj(TEXT("/Game/JointCharacter/weapon/sword_impact"));
-	
-	weapon_impact =  SwordImpactObj.Object;
 }
 
 void AJointCharacterTest::initWeaponJoints()
@@ -1476,46 +1478,51 @@ void AJointCharacterTest::initPIDs()
 	hover_height.integral = 0.f;
 	hover_height.prev_err = 0.f;
 
-	sword_motor_pos.target = FVector::UpVector*60.f;
-	sword_motor_pos.max_adjustment = FVector(100000.f, 100000.f, 100000.f);
-	sword_motor_pos.P = FVector(1.f, 1.f, 1.f);
-	sword_motor_pos.I = FVector(0.f, 0.f, 0.f);
-	sword_motor_pos.D = FVector(0.5f, 0.5f, 0.5f);
-	sword_motor_pos.integral = FVector::ZeroVector;
-
+	gpc.target = FVector::UpVector*60.f;
+	gpc.max_adjustment = FVector(100000.f, 100000.f, 100000.f);
+	gpc.P = FVector(1.f, 1.f, 1.f);
+	gpc.I = FVector(0.f, 0.f, 0.f);
+	gpc.D = FVector(0.5f, 0.5f, 0.5f);
+	gpc.integral = FVector::ZeroVector;
 
 	target_wep_dir = FVector::UpVector;
-	sword_twist_solder = FVector::UpVector;
-	sword_twist_target = FVector::RightVector;
+	weapon_twist_solder = FVector::UpVector;
+	weapon_twist_target = FVector::RightVector;
 	prev_target_wep_dir = FVector::ForwardVector;
 	prev_target_wep_dir_xy = FVector::ForwardVector;
-	sword_rotation.target = 0.0f;
-	sword_rotation.max_adjustment = 1000000;
-	sword_rotation.P = 8.f;
-	sword_rotation.I = 0.f;
-	sword_rotation.D = 0.6f;
-	sword_rotation.integral = 0.f;
+	grc.target = 0.0f;
+	grc.max_adjustment = 1000000;
+	grc.P = 8.f;
+	grc.I = 0.f;
+	grc.D = 0.6f;
+	grc.integral = 0.f;
 
-	sword_rotation_speed.target = 0.0f;
-	sword_rotation_speed.max_adjustment = 1000000;
-	sword_rotation_speed.P = 0.f;
-	sword_rotation_speed.I = 0.f;
-	sword_rotation_speed.D = 0.0f;
-	sword_rotation_speed.integral = 0.f;
+	grsc.target = 0.0f;
+	grsc.max_adjustment = 1000000;
+	grsc.P = 0.f;
+	grsc.I = 0.f;
+	grsc.D = 0.0f;
+	grsc.integral = 0.f;
 
-	sword_incline.target = 0.0f;
-	sword_incline.max_adjustment = 1000000;
-	sword_incline.P = 1000;
-	sword_incline.I = 0.0f;
-	sword_incline.D = 100;
-	sword_incline.integral = 0.f;
+	gic.target = 0.0f;
+	gic.max_adjustment = 1000000;
+	gic.P = 5000;
+	gic.I = 0.0f;
+	gic.D = 100;
+	gic.integral = 0.f;
 
-	sword_twist.target = 0.0f;
-	sword_twist.max_adjustment = 5;
-	sword_twist.P = 0.1;
-	sword_twist.I = 0.0f;
-	sword_twist.D = 0.0001f;
-	sword_twist.integral = 0.f;
+	wtc.target = 0.0f;
+	wtc.max_adjustment = 5;
+	wtc.P = 0.1;
+	wtc.I = 0.0f;
+	wtc.D = 0.0001f;
+	wtc.integral = 0.f;
+
+	wgc.max_adjustment = FVector(100000.f, 100000.f, 100000.f);
+	wgc.P = FVector(5.f, 5.f, 5.f);
+	wgc.I = FVector(0.f, 0.f, 0.f);
+	wgc.D = FVector(2.5f, 2.5f, 2.5f);
+	wgc.integral = FVector::ZeroVector;
 
 	movement_velocity.max_adjustment = FVector2D(1000000.f, 1000000.f);
 	movement_velocity.P = FVector2D(5.f, 5.f);
@@ -1602,23 +1609,19 @@ void AJointCharacterTest::initCustomPhysics()
 	OnCalculateControlGripInclinePhysics.BindUObject(this, &AJointCharacterTest::ControlGripInclinePhysics);
 	OnCalculateControlWeaponTwistPhysics.BindUObject(this, &AJointCharacterTest::ControlWeaponTwistPhysics);
 
+	OnCalculateWeaponGrabControl.BindUObject(this, &AJointCharacterTest::weaponGrabControl);
+
 	weapon_axis_bi = weapon_axis->GetBodyInstance();
 	grip_h_bi = grip_h->GetBodyInstance();
 	//weapon_handle_2_bi = weapon_handle_2->GetBodyInstance();
 	
 	grip_v_bi = grip_v->GetBodyInstance();
 
-	weapon_blade_bi = weapon_blade->GetBodyInstance();
-
-	calculateWepInertia();
-
 	UE_LOG(LogTemp, Warning, TEXT("grip+wep inertia %s"), *offset_wep_inertia.ToString());
 
 	//rolling_body->OnComponentHit.AddDynamic(this, &AJointCharacterTest::OnHit);
 	torso->OnComponentHit.AddDynamic(this, &AJointCharacterTest::OnBodyHit);
 	spine->OnComponentHit.AddDynamic(this, &AJointCharacterTest::OnBodyHit);
-
-	weapon_blade->OnComponentHit.AddDynamic(this, &AJointCharacterTest::OnSwordHit);
 
 	OnCalculateCustomWalkingPhysics.BindUObject(this, &AJointCharacterTest::customWalkingPhysics);
 	pelvis_bi = pelvis->GetBodyInstance();

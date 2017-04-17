@@ -78,28 +78,17 @@ protected:
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UPhysicsConstraintComponent* grip_v_attachment;
 
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UBoxComponent* weapon_blade;
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UStaticMeshComponent* weapon_blade_vis;
-	FBodyInstance* weapon_blade_bi;
-
-	
-
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UParticleSystemComponent* weapon_trail;
-
-	UForceFeedbackEffect* weapon_impact;
-
 	FVector offset_wep_inertia;
 
 	void fightModeOn();
 	void fightModeOff();
 	void grab();
 	void abortGrab();
+	void attachWeapon(AWeapon* _wep);
+	
 	void calculateWepInertia();
 	bool grabbing_weapon = false;
-	bool holding_weapon = true;
+	bool holding_weapon = false;
 	AWeapon* held_weapon;
 	bool holding_object = false;
 	UObject* held_object;
@@ -120,11 +109,6 @@ protected:
 	// 1 engaging
 	// 2 engaged
 	// 3 disengaging
-
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UAudioComponent* weapon_swish_audio;
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UAudioComponent* weapon_wood_impact_audio;
 
 	//legs -----------------------------------------------------------------------
 	
@@ -263,10 +247,6 @@ public:
 	UFUNCTION()
 	void OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
-	UFUNCTION()
-	void OnSwordHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
-
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -290,12 +270,12 @@ private:
 	void ControlGripInclinePhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateControlWeaponTwistPhysics; // WEAPON TWist
 	void ControlWeaponTwistPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	FCalculateCustomPhysics OnCalculateWeaponGrabControl; // WEAPON Grabbing
+	void weaponGrabControl(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateCustomInitGripPhysics;
 	void customInitGripPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateCustomWalkingPhysics;
 	void customWalkingPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-
-	void weaponSwishAudioMix();
 	
 	void initCamera();
 
@@ -369,15 +349,23 @@ private:
 	bool rot_forward = true;
 
 	//weapon control pids
-	PIDData3D sword_motor_pos;
-	PIDData sword_rotation;
-	PIDData sword_rotation_speed;
-	PIDData sword_incline;
-	PIDData sword_twist;
+	//grip_position_controller
+	PIDData3D gpc;
+	//grip_rotation_controller
+	PIDData grc;
+	//grip_rotation_speed_controller
+	PIDData grsc;
+	//grip_incline_controller
+	PIDData gic;
+	//weapon_twist_controller
+	PIDData wtc;
+
+	//weapon_grab_controller
+	PIDData3D wgc;
 
 	//general variables used across several function
-	FVector sword_twist_solder;
-	FVector sword_twist_target;
+	FVector weapon_twist_solder;
+	FVector weapon_twist_target;
 	FVector target_wep_dir;
 	FVector prev_target_wep_dir;
 	FVector prev_target_wep_dir_xy;
