@@ -82,6 +82,7 @@ protected:
 
 	void fightModeOn();
 	void fightModeOff();
+	void release();
 	void grab();
 	void abortGrab();
 	void attachWeapon(AWeapon* _wep);
@@ -362,10 +363,19 @@ private:
 
 	//weapon_grab_controller
 	PIDData3D wgc;
+	//weapon_grab_rotation_controller
+	PIDData wgrc;
+	//weapon_grab_incline_controller
+	PIDData wgic;
 
 	//general variables used across several function
 	FVector weapon_twist_solder;
 	FVector weapon_twist_target;
+	FVector input_dir;
+	FVector prev_input_dir;
+	FVector target_wep_pos;
+	FVector target_wep_pos_xy;
+
 	FVector target_wep_dir;
 	FVector prev_target_wep_dir;
 	FVector prev_target_wep_dir_xy;
@@ -382,7 +392,7 @@ private:
 	FVector gv_forward;
 	FVector gv_right;
 	FVector gv_up;
-	FVector current_wep_dir;
+	FVector current_griph_xydir;
 
 	//Movement control --------------------------------------------------------------
 
