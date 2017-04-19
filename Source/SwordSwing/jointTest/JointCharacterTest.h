@@ -86,6 +86,10 @@ protected:
 	void grab();
 	void abortGrab();
 	void attachWeapon(AWeapon* _wep);
+
+	void guard();
+	void abortGuard();
+	bool guarding = false;
 	
 	void calculateWepInertia();
 	bool grabbing_weapon = false;
@@ -256,6 +260,8 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
 private:
+
+	void initInputVars();
 
 	FCalculateCustomPhysics OnCalculateCustomHoverPhysics; //HOVER
 	void customHoverPhysics(float DeltaTime, FBodyInstance* BodyInstance);

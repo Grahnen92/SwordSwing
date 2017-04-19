@@ -65,16 +65,7 @@ void AJointCharacterTest::Tick(float DeltaTime)
 		5.f
 	);
 
-	DrawDebugLine(
-		GetWorld(),
-		grip_h->GetComponentLocation(),
-		grip_h->GetComponentLocation() - 200 * gh_right, 					//size
-		FColor(255, 0, 0),  //pink
-		true,  				//persistent (never goes away)
-		0.03, 					//point leaves a trail on moving object
-		10,
-		5.f
-	);
+
 
 	if (alive)
 	{
@@ -449,33 +440,80 @@ void AJointCharacterTest::customWalkingPhysics(float DeltaTime, FBodyInstance* B
 
 void AJointCharacterTest::ControlGripPhysics(float DeltaTime, FBodyInstance* BodyInstance)
 {
-	if (grabbing_weapon)
+	initInputVars();
+	
+
+	customInitGripPhysics(DeltaTime, BodyInstance);
+	ControlGripPositionPhysics(DeltaTime, BodyInstance);
+	ControlGripDirectionPhysics(DeltaTime, BodyInstance);
+	ControlGripInclinePhysics(DeltaTime, BodyInstance);
+
+	if (holding_weapon)
 	{
-		
-		//target_wep_dir = held_weapon->getShaftComponent()->GetBodyInstance()->GetUnrealWorldTransform().GetUnitAxis(EAxis::Z);
-		target_wep_dir = input_dir;
-		//target_wep_pos = held_weapon->getAttachmentPoint()->GetComponentLocation();
-		target_wep_pos = input_dir;
-		customInitGripPhysics(DeltaTime, BodyInstance);
-		ControlGripPositionPhysics(DeltaTime, BodyInstance);
-		ControlGripDirectionPhysics(DeltaTime, BodyInstance);
-		ControlGripInclinePhysics(DeltaTime, BodyInstance);
+		ControlWeaponTwistPhysics(DeltaTime, BodyInstance);
+	}
+	else if (grabbing_weapon)
+	{
 		weaponGrabControl(DeltaTime, BodyInstance);
+	}
+}
+
+void AJointCharacterTest::initInputVars()
+{
+	if (guarding)
+	{
+		FVector rot_ref;
+		wep_extended = false;
+		target_wep_dir = input_dir;
+		target_wep_pos = input_dir;
+
+		target_wep_dir_xy = target_wep_dir - FVector::DotProduct(target_wep_dir, camera_axis->GetUpVector())*camera_axis->GetUpVector();
+
+		target_wep_pos_xy = target_wep_pos - FVector::DotProduct(target_wep_dir, camera_axis->GetUpVector())*camera_axis->GetUpVector();
+		target_wep_pos_xy.Normalize();
+
+		if (target_wep_dir_xy.IsNearlyZero())
+			target_wep_dir_xy = prev_target_wep_dir_xy;
+
+		FVector guard_pos(FMath::Cos(PI / 2.5f), 0.f , FMath::Sin(PI / 2.5f));
+		guard_pos.Normalize();
+
+		float tmp_angle = FMath::Acos(FVector::DotProduct(target_wep_dir_xy.GetSafeNormal(), FVector::ForwardVector))*180.f / PI;
+		if (FVector::CrossProduct( FVector::ForwardVector, target_wep_dir_xy.GetSafeNormal() ).Z < 0)
+			tmp_angle = -tmp_angle;
+		target_wep_pos = guard_pos.RotateAngleAxis(tmp_angle, FVector::UpVector);
 		
+		FVector guard_dir(FMath::Cos(-PI / 3.f), 0.f, FMath::Sin(-PI / 3.f));
+		guard_dir.Normalize();
+		target_wep_dir = guard_dir.RotateAngleAxis(tmp_angle, FVector::UpVector);
+
+		target_wep_dir_curr_wep_proj = target_wep_dir - FVector::DotProduct(target_wep_dir, gh_right)*gh_right;
+
+		DrawDebugLine(
+			GetWorld(),
+			torso->GetComponentLocation(),
+			torso->GetComponentLocation() + 100 * target_wep_dir, 					//size
+			FColor(255, 0, 0),  //pink
+			true,  				//persistent (never goes away)
+			0.03, 					//point leaves a trail on moving object
+			10,
+			5.f
+		);
 	}
 	else
 	{
 		target_wep_dir = input_dir;
 		target_wep_pos = input_dir;
-		customInitGripPhysics(DeltaTime, BodyInstance);
-		ControlGripPositionPhysics(DeltaTime, BodyInstance);
-		ControlGripDirectionPhysics(DeltaTime, BodyInstance);
-		ControlGripInclinePhysics(DeltaTime, BodyInstance);
-		if (holding_weapon)
-		{
-			ControlWeaponTwistPhysics(DeltaTime, BodyInstance);
-		}
+
+		target_wep_dir_xy = target_wep_dir - FVector::DotProduct(target_wep_dir, camera_axis->GetUpVector())*camera_axis->GetUpVector();
+		//target_wep_dir_xy.Normalize();
+		target_wep_dir_curr_wep_proj = target_wep_dir - FVector::DotProduct(target_wep_dir, gh_right)*gh_right;
+
+		target_wep_pos_xy = target_wep_pos - FVector::DotProduct(target_wep_dir, camera_axis->GetUpVector())*camera_axis->GetUpVector();
+		target_wep_pos_xy.Normalize();
 	}
+
+	
 }
 
 void AJointCharacterTest::customInitGripPhysics(float DeltaTime, FBodyInstance* BodyInstance)
@@ -496,14 +534,6 @@ void AJointCharacterTest::customInitGripPhysics(float DeltaTime, FBodyInstance* 
 	current_griph_xydir = gh_forward;
 	current_griph_xydir.Z = 0.0f;
 
-	//UE_LOG(LogTemp, Warning, TEXT("target dir:  %s"), target_wep_dir.ToString());
-	//UE_LOG(LogTemp, Warning, TEXT("target dir: %s"), *target_wep_dir.ToString());
-	target_wep_dir_xy = target_wep_dir - FVector::DotProduct(target_wep_dir, camera_axis->GetUpVector())*camera_axis->GetUpVector();
-	//target_wep_dir_xy.Normalize();
-	target_wep_dir_curr_wep_proj = target_wep_dir - FVector::DotProduct(target_wep_dir, gh_right)*gh_right;
-
-	target_wep_pos_xy = target_wep_pos - FVector::DotProduct(target_wep_dir, camera_axis->GetUpVector())*camera_axis->GetUpVector();
-	target_wep_pos_xy.Normalize();
 	/*float current_wep_incline = FMath::Acos(FVector::DotProduct(gh_up, w_up))*180.f / PI;
 	current_wep_incline = FMath::Fmod(current_wep_incline, 90.0f);*/
 }
@@ -628,10 +658,6 @@ void AJointCharacterTest::ControlGripDirectionPhysics(float DeltaTime, FBodyInst
 
 void AJointCharacterTest::ControlGripInclinePhysics(float DeltaTime, FBodyInstance* BodyInstance)
 {
-	if (jumping)
-	{
-		jumping = false;
-	}
 	if (!target_wep_dir_curr_wep_proj.IsNearlyZero())
 	{
 
@@ -665,7 +691,7 @@ void AJointCharacterTest::ControlGripInclinePhysics(float DeltaTime, FBodyInstan
 		if (FVector::Coincident(FVector::CrossProduct(gv_up, target_wep_dir_curr_wep_proj.GetSafeNormal()), gv_right, 0.00001f))
 			gic.error = -gic.error;
 
-		if (gv_up.Z < 0.f && (gv_forward*gic.error).Z < 0.f)
+		if (gv_up.Z < 0.f && (gv_forward*gic.error).Z < 0.f && !guarding)
 			gic.error = -gic.error;
 	}
 	else {
@@ -702,14 +728,11 @@ void AJointCharacterTest::ControlWeaponTwistPhysics(float DeltaTime, FBodyInstan
 		weapon_twist_solder = weapon_twist_solder + tmp_vel_proj*(0.05f / tmp_vel_proj.Size());
 	}
 
-
 	weapon_twist_target = weapon_twist_target.GetSafeNormal() - FVector::DotProduct(weapon_twist_target.GetSafeNormal(), gv_up)*gv_up;
 	weapon_twist_target = weapon_twist_target.GetSafeNormal();
 	FVector tmp_forward_ref;
 
 	tmp_forward_ref = held_weapon->getHeadComponent()->GetForwardVector();
-
-
 	//held_weapon->getforwa
 
 	wtc.error = FMath::Acos(FVector::DotProduct(tmp_forward_ref, weapon_twist_target))*180.f / PI;
@@ -734,9 +757,7 @@ void AJointCharacterTest::ControlWeaponTwistPhysics(float DeltaTime, FBodyInstan
 		wtc.D * wtc.derivative;
 	wtc.prev_err = wtc.error;
 
-
 	held_weapon->getHeadComponent()->AddLocalRotation(FRotator(0.f, wtc.adjustment, 0.f));
-
 
 }
 
@@ -807,7 +828,6 @@ void AJointCharacterTest::weaponGrabControl(float DeltaTime, FBodyInstance* Body
 
 	//weapon incline --------------------------------------------------------------
 	wgic.error = (FMath::Acos(FVector::DotProduct(gv_up, gh_up))*180.f / PI) - (FMath::Acos(FVector::DotProduct(tmp_wep_forward, gh_up))*180.f / PI);
-	UE_LOG(LogTemp, Warning, TEXT("gic.error: %f"), wgic.error);
 	wgic.integral = wgic.integral + wgic.error * DeltaTime;
 	wgic.derivative = (wgic.error - wgic.prev_err) / DeltaTime;
 
@@ -838,6 +858,9 @@ void AJointCharacterTest::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	//Hook up events for "ZoomIn"
 	InputComponent->BindAction("FightMode", IE_Pressed, this, &AJointCharacterTest::fightModeOn);
 	InputComponent->BindAction("FightMode", IE_Released, this, &AJointCharacterTest::fightModeOff);
+
+	InputComponent->BindAction("Guard", IE_Pressed, this, &AJointCharacterTest::guard);
+	InputComponent->BindAction("Guard", IE_Released, this, &AJointCharacterTest::abortGuard);
 
 	InputComponent->BindAction("Grab", IE_Pressed, this, &AJointCharacterTest::release);
 	InputComponent->BindAction("Grab", IE_Repeat, this, &AJointCharacterTest::grab);
@@ -900,6 +923,16 @@ void AJointCharacterTest::zoomIn()
 void AJointCharacterTest::zoomOut()
 {
 	zooming = false;
+}
+
+void AJointCharacterTest::guard()
+{
+	guarding = true;
+}
+
+void AJointCharacterTest::abortGuard()
+{
+	guarding = false;
 }
 
 void AJointCharacterTest::fightModeOn()
@@ -1009,7 +1042,7 @@ void AJointCharacterTest::release()
 
 void AJointCharacterTest::grab()
 {
-	if (!grabbing_weapon)
+	if (!grabbing_weapon && !holding_weapon)
 	{
 		TSet<AActor*> overlaps;
 		grip_v->GetOverlappingActors(overlaps);
@@ -1033,8 +1066,8 @@ void AJointCharacterTest::grab()
 			{
 				grabbing_weapon = true;
 				held_weapon->getShaftComponent()->SetEnableGravity(false);
-				held_weapon->getShaftComponent()->SetAngularDamping(1.0f);
-				held_weapon->getShaftComponent()->SetLinearDamping(1.0f);
+				//held_weapon->getShaftComponent()->SetAngularDamping(1.0f);
+				//held_weapon->getShaftComponent()->SetLinearDamping(1.0f);
 
 			}
 			else
@@ -1061,8 +1094,8 @@ void AJointCharacterTest::grab()
 			{
 				grabbing_weapon = true;
 				held_weapon->getShaftComponent()->SetEnableGravity(false);
-				held_weapon->getShaftComponent()->SetAngularDamping(1.0f);
-				held_weapon->getShaftComponent()->SetLinearDamping(1.0f);
+				//held_weapon->getShaftComponent()->SetAngularDamping(1.0f);
+				//held_weapon->getShaftComponent()->SetLinearDamping(1.0f);
 			}
 		}
 	}
@@ -1105,6 +1138,8 @@ void AJointCharacterTest::attachWeapon(AWeapon* _wep)
 	holding_weapon = true;
 	
 	wep_extended = false;
+
+	held_weapon->initGrabbed(this);
 }
 
 
@@ -1615,7 +1650,7 @@ void AJointCharacterTest::initPIDs()
 	wgrc.max_adjustment = 1000000;
 	wgrc.P = 100.f;
 	wgrc.I = 0.f;
-	wgrc.D = 1.1f;
+	wgrc.D = 8.1f;
 	wgrc.integral = 0.f;
 
 	wgic.target = 0.0f;
