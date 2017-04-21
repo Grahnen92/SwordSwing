@@ -55,12 +55,12 @@ protected:
 
 	//weapon ------------------------------------------------------------------------
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	USphereComponent* weapon_axis;
+	USphereComponent* grip_axis;
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UStaticMeshComponent* weapon_axis_vis;
-	FBodyInstance* weapon_axis_bi;
+	UStaticMeshComponent* grip_axis_vis;
+	FBodyInstance* grip_axis_bi;
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UPhysicsConstraintComponent* weapon_axis_attachment;
+	UPhysicsConstraintComponent* grip_axis_attachment;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	USphereComponent* grip_h;
@@ -89,7 +89,10 @@ protected:
 
 	void guard();
 	void abortGuard();
+	void lockGuard();
+	void unlockGuard();
 	bool guarding = false;
+	bool guard_locked = false;
 	
 	void calculateWepInertia();
 	bool grabbing_weapon = false;
@@ -299,6 +302,9 @@ private:
 
 	void initCustomPhysics();
 
+	//calculates the inertia of a bodyinstance relative to a point in worldspace
+	void calculateRelativeInertia(FBodyInstance* offset_bi, const FVector& cor, FMatrix* out_inertia);
+	float inertiaAboutAxis(const FMatrix& inertia_mat, const FVector& axis);
 	struct PIDData
 	{
 		
@@ -358,6 +364,8 @@ private:
 	//weapon control pids
 	//grip_position_controller
 	PIDData3D gpc;
+	//arm_direction_controller
+	PIDData2D adc;
 	//grip_rotation_controller
 	PIDData grc;
 	//grip_rotation_speed_controller
@@ -381,6 +389,7 @@ private:
 	FVector prev_input_dir;
 	FVector target_wep_pos;
 	FVector target_wep_pos_xy;
+	FVector prev_target_wep_pos_xy;
 
 	FVector target_wep_dir;
 	FVector prev_target_wep_dir;
@@ -389,7 +398,10 @@ private:
 	FVector target_wep_dir_curr_wep_proj;
 	
 	//variables used for readability across several function
-	FVector wa_pos;
+	FVector ga_pos;
+	FVector ga_forward;
+	FVector ga_right;
+	FVector ga_up;
 	FVector gh_pos;
 	FVector gh_forward;
 	FVector gh_right;

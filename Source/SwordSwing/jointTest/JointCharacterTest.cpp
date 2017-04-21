@@ -70,8 +70,8 @@ void AJointCharacterTest::Tick(float DeltaTime)
 	if (alive)
 	{
 		camera_axis->SetWorldLocation(torso->GetCenterOfMass());
-		//weapon_axis->SetWorldLocation(torso->GetCenterOfMass() + FVector(0.f, 0.f, -15.f));
-		weapon_axis_bi->SetBodyTransform(FTransform(torso_bi->GetCOMPosition() + FVector(0.f, 0.f, -15.f)), true);
+		//grip_axis->SetWorldLocation(torso->GetCenterOfMass() + FVector(0.f, 0.f, -15.f));
+		//grip_axis_bi->SetBodyTransform(FTransform(torso_bi->GetCOMPosition() + FVector(0.f, 0.f, -15.f)), true);
 		
 		
 		if (fight_mode)
@@ -185,7 +185,7 @@ void AJointCharacterTest::movementCalculations(float DeltaTime)
 
 		if (curr_jump_time == 0.f)
 		{//the factor of 100 is because unreal apparently applies forces in kg*cm*s^(-2)
-			jump_force = (((FMath::Sqrt(2.f*1000.f*jump_height) - torso->GetComponentVelocity().Z) / jump_force_time) + 1000.f)*(torso->GetMass() + grip_v->GetMass() + weapon_axis->GetMass() + grip_h->GetMass()) * 100;
+			jump_force = (((FMath::Sqrt(2.f*1000.f*jump_height) - torso->GetComponentVelocity().Z) / jump_force_time) + 1000.f)*(torso->GetMass() + grip_v->GetMass() + grip_axis->GetMass() + grip_h->GetMass()) * 100;
 		}
 
 		torso->AddForce(FVector::UpVector*jump_force*DeltaTime);
@@ -241,13 +241,19 @@ void AJointCharacterTest::customHoverPhysics(float DeltaTime, FBodyInstance* Bod
 	FVector end = start - FVector::UpVector*hover_height.target*2.f;
 
 	//call GetWorld() from within an actor extending class
-	GetWorld()->LineTraceSingleByChannel(
-		rv_hit,        //result
+	GetWorld()->LineTraceSingleByObjectType(rv_hit,        //result
 		start,    //start
 		end, //end
-		ECC_WorldStatic, //collision channel
-		RV_TraceParams
-	);
+		FCollisionObjectQueryParams::AllStaticObjects, //collision channel
+		RV_TraceParams);
+	//GetWorld()->LineTraceSingleByChannel(
+	//	rv_hit,        //result
+	//	start,    //start
+	//	end, //end
+	//	ECC_WorldStatic, //collision channel
+	//	RV_TraceParams
+	//);
+
 
 	if (rv_hit.bBlockingHit)
 	{
@@ -445,10 +451,29 @@ void AJointCharacterTest::ControlGripPhysics(float DeltaTime, FBodyInstance* Bod
 
 	customInitGripPhysics(DeltaTime, BodyInstance);
 	ControlGripPositionPhysics(DeltaTime, BodyInstance);
-	ControlGripDirectionPhysics(DeltaTime, BodyInstance);
-	ControlGripInclinePhysics(DeltaTime, BodyInstance);
+	
 
-	if (holding_weapon)
+	if (!guard_locked)
+	//if (false)
+	{
+		ControlGripDirectionPhysics(DeltaTime, BodyInstance);
+		ControlGripInclinePhysics(DeltaTime, BodyInstance);
+	}
+
+	if (guarding)
+	{
+		if (!guard_locked)
+		{
+			if (FMath::Abs(grc.error) < 2.f && FMath::Abs(gic.error) < 2.f)
+			{
+				lockGuard();
+			}
+		}
+	}
+
+
+
+	if (holding_weapon && !guard_locked)
 	{
 		ControlWeaponTwistPhysics(DeltaTime, BodyInstance);
 	}
@@ -489,28 +514,34 @@ void AJointCharacterTest::initInputVars()
 
 		target_wep_dir_curr_wep_proj = target_wep_dir - FVector::DotProduct(target_wep_dir, gh_right)*gh_right;
 
-		DrawDebugLine(
-			GetWorld(),
-			torso->GetComponentLocation(),
-			torso->GetComponentLocation() + 100 * target_wep_dir, 					//size
-			FColor(255, 0, 0),  //pink
-			true,  				//persistent (never goes away)
-			0.03, 					//point leaves a trail on moving object
-			10,
-			5.f
-		);
 	}
 	else
 	{
+		//direction target
 		target_wep_dir = input_dir;
-		target_wep_pos = input_dir;
-
-		target_wep_dir_xy = target_wep_dir - FVector::DotProduct(target_wep_dir, camera_axis->GetUpVector())*camera_axis->GetUpVector();
 		//target_wep_dir_xy.Normalize();
 		target_wep_dir_curr_wep_proj = target_wep_dir - FVector::DotProduct(target_wep_dir, gh_right)*gh_right;
+		if (target_wep_dir_xy.IsNearlyZero()) {
+			target_wep_dir_xy = prev_target_wep_dir_xy;
+		}
+		else
+		{
+			prev_target_wep_dir_xy = target_wep_dir_xy;
+		}
 
-		target_wep_pos_xy = target_wep_pos - FVector::DotProduct(target_wep_dir, camera_axis->GetUpVector())*camera_axis->GetUpVector();
-		target_wep_pos_xy.Normalize();
+		target_wep_dir_xy = target_wep_dir - FVector::DotProduct(target_wep_dir, camera_axis->GetUpVector())*camera_axis->GetUpVector();
+
+		//position target
+		target_wep_pos = input_dir;
+		target_wep_pos_xy = target_wep_pos - FVector::DotProduct(target_wep_pos, camera_axis->GetUpVector())*camera_axis->GetUpVector();
+		/*if (target_wep_pos_xy.IsNearlyZero()) {
+			target_wep_pos_xy = prev_target_wep_pos_xy;
+		}
+		else
+		{
+			target_wep_pos_xy.Normalize();
+			prev_target_wep_pos_xy = target_wep_pos_xy;
+		}*/
 	}
 
 	
@@ -518,8 +549,11 @@ void AJointCharacterTest::initInputVars()
 
 void AJointCharacterTest::customInitGripPhysics(float DeltaTime, FBodyInstance* BodyInstance)
 {
-	weapon_axis_bi->SetBodyTransform(FTransform(torso_bi->GetCOMPosition() + FVector(0.f, 0.f, -15.f)), true);
-	wa_pos = weapon_axis_bi->GetUnrealWorldTransform().GetLocation();
+	//grip_axis_bi->SetBodyTransform(FTransform(torso_bi->GetCOMPosition() + FVector(0.f, 0.f, -15.f)), true);
+	ga_pos = grip_axis_bi->GetUnrealWorldTransform().GetLocation();
+	ga_forward = grip_axis_bi->GetUnrealWorldTransform().GetUnitAxis(EAxis::X);
+	ga_right = grip_axis_bi->GetUnrealWorldTransform().GetUnitAxis(EAxis::Y);
+	ga_up = grip_axis_bi->GetUnrealWorldTransform().GetUnitAxis(EAxis::Z);
 
 	gh_pos = grip_h_bi->GetUnrealWorldTransform().GetLocation();
 	gh_forward = grip_h_bi->GetUnrealWorldTransform().GetUnitAxis(EAxis::X);
@@ -541,23 +575,44 @@ void AJointCharacterTest::customInitGripPhysics(float DeltaTime, FBodyInstance* 
 
 void AJointCharacterTest::ControlGripPositionPhysics(float DeltaTime, FBodyInstance* BodyInstance)
 {
-/*	if(grabbing_weapon)
-		gpc.error = target_wep_pos - gh_pos;
-	else */
-	if (wep_extended)
-		gpc.error = ((wa_pos) +target_wep_pos_xy.GetSafeNormal() * 70.f) - gh_pos;
-	else
-		gpc.error = ((wa_pos) +target_wep_pos * 70.f) - gh_pos;
+	
+	adc.error.X = (FMath::Acos(FVector::DotProduct(target_wep_pos, ga_up))*180.f / PI);
+	FVector vel_axis = grip_axis_bi->GetUnrealWorldAngularVelocity();
+	adc.error.Y = -vel_axis.Size();
+	vel_axis.Normalize();
 
-	gpc.integral = gpc.integral + gpc.error * DeltaTime;
-	gpc.derivative = (gpc.error - gpc.prev_err) / DeltaTime;
+	adc.integral = adc.integral + adc.error * DeltaTime;
+	adc.derivative = (adc.error - adc.prev_err) / DeltaTime;
 
-	gpc.adjustment = gpc.P * gpc.error +
-		gpc.I * gpc.integral +
-		gpc.D * gpc.derivative;
-	gpc.prev_err = gpc.error;
+	adc.adjustment = adc.P * adc.error +
+		adc.I * adc.integral +
+		adc.D * adc.derivative;
+	adc.prev_err = adc.error;
+	FVector rot_ref = FVector::CrossProduct(ga_up, target_wep_pos ).GetSafeNormal();
+	
+	FMatrix wep_inertia;
+	calculateRelativeInertia(grip_v_bi, ga_pos, &wep_inertia);
+	float wi_ref_i = inertiaAboutAxis(wep_inertia, rot_ref);
+	float wi_va_i = inertiaAboutAxis(wep_inertia, vel_axis);
 
-	grip_h_bi->AddImpulse(gpc.adjustment*(grip_h_bi->GetBodyMass() + grip_v_bi->GetBodyMass()), false);
+	FMatrix grip_inertia;
+	calculateRelativeInertia(grip_h_bi, ga_pos, &grip_inertia);
+	float gi_ref_i = inertiaAboutAxis(grip_inertia, rot_ref);
+	float gi_va_i = inertiaAboutAxis(grip_inertia, vel_axis);
+	//UE_LOG(LogTemp, Warning, TEXT("inertia matrix: %s"), *test.ToString());
+	//if (adc.error.X > 5)
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("ref inertia  %f"), wi_ref_i);
+	//	UE_LOG(LogTemp, Warning, TEXT("va inertia  %f"), wi_va_i);
+
+	//}
+
+	//UE_LOG(LogTemp, Warning, TEXT("adc.error.X  %f"), adc.error.X);
+	
+	//grip_axis_bi->AddTorque(FVector::UpVector*100000000000000.f, false);
+	grip_axis_bi->AddTorque(rot_ref*adc.adjustment.X*(wi_ref_i + gi_ref_i + grip_axis_bi->GetBodyInertiaTensor().Z), false);
+	grip_axis_bi->AddTorque(vel_axis*adc.adjustment.Y*(wi_va_i + gi_va_i + grip_axis_bi->GetBodyInertiaTensor().Z), false);
+
 }
 
 void AJointCharacterTest::ControlGripDirectionPhysics(float DeltaTime, FBodyInstance* BodyInstance)
@@ -850,6 +905,53 @@ void AJointCharacterTest::weaponGrabControl(float DeltaTime, FBodyInstance* Body
 
 }
 
+void AJointCharacterTest::lockGuard()
+{
+	//Grip_h
+	FVector WPri = grip_h_attachment->ComponentToWorld.GetUnitAxis(EAxis::X);
+	FVector WOrth = grip_h_attachment->ComponentToWorld.GetUnitAxis(EAxis::Y);
+
+	FVector PriAxis1 = grip_axis->GetComponentTransform().InverseTransformVectorNoScale(WPri);
+	FVector SecAxis1 = grip_axis->GetComponentTransform().InverseTransformVectorNoScale(WOrth);
+	grip_h_attachment->SetConstraintReferenceOrientation(EConstraintFrame::Frame1, PriAxis1, SecAxis1);
+
+	grip_h_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+	grip_h_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+	grip_h_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+	
+	grip_h_bi->bLockXRotation = false;
+	grip_h_bi->bLockYRotation = false;
+	grip_h_bi->bLockZRotation = false;
+
+	//Grip_v
+	WPri = grip_v_attachment->ComponentToWorld.GetUnitAxis(EAxis::X);
+	WOrth = grip_v_attachment->ComponentToWorld.GetUnitAxis(EAxis::Y);
+
+	PriAxis1 = grip_h->GetComponentTransform().InverseTransformVectorNoScale(WPri);
+	SecAxis1 = grip_h->GetComponentTransform().InverseTransformVectorNoScale(WOrth);
+	grip_v_attachment->SetConstraintReferenceOrientation(EConstraintFrame::Frame1, PriAxis1, SecAxis1);
+
+	grip_v_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+	grip_v_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+	grip_v_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+	
+	
+	guard_locked = true;
+}
+
+void AJointCharacterTest::unlockGuard()
+{
+	grip_h_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Free, 0.0f);
+	grip_h_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Free, 0.0f);
+	grip_h_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Free, 0.0f);
+
+	grip_v_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+	grip_v_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Free, 0.0f);
+	grip_v_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+
+	guard_locked = false;
+}
+
 // Called to bind functionality to input
 void AJointCharacterTest::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -933,6 +1035,7 @@ void AJointCharacterTest::guard()
 void AJointCharacterTest::abortGuard()
 {
 	guarding = false;
+	unlockGuard();
 }
 
 void AJointCharacterTest::fightModeOn()
@@ -948,17 +1051,17 @@ void AJointCharacterTest::fightModeOn()
 		arm_rot_before_fight = FRotator(camera_spring_arm->GetRelativeTransform().GetRotation());
 		arm_length_before_fight = camera_spring_arm->TargetArmLength;
 
-		grip_v_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
-		grip_v_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Free, 120);
-		grip_v_attachment->ConstraintInstance.AngularRotationOffset = FRotator(0.f, 0.f, 0.f);
-		grip_v_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+		//grip_v_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+		//grip_v_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Free, 120);
+		//grip_v_attachment->ConstraintInstance.AngularRotationOffset = FRotator(0.f, 0.f, 0.f);
+		//grip_v_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.0f);
 
-		grip_h_attachment->SetLinearXLimit(ELinearConstraintMotion::LCM_Limited, 150.0f);
+		/*grip_h_attachment->SetLinearXLimit(ELinearConstraintMotion::LCM_Limited, 150.0f);
 		grip_h_attachment->SetLinearYLimit(ELinearConstraintMotion::LCM_Limited, 150.0f);
 		grip_h_attachment->SetLinearZLimit(ELinearConstraintMotion::LCM_Limited, 150.0f);
 		grip_h_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Free, 0.0f);
 		grip_h_attachment->SetConstraintReferencePosition(EConstraintFrame::Frame2, FVector(0.f, 0.f, 41.6666f));
-
+*/
 
 		grip_v->SetEnableGravity(false);
 	}
@@ -967,7 +1070,7 @@ void AJointCharacterTest::fightModeOn()
 		fight_mode = false;
 		fight_mode_state = 3;
 
-		grip_v_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Free, 0.0f);
+		/*grip_v_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Free, 0.0f);
 		grip_v_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Free, 90.f);
 		grip_v_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Free, 0.0f);
 
@@ -976,8 +1079,8 @@ void AJointCharacterTest::fightModeOn()
 		grip_h_attachment->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0.0f);
 		grip_h_attachment->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0.0f);
 		grip_h_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
-		
-		//weapon_axis_attachment->SetConstraintReferencePosition(EConstraintFrame::Frame2, FVector(0.f, -20.f, 0.f));
+		*/
+		//grip_axis_attachment->SetConstraintReferencePosition(EConstraintFrame::Frame2, FVector(0.f, -20.f, 0.f));
 
 		grip_v->SetEnableGravity(true);
 	}
@@ -1207,23 +1310,23 @@ void AJointCharacterTest::initUpperBodyJoints()
 void AJointCharacterTest::initWeapon()
 {
 	// Weapon settings
-	weapon_axis = CreateDefaultSubobject<USphereComponent>(TEXT("WeaponAxis"));
-	weapon_axis->SetupAttachment(RootComponent);
-	weapon_axis->SetRelativeLocation(FVector(0.f, 0.f, 50));
-	weapon_axis->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
-	weapon_axis->SetSphereRadius(15.f);
-	weapon_axis->SetSimulatePhysics(false);
-	weapon_axis->SetEnableGravity(false);
-	weapon_axis_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponAxisVis"));
-	weapon_axis_vis->SetupAttachment(weapon_axis);
-	
-
-	weapon_axis_attachment = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("WeaponAxisAttachment"));
-	weapon_axis_attachment->SetupAttachment(torso);
-	weapon_axis_attachment->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
+	grip_axis = CreateDefaultSubobject<USphereComponent>(TEXT("WeaponAxis"));
+	grip_axis->SetupAttachment(RootComponent);
+	grip_axis->SetRelativeLocation(FVector(0.f, 0.f, 20));
+	grip_axis->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
+	grip_axis->SetSphereRadius(30.f);
+	grip_axis->SetSimulatePhysics(true);
+	grip_axis->SetEnableGravity(false);
+	grip_axis->SetMassOverrideInKg(NAME_None, 20.f, true);
+	grip_axis->SetPhysicsMaxAngularVelocity(5000.f);
+	grip_axis_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponAxisVis"));
+	grip_axis_vis->SetupAttachment(grip_axis);
+	grip_axis_attachment = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("WeaponAxisAttachment"));
+	grip_axis_attachment->SetupAttachment(grip_axis);
+	grip_axis_attachment->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
 
 	grip_h = CreateDefaultSubobject<USphereComponent>(TEXT("WeaponHandle1"));
-	grip_h->SetupAttachment(weapon_axis);
+	grip_h->SetupAttachment(grip_axis);
 	grip_h->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
 	grip_h->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
 	grip_h->SetSphereRadius(20.f);
@@ -1235,7 +1338,7 @@ void AJointCharacterTest::initWeapon()
 	grip_h_vis->SetupAttachment(grip_h);
 	
 	grip_h_attachment = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("WeaponHandle1Attachment"));
-	grip_h_attachment->SetupAttachment(weapon_axis);
+	grip_h_attachment->SetupAttachment(grip_h);
 	grip_h_attachment->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
 	
 	grip_v = CreateDefaultSubobject<USphereComponent>(TEXT("grip_v"));
@@ -1250,7 +1353,7 @@ void AJointCharacterTest::initWeapon()
 	grip_v_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("grip_vVis"));
 	grip_v_vis->SetupAttachment(grip_v);
 	grip_v_attachment = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("grip_vAttachment"));
-	grip_v_attachment->SetupAttachment(grip_h);
+	grip_v_attachment->SetupAttachment(grip_v);
 }
 
 void AJointCharacterTest::initWeaponJoints()
@@ -1271,22 +1374,22 @@ void AJointCharacterTest::initWeaponJoints()
 	//weapon_attachment->SetConstraintReferencePosition
 	//weapon_attachment->SetConstraintReferenceFrame()
 
-	/*weapon_axis_attachment->SetConstrainedComponents(torso, NAME_None, weapon_axis, NAME_None);
-	weapon_axis_attachment->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 4.0f);
-	weapon_axis_attachment->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 4.0f);
-	weapon_axis_attachment->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 4.0f);
-	weapon_axis_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
-	weapon_axis_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
-	weapon_axis_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.0f);
-	weapon_axis_attachment->SetDisableCollision(true);*/
+	grip_axis_attachment->SetConstrainedComponents(torso, NAME_None, grip_axis, NAME_None);
+	grip_axis_attachment->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 4.0f);
+	grip_axis_attachment->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 4.0f);
+	grip_axis_attachment->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 4.0f);
+	grip_axis_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Free, 0.0f);
+	grip_axis_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Free, 0.0f);
+	grip_axis_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Free, 0.0f);
+	grip_axis_attachment->SetDisableCollision(true);
 
-	grip_h_attachment->SetConstrainedComponents(weapon_axis, NAME_None, grip_h, NAME_None);
+	grip_h_attachment->SetConstrainedComponents(grip_axis, NAME_None, grip_h, NAME_None);
 	grip_h_attachment->SetLinearXLimit(ELinearConstraintMotion::LCM_Limited, 0.0f);
 	grip_h_attachment->SetLinearYLimit(ELinearConstraintMotion::LCM_Limited, 0.0f);
 	grip_h_attachment->SetLinearZLimit(ELinearConstraintMotion::LCM_Limited, 0.0f);
 	grip_h_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Free, 0.0f);
-	grip_h_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
-	grip_h_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.0f);
+	grip_h_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Free, 0.0f);
+	grip_h_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Free, 0.0f);
 	grip_h_attachment->SetDisableCollision(true);
 
 	grip_v_attachment->SetConstrainedComponents(grip_h, NAME_None, grip_v, NAME_None);
@@ -1294,15 +1397,10 @@ void AJointCharacterTest::initWeaponJoints()
 	grip_v_attachment->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0.0f);
 	grip_v_attachment->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0.0f);
 	grip_v_attachment->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Locked, 0.0f);
-	grip_v_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, 90.f);
+	grip_v_attachment->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Free, 90.f);
 	grip_v_attachment->ConstraintInstance.AngularRotationOffset = FRotator(0.f, 0.f, 0.f);
 	grip_v_attachment->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.0f);
 	grip_v_attachment->SetDisableCollision(true);
-	grip_v_attachment->SetAngularDriveMode(EAngularDriveMode::TwistAndSwing);
-	grip_v_attachment->SetAngularVelocityDriveTwistAndSwing(true, true);
-	grip_v_attachment->SetAngularDriveParams(0.f, 10000.f, 10000000000000000000000.f);
-
-
 	//weapon_attachment->SetAngularDriveMode(EAngularDriveMode::TwistAndSwing);
 	//weapon_attachment->SetAngularOrientationTarget(FRotator(0.f, 0.f, 0.f));
 	//weapon_attachment->SetAngularDriveParams(10000.f, 0.f, 1000000.f);
@@ -1607,11 +1705,20 @@ void AJointCharacterTest::initPIDs()
 	gpc.D = FVector(0.5f, 0.5f, 0.5f);
 	gpc.integral = FVector::ZeroVector;
 
+	adc.target = FVector2D(0.f, 0.f);
+	adc.max_adjustment = FVector2D(0.f, 0.f);
+	adc.P = FVector2D(10.f, 1.f);
+	adc.I = FVector2D(0.f, 0.f);
+	adc.D = FVector2D(0.5f, 0.f);
+	adc.integral = FVector2D::ZeroVector;
+
 	target_wep_dir = FVector::UpVector;
 	weapon_twist_solder = FVector::UpVector;
 	weapon_twist_target = FVector::RightVector;
 	prev_target_wep_dir = FVector::ForwardVector;
 	prev_target_wep_dir_xy = FVector::ForwardVector;
+	target_wep_pos = FVector::UpVector;
+	prev_target_wep_pos_xy = FVector::ForwardVector;
 	grc.target = 0.0f;
 	grc.max_adjustment = 1000000;
 	grc.P = 8.f;
@@ -1747,13 +1854,12 @@ void AJointCharacterTest::initCustomPhysics()
 
 	OnCalculateWeaponGrabControl.BindUObject(this, &AJointCharacterTest::weaponGrabControl);
 
-	weapon_axis_bi = weapon_axis->GetBodyInstance();
+	grip_axis_bi = grip_axis->GetBodyInstance();
 	grip_h_bi = grip_h->GetBodyInstance();
 	//weapon_handle_2_bi = weapon_handle_2->GetBodyInstance();
 	
 	grip_v_bi = grip_v->GetBodyInstance();
-
-	UE_LOG(LogTemp, Warning, TEXT("grip+wep inertia %s"), *offset_wep_inertia.ToString());
+	calculateWepInertia();
 
 	//rolling_body->OnComponentHit.AddDynamic(this, &AJointCharacterTest::OnHit);
 	torso->OnComponentHit.AddDynamic(this, &AJointCharacterTest::OnBodyHit);
@@ -1788,4 +1894,27 @@ void AJointCharacterTest::calculateWepInertia()
 		ti.Z + grip_v_bi->GetBodyMass()*(tp.X*tp.X + tp.Y*tp.Y));
 
 	UE_LOG(LogTemp, Warning, TEXT("offset inertia: %s"), *offset_wep_inertia.ToString());
+}
+
+void AJointCharacterTest::calculateRelativeInertia(FBodyInstance* offset_bi, const FVector& cor, FMatrix* out_inertia)
+{
+	FVector bi_inrt = offset_bi->GetBodyInertiaTensor();
+	FMatrix bi_T = offset_bi->GetUnrealWorldTransform().ToMatrixWithScale();
+	bi_T.ScaleTranslation(FVector(0.f, 0.f, 0.f));
+	FMatrix bi_di = FMatrix(FVector(bi_inrt.X, 0.f, 0.f), FVector(0.f, bi_inrt.Y, 0.f), FVector(0.f, 0.f, bi_inrt.Z), FVector(0.f, 0.f, 0.f));
+	*out_inertia = bi_T*bi_di*bi_T.GetTransposed();
+	FVector r = offset_bi->GetCOMPosition() - cor;
+	float bi_m = offset_bi->GetBodyMass();
+	out_inertia->M[0][0] = out_inertia->M[0][0] + bi_m*(r.Y*r.Y + r.Z*r.Z);
+	out_inertia->M[1][1] = out_inertia->M[1][1] + bi_m*(r.X*r.X + r.Z*r.Z);
+	out_inertia->M[2][2] = out_inertia->M[2][2] + bi_m*(r.X*r.X + r.Y*r.Y);
+	out_inertia->M[0][1] = out_inertia->M[0][1] + bi_m*(r.X*r.Y);
+	out_inertia->M[0][2] = out_inertia->M[0][2] + bi_m*(r.X*r.Z);
+	out_inertia->M[1][2] = out_inertia->M[1][2] + bi_m*(r.Y*r.Z);
+}
+
+float AJointCharacterTest::inertiaAboutAxis(const FMatrix& inertia_mat, const FVector& axis)
+{
+	return inertia_mat.M[0][0] *axis.X*axis.X + inertia_mat.M[1][1] *axis.Y*axis.Y + inertia_mat.M[2][2] *axis.Z*axis.Z
+		- 2.f*inertia_mat.M[0][1] *axis.X*axis.Y - 2.f*inertia_mat.M[1][2] *axis.Y*axis.Z - 2.f*inertia_mat.M[0][2] *axis.X*axis.Z;
 }

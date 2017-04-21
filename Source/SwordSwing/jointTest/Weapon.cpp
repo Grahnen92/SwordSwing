@@ -21,6 +21,7 @@ void AWeapon::BeginPlay()
 	Super::BeginPlay();
 
 	weapon_head->OnComponentHit.AddDynamic(this, &AWeapon::OnWeaponHit);
+	weapon_swish_audio->Activate();
 }
 
 // Called every frame
