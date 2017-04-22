@@ -63,20 +63,16 @@ protected:
 	UPhysicsConstraintComponent* grip_axis_attachment;
 
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	USphereComponent* grip_h;
+	USphereComponent* grip;
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UStaticMeshComponent* grip_h_vis;
-	FBodyInstance* grip_h_bi;
+	UStaticMeshComponent* grip_vis;
+	FBodyInstance* grip_bi;
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UPhysicsConstraintComponent* grip_h_attachment;
+	UPhysicsConstraintComponent* grip_attachment;
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UPhysicsConstraintComponent* wep_attachment;
 
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	USphereComponent* grip_v;
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UStaticMeshComponent* grip_v_vis;
-	FBodyInstance* grip_v_bi;
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	UPhysicsConstraintComponent* grip_v_attachment;
+
 
 	FVector offset_wep_inertia;
 
@@ -362,10 +358,16 @@ private:
 	bool rot_forward = true;
 
 	//weapon control pids
-	//grip_position_controller
-	PIDData3D gpc;
+
 	//arm_direction_controller
 	PIDData2D adc;
+	//g_direction_controller
+	PIDData3D gdc;
+	//weapon_grab_direction_controller
+	PIDData2D wgdc;
+
+	//grip_position_controller
+	PIDData3D gpc;
 	//grip_rotation_controller
 	PIDData grc;
 	//grip_rotation_speed_controller
@@ -377,10 +379,8 @@ private:
 
 	//weapon_grab_controller
 	PIDData3D wgc;
-	//weapon_grab_rotation_controller
-	PIDData wgrc;
-	//weapon_grab_incline_controller
-	PIDData wgic;
+	
+
 
 	//general variables used across several function
 	FVector weapon_twist_solder;
@@ -402,10 +402,13 @@ private:
 	FVector ga_forward;
 	FVector ga_right;
 	FVector ga_up;
-	FVector gh_pos;
-	FVector gh_forward;
-	FVector gh_right;
-	FVector gh_up;
+	FVector ga_prev_up;
+	FVector g_pos;
+	FVector g_pos_offset;
+	FVector g_forward;
+	FVector g_right;
+	FVector g_up;
+	FVector g_prev_up;
 	FVector gv_pos;
 	FVector gv_forward;
 	FVector gv_right;
