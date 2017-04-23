@@ -403,17 +403,19 @@ private:
 	FVector ga_right;
 	FVector ga_up;
 	FVector ga_prev_up;
+	
 	FVector g_pos;
 	FVector g_pos_offset;
 	FVector g_forward;
 	FVector g_right;
 	FVector g_up;
 	FVector g_prev_up;
-	FVector gv_pos;
-	FVector gv_forward;
-	FVector gv_right;
-	FVector gv_up;
+	
 	FVector current_griph_xydir;
+
+	FVector w_pos;
+	FVector w_up;
+	FVector w_prev_up;
 
 	//Movement control --------------------------------------------------------------
 
