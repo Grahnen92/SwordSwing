@@ -23,6 +23,7 @@ public:
 
 	TArray<class ARoundInfo*> round_info_displays;
 	TArray<class ATextRenderActor*> fight_counters;
+	void toggleFightText();
 
 	AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
@@ -30,9 +31,12 @@ public:
 	void despawnPlayer( APlayerController* pc);
 
 	void initStartRound();
+	int count_down = 3;
+	void decrementCountdown();
 	void startRound();
 
-	void initEndRound(APlayerController* round_loser);
+	void registerDeath(APlayerController* round_loser);
+	void initEndRound(APlayerController* round_winner);
 	void endRound();
 	void endMatch(APlayerState* match_winner);
 
@@ -43,6 +47,7 @@ protected:
 private:
 	const int MAX_PLAYERS = 4;
 	int current_player_amount = 2;
+	int live_player_amount = 2;
 
 	int current_round = 0;
 	// 0 = starting round

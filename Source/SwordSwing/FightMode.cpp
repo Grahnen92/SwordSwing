@@ -88,7 +88,7 @@ void AFightMode::BeginPlay()
 		}
 		
 		SpawnInfo;
-		fight_counters.Add(GetWorld()->SpawnActor<ATextRenderActor>(player->StartSpot->GetActorLocation() + player->StartSpot->GetActorForwardVector()* 200.f + player->StartSpot->GetActorRightVector()* 100.f + player->StartSpot->GetActorUpVector()* 200.f, FRotator(0.f, 0.f, 0.f), SpawnInfo));
+		fight_counters.Add(GetWorld()->SpawnActor<ATextRenderActor>(player->StartSpot->GetActorLocation() + player->StartSpot->GetActorForwardVector()* 200.f + player->StartSpot->GetActorRightVector()* 100.f + player->StartSpot->GetActorUpVector()* 150.f, FRotator(0.f, 0.f, 0.f), SpawnInfo));
 		FVector fight_direction = player->StartSpot->GetActorLocation() - fight_counters.Top()->GetActorLocation();
 		FRotator look_rot_fight = FRotationMatrix::MakeFromX(fight_direction).Rotator();
 		fight_counters.Top()->SetActorRotation(look_rot_fight);
@@ -96,6 +96,9 @@ void AFightMode::BeginPlay()
 		//TODO: look into this netid 
 		//if (GameState->PlayerArray[i]->UniqueId.IsValid())
 	}
+
+	toggleFightText();
+
 	initStartRound();
 }
 
@@ -144,7 +147,6 @@ void AFightMode::spawnPlayer( APlayerController* pc)
 	
 	
 	AJointCharacterTest* new_char = GetWorld()->SpawnActor<AJointCharacterTest>(fight_char, pc->StartSpot->GetActorTransform(), SpawnInfo);
-	new_char->SetActorRotation(FRotationMatrix::MakeFromX(-pc->StartSpot->GetActorRightVector()).Rotator());
 
 	if (new_char)
 	{
@@ -212,13 +214,45 @@ void AFightMode::initStartRound()
 		//tmp_controller->SetIgnoreMoveInput(true);
 		Cast<AJointCharacterTest>(tmp_controller->GetPawn())->setCanMove(false);
 
+		fight_counters[i]->TextRender->SetText("Get ready!");
 	}
 	
+	live_player_amount = current_player_amount;
+	count_down = 3;
+	toggleFightText();
 	
 	FTimerHandle unused_handle;
-	GetWorldTimerManager().SetTimer(unused_handle, this, &AFightMode::startRound, 3.0f, false);
+	GetWorldTimerManager().SetTimer(unused_handle, this, &AFightMode::decrementCountdown, 2.0f, false);
 	round_state = 0;
 }
+
+void AFightMode::decrementCountdown()
+{
+	if (count_down > 0)
+	{
+		std::stringstream ss_count;
+		ss_count << count_down;
+		for (int i = 0; i < GameState->PlayerArray.Num(); i++)
+		{
+			fight_counters[i]->TextRender->SetText(ss_count.str().c_str());
+		}
+		count_down--;
+		FTimerHandle unused_handle;
+		GetWorldTimerManager().SetTimer(unused_handle, this, &AFightMode::decrementCountdown, 1.0f, false);
+	}
+	else
+	{
+		for (int i = 0; i < GameState->PlayerArray.Num(); i++)
+		{
+			fight_counters[i]->TextRender->SetText("Fight!");
+		}
+		startRound();
+		FTimerHandle unused_handle;
+		GetWorldTimerManager().SetTimer(unused_handle, this, &AFightMode::toggleFightText, 2.0f, false);
+	}
+	
+}
+
 void AFightMode::startRound()
 {
 	for (int i = 0; i < GameState->PlayerArray.Num(); i++)
@@ -233,40 +267,60 @@ void AFightMode::startRound()
 	round_state = 1;
 }
 
-void AFightMode::initEndRound(APlayerController* round_loser)
+void AFightMode::registerDeath(APlayerController* round_loser)
 {
 	if (round_state != 2)
 	{
-		int tmp_player_index;
-		GameState->PlayerArray.Find(round_loser->PlayerState, tmp_player_index);
-		GameState->PlayerArray[tmp_player_index]->Score++;
-		if (GameState->PlayerArray[tmp_player_index]->Score >= score_to_win)
+		live_player_amount--;
+
+		if (live_player_amount == 1)
 		{
-			endMatch(GameState->PlayerArray[tmp_player_index]);
-		}
+			round_state = 2;
 
-		current_round++;
-
-
-		for (int i = 0; i < GameState->PlayerArray.Num(); i++)
-		{
-			//Update all round displays
-			round_info_displays[i]->setRound(current_round);
-			/*round_info_displays[i]->setPlayerScore(0, GameState->PlayerArray[tmp_player_index]->Score);
-			int rest_players_count = 1;
-			for (int j = 0; j < GameState->PlayerArray.Num(); j++) {
-				if (j != i) {
-					round_info_displays[i]->setPlayerScore(rest_players_count, GameState->PlayerArray[j]->Score);
-					rest_players_count++;
+			for (int i = 0; i < GameState->PlayerArray.Num(); i++)
+			{
+				APlayerController* tmp_controller = GameState->PlayerArray[i]->GetNetOwningPlayer()->PlayerController;
+				if (Cast<AJointCharacterTest>(tmp_controller->GetPawn())->isAlive())
+				{
+					initEndRound(tmp_controller);
 				}
-			}*/
-			round_info_displays[i]->updatePlayerScores();
+			}
+
 		}
-		FTimerHandle unused_handle;
-		GetWorldTimerManager().SetTimer(unused_handle, this, &AFightMode::endRound, 10.0f, false);
-		
-		round_state = 2;
 	}
+
+}
+
+void AFightMode::initEndRound(APlayerController* round_winner)
+{
+	round_winner->PlayerState->Score++;
+
+	if (round_winner->PlayerState->Score >= score_to_win)
+	{
+		endMatch(round_winner->PlayerState);
+	}
+
+	current_round++;
+
+	for (int i = 0; i < GameState->PlayerArray.Num(); i++)
+	{
+		//Update all round displays
+		round_info_displays[i]->setRound(current_round);
+		/*round_info_displays[i]->setPlayerScore(0, GameState->PlayerArray[tmp_player_index]->Score);
+		int rest_players_count = 1;
+		for (int j = 0; j < GameState->PlayerArray.Num(); j++) {
+			if (j != i) {
+				round_info_displays[i]->setPlayerScore(rest_players_count, GameState->PlayerArray[j]->Score);
+				rest_players_count++;
+			}
+		}*/
+		round_info_displays[i]->updatePlayerScores();
+	}
+	FTimerHandle unused_handle;
+	GetWorldTimerManager().SetTimer(unused_handle, this, &AFightMode::endRound, 7.0f, false);
+		
+	round_state = 2;
+	
 }
 
 void AFightMode::endRound()
@@ -287,6 +341,14 @@ void AFightMode::endMatch(APlayerState* match_winner)
 	UE_LOG(LogTemp, Warning, TEXT("The winner is: %s"), *match_winner->GetName());
 	this->Reset();
 	UGameplayStatics::OpenLevel(GetWorld(), "MainMenu");
+}
+
+void  AFightMode::toggleFightText()
+{
+	for (int i = 0; i < GameState->PlayerArray.Num(); i++)
+	{
+		fight_counters[i]->TextRender->ToggleVisibility();
+	}
 }
 
 void  AFightMode::initPlayerMats()

@@ -20,11 +20,14 @@ public:
 	// Sets default values for this pawn's properties
 	AJointCharacterTest();
 
+	bool isAlive();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
 	bool alive = true;
+
 	bool can_move = true;
 	bool can_swing = true;
 
@@ -37,7 +40,19 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* camera_axis;
 
+	//targeting
+	TArray<USceneComponent* >lock_on_targets;
+	USceneComponent* locked_target;
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	USphereComponent* targeting_sphere;
 	
+	UFUNCTION()
+	void addPotentialTarget(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void removePotentialTarget(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	
+	void aquireTarget();
+
 	//weapon ------------------------------------------------------------------------
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	USphereComponent* grip_axis;
@@ -88,14 +103,16 @@ protected:
 	float target_arm_length;
 
 	bool fight_mode;
-	int fight_mode_state;
-	float fight_t;
-	UPROPERTY(EditAnywhere)
-	float fight_mode_engage_time = 0.25;
+
 	// 0 disengaged
 	// 1 engaging
 	// 2 engaged
 	// 3 disengaging
+	int fight_mode_state;
+	float fight_t;
+	UPROPERTY(EditAnywhere)
+	float fight_mode_engage_time = 0.25;
+
 
 	//Upper body ------------------------------------------------------------------------
 
@@ -272,8 +289,8 @@ private:
 	void customStabilizerPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateControlGripPhysics; //GRIP
 	void ControlGripPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-	FCalculateCustomPhysics OnCalculateControlGripPositionPhysics; //GRIP POSITION
-	void ControlGripPositionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	FCalculateCustomPhysics OnCalculateControlArmDirectionPhysics; //GRIP POSITION
+	void ControlArmDirectionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateControlGripDirectionPhysics; //GRIP DIRECTION
 	void ControlGripDirectionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateControlArmTwistPhysics; // WEAPON TWist
@@ -289,6 +306,7 @@ private:
 	FCalculateCustomPhysics OnCalculateCustomWalkingPhysics;
 	void customWalkingPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	
+	void controlCameraDirection(float DeltaTime);
 	void initCamera();
 
 	void initUpperBody();
@@ -355,7 +373,14 @@ private:
 		FVector D;
 	};
 
-	
+	//Camera control --------------------------------------------------------------
+	//camera_direction_control
+	//X = horizontal rotation
+	//Y = vertical rotation
+	PIDData2D cdc;
+
+	FVector locked_target_dir;
+	FVector locked_target_dir_xy;
 
 	//Weapon control --------------------------------------------------------------
 	//weapon control states
@@ -363,41 +388,33 @@ private:
 	bool wep_extended = false;
 	bool rot_forward = true;
 
-	//weapon control pids
-
 	//arm_direction_controller
+	//X = direction control
+	//Y = rotational speed control
 	PIDData2D adc;
-	//arm_direction_controller
+	//arm_twist_controller
 	PIDData atc;
-	//g_direction_controller
-	PIDData3D gdc;
-	//weapon_grab_direction_controller
-	PIDData2D wgdc;
 
-	//grip_position_controller
-	PIDData3D gpc;
-	//grip_rotation_controller
-	PIDData grc;
-	//grip_rotation_speed_controller
-	PIDData grsc;
-	//grip_incline_controller
-	PIDData gic;
+	//g_direction_controller
+	//X = direction control
+	//Y = rotational speed control
+	PIDData3D gdc;
 	//weapon_twist_controller
 	PIDData wtc;
 
+	//weapon_grab_direction_controller
+	PIDData2D wgdc;
 	//weapon_grab_controller
 	PIDData3D wgc;
-	
-
 
 	//general variables used across several function
 	FVector weapon_twist_solder;
 	FVector weapon_twist_target;
 	FVector input_dir;
 	FVector prev_input_dir;
-	FVector target_wep_pos;
-	FVector target_wep_pos_xy;
-	FVector prev_target_wep_pos_xy;
+	FVector target_arm_dir;
+	FVector target_arm_dir_xy;
+	FVector prev_target_arm_dir_xy;
 
 	FVector target_wep_dir;
 	FVector prev_target_wep_dir;
