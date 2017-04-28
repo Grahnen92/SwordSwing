@@ -20,12 +20,14 @@ public:
 	// Sets default values for this pawn's properties
 	AJointCharacterTest();
 
-
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	//UPROPERTY(EditAnywhere)
+	
+	bool alive = true;
+	bool can_move = true;
+	bool can_swing = true;
+
 
 	//camera ------------------------------------------------------------------------
 	UPROPERTY(VisibleAnywhere)
@@ -35,24 +37,7 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* camera_axis;
 
-	bool alive = true;
-
-	//Upper body ------------------------------------------------------------------------
-
-	UPROPERTY(VisibleAnywhere)
-	UBoxComponent* torso;
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* torso_vis;
-	FBodyInstance* torso_bi;
-
-	UPROPERTY(VisibleAnywhere)
-	UCapsuleComponent* spine;
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* spine_vis;
-	FBodyInstance* spine_bi;
-	UPROPERTY(Category = "UpperBody", VisibleAnywhere)
-	UPhysicsConstraintComponent* spine_attachment;
-
+	
 	//weapon ------------------------------------------------------------------------
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	USphereComponent* grip_axis;
@@ -71,8 +56,6 @@ protected:
 	UPhysicsConstraintComponent* grip_attachment;
 	UPROPERTY(Category = "Weapon", VisibleAnywhere)
 	UPhysicsConstraintComponent* wep_attachment;
-
-
 
 	FVector offset_wep_inertia;
 
@@ -113,6 +96,23 @@ protected:
 	// 1 engaging
 	// 2 engaged
 	// 3 disengaging
+
+	//Upper body ------------------------------------------------------------------------
+
+	UPROPERTY(VisibleAnywhere)
+	UBoxComponent* torso;
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* torso_vis;
+	FBodyInstance* torso_bi;
+
+	UPROPERTY(VisibleAnywhere)
+	UCapsuleComponent* spine;
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* spine_vis;
+	FBodyInstance* spine_bi;
+	UPROPERTY(Category = "UpperBody", VisibleAnywhere)
+	UPhysicsConstraintComponent* spine_attachment;
+
 
 	//legs -----------------------------------------------------------------------
 	
@@ -254,10 +254,14 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
+	void setPlayerSpecificMaterial(UMaterial* mat);
+
+	void setCanMove(bool new_state);
+	void setCanSwing(bool new_state);
+
 private:
 
 	void initInputVars();
@@ -272,6 +276,8 @@ private:
 	void ControlGripPositionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateControlGripDirectionPhysics; //GRIP DIRECTION
 	void ControlGripDirectionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	FCalculateCustomPhysics OnCalculateControlArmTwistPhysics; // WEAPON TWist
+	void ControlArmTwistPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateControlGripInclinePhysics; //GRIP INCLINE
 	void ControlGripInclinePhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateControlWeaponTwistPhysics; // WEAPON TWist
@@ -361,6 +367,8 @@ private:
 
 	//arm_direction_controller
 	PIDData2D adc;
+	//arm_direction_controller
+	PIDData atc;
 	//g_direction_controller
 	PIDData3D gdc;
 	//weapon_grab_direction_controller
