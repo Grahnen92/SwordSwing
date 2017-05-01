@@ -75,7 +75,7 @@ void AJointCharacterTest::Tick(float DeltaTime)
 
 	if (alive)
 	{
-		camera_axis->SetWorldLocation(torso->GetCenterOfMass()+ FVector::UpVector*40.f);
+		camera_axis->SetWorldLocation(torso->GetCenterOfMass()+ FVector::UpVector*70.f);
 		//grip_axis->SetWorldLocation(torso->GetCenterOfMass() + FVector(0.f, 0.f, -15.f));
 		//grip_axis_bi->SetBodyTransform(FTransform(torso_bi->GetCOMPosition() + FVector(0.f, 0.f, -15.f)), true);
 		
@@ -241,7 +241,7 @@ bool AJointCharacterTest::isAlive()
 
 void AJointCharacterTest::OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (NormalImpulse.Size() > 16000.f)
+	if (NormalImpulse.Size() > 50000.f)
 	{
 		TArray<USceneComponent*> tmp_child_comps;
 		HitComp->GetChildrenComponents(true, tmp_child_comps);
@@ -306,12 +306,12 @@ void AJointCharacterTest::controlCameraDirection(float DeltaTime)
 void AJointCharacterTest::addPotentialTarget(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (OtherActor != this)
-		lock_on_targets.Add(OtherActor->GetRootComponent());
+		lock_on_targets.Add(OtherComp);
 }
 void AJointCharacterTest::removePotentialTarget(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (OtherActor != this)
-		lock_on_targets.Remove(OtherActor->GetRootComponent());
+		lock_on_targets.Remove(OtherComp);
 }
 
 void AJointCharacterTest::aquireTarget()
@@ -1687,11 +1687,11 @@ void AJointCharacterTest::initPIDs()
 	//camera ------------------------------------------------
 	axis_target_rot = FRotator(0.f, 150.f, 0.f);
 	arm_target_rot = FRotator(-35.f, 0.f, 0.f);
-	target_arm_length = 300.f;
+	target_arm_length = 500.f;
 
 	cdc.target = FVector2D(0.f, 0.f);
 	cdc.max_adjustment = FVector2D(0.f, 0.f);
-	cdc.P = FVector2D(10.f, 10.f);
+	cdc.P = FVector2D(15.f, 15.f);
 	cdc.I = FVector2D(0.f, 0.f);
 	cdc.D = FVector2D(0.005f, 0.005f);
 	cdc.integral = FVector2D::ZeroVector;
@@ -1723,9 +1723,9 @@ void AJointCharacterTest::initPIDs()
 	
 	atc.target = 0.0f;
 	atc.max_adjustment = 5;
-	atc.P = 500;
+	atc.P = 100;
 	atc.I = 0.0f;
-	atc.D = 100.1f;
+	atc.D = 20.1f;
 	atc.integral = 0.f;
 
 	gdc.target = FVector::ZeroVector;

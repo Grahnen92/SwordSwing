@@ -67,7 +67,7 @@ void AFightMode::BeginPlay()
 		FActorSpawnParameters SpawnInfo;
 		round_info_displays.Add(GetWorld()->SpawnActor<ARoundInfo>(FVector(0.f, 0.f, 0.f), FRotator(0.f, 0.f, 0.f), SpawnInfo));
 		round_info_displays.Top()->Init(GameState->PlayerArray.Num(), score_to_win);
-		round_info_displays.Top()->SetActorLocation(player->StartSpot->GetActorForwardVector()*5000.f + player->StartSpot->GetActorLocation() + FVector::UpVector * 4000);
+		round_info_displays.Top()->SetActorLocation(player->StartSpot->GetActorForwardVector()*5000.f + player->StartSpot->GetActorLocation() + FVector::UpVector * 3000);
 		
 		spawnPlayer(player);
 

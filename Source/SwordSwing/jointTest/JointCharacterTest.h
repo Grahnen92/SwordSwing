@@ -473,7 +473,7 @@ private:
 	PIDData3D l_toe_position_controller;
 
 	UPROPERTY(EditAnywhere)
-	float target_speed = 500;
+	float target_speed = 300;
 	UPROPERTY(EditAnywhere)
 	float time_to_target_speed = 0.05f;
 	PIDData2D movement_velocity;

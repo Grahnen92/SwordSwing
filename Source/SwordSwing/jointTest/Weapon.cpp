@@ -21,14 +21,14 @@ void AWeapon::BeginPlay()
 	Super::BeginPlay();
 
 	weapon_head->OnComponentHit.AddDynamic(this, &AWeapon::OnWeaponHit);
-	weapon_swish_audio->Activate();
 }
 
 // Called every frame
 void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	weaponSwishAudioMix();
+	if(weapon_swish_audio->bIsActive)
+		weaponSwishAudioMix();
 
 	//DrawDebugPoint(
 	//	GetWorld(),
@@ -166,6 +166,7 @@ void AWeapon::initGrabbed(AJointCharacterTest* _holder)
 {
 	holder = _holder;
 	weapon_trail->BeginTrails(FName("top_trail"), FName("bot_trail"), ETrailWidthMode::ETrailWidthMode_FromCentre, 1.0f);
+	weapon_swish_audio->Activate();
 }
 
 void AWeapon::deInitGrabbed()
