@@ -26,10 +26,26 @@ public:
 	{
 		dims.X = x; dims.Y = y;
 	}
+
+	FVector getDims()
+	{
+		return FVector(dims.X, dims.Y, 0.f);
+	}
+
+	std::vector<VSite>* getSites()
+	{
+		return &sites;
+	}
+
 private:
 
 	void addParabola(VSite * _s);
 	VParabola* findParabolaAtX(float _x);
+
+	void checkCircle(VParabola* _p1);
+	bool getEdgeIntersection(VHalfEdge* _he1, VHalfEdge* _he2, FVector2D& _out);
+
+	void handleCircleEvent(VEvent* _circle_event);
 
 	std::vector<VSite> sites;
 	std::vector<FVector2D> vertices;
@@ -37,9 +53,12 @@ private:
 
 	VParabola* root;
 
+	//queue sorted decreasingly by the Y coordinate of the events
 	std::priority_queue<VEvent*, std::vector<VEvent*>, VEvent::CompareEvent > event_queue;
-
+	//directrix moving downwards with the eventorder
 	float directrix_y;
 
+	//vector of deleted events
+	std::vector<VEvent*> deleted_events;
 	FVector2D dims;
 };

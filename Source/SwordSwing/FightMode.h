@@ -40,6 +40,8 @@ public:
 	void endRound();
 	void endMatch(APlayerState* match_winner);
 
+
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -59,4 +61,6 @@ private:
 
 	TArray<UMaterial*> player_mats;
 	void initPlayerMats();
+
+	TArray<class AWeaponSpawner*> weapon_spawns;
 };

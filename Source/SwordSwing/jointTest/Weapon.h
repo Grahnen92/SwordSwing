@@ -54,6 +54,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	AJointCharacterTest* getHolder();
+
 	UFUNCTION()
 	void OnWeaponHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 

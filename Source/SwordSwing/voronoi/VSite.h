@@ -3,6 +3,7 @@
 #pragma once
 #include "VHalfEdge.h"
 #include <list>
+#include <vector>
 
 /**
  * 
@@ -16,7 +17,8 @@ public:
 
 	FVector2D pos;
 
+	std::vector<VHalfEdge*> edges;
 private:
 	
-	std::list<VHalfEdge*> edges;
+	
 };

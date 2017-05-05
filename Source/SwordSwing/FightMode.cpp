@@ -1,13 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SwordSwing.h"
+#include "FightMode.h"
+
 #include "EngineUtils.h"
 //#include "TextRenderActor.h"
 
 #include "InitPawn.h"
 #include "jointTest/JointCharacterTest.h"
 #include "ThirdPersonController.h"
-#include "FightMode.h"
+#include "weapons/WeaponSpawner.h"
 #include "hud/RoundInfo.h"
 
 #include <sstream>
@@ -69,7 +71,7 @@ void AFightMode::BeginPlay()
 		round_info_displays.Top()->Init(GameState->PlayerArray.Num(), score_to_win);
 		round_info_displays.Top()->SetActorLocation(player->StartSpot->GetActorForwardVector()*5000.f + player->StartSpot->GetActorLocation() + FVector::UpVector * 3000);
 		
-		spawnPlayer(player);
+		//spawnPlayer(player);
 
 		FVector info_direction = player->StartSpot->GetActorLocation() - round_info_displays.Top()->GetActorLocation();
 		FRotator look_rot = FRotationMatrix::MakeFromX(info_direction).Rotator();
@@ -95,6 +97,12 @@ void AFightMode::BeginPlay()
 
 		//TODO: look into this netid 
 		//if (GameState->PlayerArray[i]->UniqueId.IsValid())
+	}
+
+	for (TActorIterator<AWeaponSpawner> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+	{
+		// Same as with the Object Iterator, access the subclass instance with the * or -> operators.
+		weapon_spawns.Add(*ActorItr);
 	}
 
 	toggleFightText();
@@ -216,7 +224,11 @@ void AFightMode::initStartRound()
 
 		fight_counters[i]->TextRender->SetText("Get ready!");
 	}
-	
+	for (const auto& spawn : weapon_spawns)
+	{
+		spawn->spawnWeapon();
+	}
+
 	live_player_amount = current_player_amount;
 	count_down = 3;
 	toggleFightText();
@@ -327,11 +339,11 @@ void AFightMode::endRound()
 {
 	//GetWorld()->ServerTravel(FString("/Game/Levels/FightArena/FightArena"));
 
-	//TODO: didn't work
-	for (FConstPhysicsVolumeIterator physIt = GetWorld()->GetNonDefaultPhysicsVolumeIterator(); physIt; ++physIt)
+	for (const auto& spawn : weapon_spawns)
 	{
-		physIt->Get()->Reset();
+		spawn->despawnAllWeapons();
 	}
+
 
 	initStartRound();
 }

@@ -60,22 +60,12 @@ void AJointCharacterTest::Tick(float DeltaTime)
 	//	0.03 					//point leaves a trail on moving object
 	//);
 
-	//DrawDebugLine(
-	//	GetWorld(),
-	//	grip->GetComponentLocation(),
-	//	grip->GetComponentLocation() - 200 * FVector::UpVector, 					//size
-	//	FColor(255, 0, 0),  //pink
-	//	true,  				//persistent (never goes away)
-	//	0.03, 					//point leaves a trail on moving object
-	//	10,
-	//	5.f
-	//);
 
 
 
 	if (alive)
 	{
-		camera_axis->SetWorldLocation(torso->GetCenterOfMass()+ FVector::UpVector*70.f);
+		camera_axis->SetWorldLocation(torso->GetCenterOfMass()+ FVector::UpVector*30.f);
 		//grip_axis->SetWorldLocation(torso->GetCenterOfMass() + FVector(0.f, 0.f, -15.f));
 		//grip_axis_bi->SetBodyTransform(FTransform(torso_bi->GetCOMPosition() + FVector(0.f, 0.f, -15.f)), true);
 		
@@ -85,6 +75,11 @@ void AJointCharacterTest::Tick(float DeltaTime)
 			{
 				grip_bi->AddCustomPhysics(OnCalculateControlGripPhysics);
 			}
+		}
+
+		if (!holding_weapon)
+		{
+			gripIndicatorCalculations(DeltaTime);
 		}
 
 
@@ -97,10 +92,8 @@ void AJointCharacterTest::Tick(float DeltaTime)
 			pelvis_bi->AddCustomPhysics(OnCalculateCustomWalkingPhysics);
 		}
 		
-
-		
-		
 	}
+
 }
 
 
@@ -169,33 +162,28 @@ void AJointCharacterTest::movementCalculations(float DeltaTime)
 	if(!movement_input.IsZero())
 		target_direction = (camera_axis->GetForwardVector()*movement_input.X + camera_axis->GetRightVector()* movement_input.Y).GetSafeNormal();
 
-	//if (!movement_input.IsZero() && rolling_body->GetComponentVelocity().Size() < target_speed)
-	//if (!movement_input.IsZero())
-	if(true)
-	{
-		FVector2D movement_input_norm = movement_input.GetSafeNormal();
+	FVector2D movement_input_norm = movement_input.GetSafeNormal();
 
-		FVector curr_vel = torso->GetComponentVelocity();
-		FVector2D curr_vel2D = FVector2D(curr_vel.X, curr_vel.Y);
+	FVector curr_vel = torso->GetComponentVelocity();
+	FVector2D curr_vel2D = FVector2D(curr_vel.X, curr_vel.Y);
 
-		FVector target_vel = (camera_axis->GetForwardVector()*movement_input.X + camera_axis->GetRightVector()* movement_input.Y)*target_speed;
-		FVector2D target_vel2D = FVector2D(target_vel.X, target_vel.Y);
+	FVector target_vel = (camera_axis->GetForwardVector()*movement_input.X + camera_axis->GetRightVector()* movement_input.Y)*target_speed;
+	FVector2D target_vel2D = FVector2D(target_vel.X, target_vel.Y);
 
-		movement_velocity.error = target_vel2D - curr_vel2D;
-		movement_velocity.integral = movement_velocity.integral + movement_velocity.error * DeltaTime;
-		movement_velocity.derivative = (movement_velocity.error - movement_velocity.prev_err) / DeltaTime;
+	movement_velocity.error = target_vel2D - curr_vel2D;
+	movement_velocity.integral = movement_velocity.integral + movement_velocity.error * DeltaTime;
+	movement_velocity.derivative = (movement_velocity.error - movement_velocity.prev_err) / DeltaTime;
 
-		movement_velocity.adjustment = movement_velocity.P * movement_velocity.error +
-									   movement_velocity.I * movement_velocity.integral +
-									   movement_velocity.D * movement_velocity.derivative;
-		movement_velocity.prev_err = movement_velocity.error;
+	movement_velocity.adjustment = movement_velocity.P * movement_velocity.error +
+									movement_velocity.I * movement_velocity.integral +
+									movement_velocity.D * movement_velocity.derivative;
+	movement_velocity.prev_err = movement_velocity.error;
 
-		//FVector move_force = ((target_vel - curr_vel) )*rolling_body->GetMass();
-		//move_force.Z = 0;
-		FVector move_force = FVector(movement_velocity.adjustment.X, movement_velocity.adjustment.Y, 0.f)*torso->GetMass();
+	//FVector move_force = ((target_vel - curr_vel) )*rolling_body->GetMass();
+	//move_force.Z = 0;
+	FVector move_force = FVector(movement_velocity.adjustment.X, movement_velocity.adjustment.Y, 0.f)*torso->GetMass();
 	
-		torso->AddForce(move_force );
-	}
+	torso->AddForce(move_force );
 	//Jumping -------------------------------------------------------------------------------------
 
 	if (jumping) 
@@ -218,6 +206,65 @@ void AJointCharacterTest::movementCalculations(float DeltaTime)
 }
 //SETTERS / GETTERS ===========================================================================
 
+void  AJointCharacterTest::gripIndicatorCalculations(float DeltaTime)
+{
+	FCollisionQueryParams RV_TraceParams = FCollisionQueryParams(FName(TEXT("RV_Trace")), true, this);
+	RV_TraceParams.bTraceComplex = true;
+	RV_TraceParams.bTraceAsyncScene = false;
+	RV_TraceParams.bReturnPhysicalMaterial = false;
+
+	FCollisionObjectQueryParams rv_objects;
+	rv_objects.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldStatic);
+	rv_objects.AddObjectTypesToQuery(ECollisionChannel::ECC_PhysicsBody);
+
+
+	//Re-initialize hit info
+	FHitResult rv_hit(ForceInit);
+
+	FVector start = g_pos;
+	FVector end = start - FVector::UpVector*200.f;
+
+	//call GetWorld() from within an actor extending class
+	GetWorld()->LineTraceSingleByObjectType(rv_hit,        //result
+		start,    //start
+		end, //end
+		rv_objects, //collision channel
+		RV_TraceParams);
+
+	if (rv_hit.bBlockingHit)
+	{
+		grip_indicator_decal->SetVisibility(true);
+		grip_indicator_decal->SetWorldLocation(rv_hit.Location);
+		grip_indicator_beam->SetBeamTargetPoint(0, g_pos -FVector::UpVector*rv_hit.Distance, 0);
+		
+
+		DrawDebugPoint(
+			GetWorld(),
+			rv_hit.Location,
+			5,  					//size
+			FColor(255, 0, 255),  //pink
+			false,  				//persistent (never goes away)
+			0.03 					//point leaves a trail on moving object
+		);
+		
+	}
+	else
+	{
+		grip_indicator_beam->SetBeamTargetPoint(0, g_pos - FVector::UpVector*200.f, 0);
+		grip_indicator_decal->SetVisibility(false);
+	}
+
+	DrawDebugPoint(
+		GetWorld(),
+		grip_indicator_decal->GetComponentLocation(),
+		5,  					//size
+		FColor(255, 0, 0),  //pink
+		false,  				//persistent (never goes away)
+		0.03 					//point leaves a trail on moving object
+	);
+	
+}
+
 void AJointCharacterTest::setCanMove(bool new_state)
 {
 	can_move = new_state;
@@ -225,6 +272,15 @@ void AJointCharacterTest::setCanMove(bool new_state)
 void AJointCharacterTest::setCanSwing(bool new_state)
 {
 	can_swing = new_state;
+}
+
+void AJointCharacterTest::disableSwingAbility()
+{
+	can_swing = false;
+}
+void AJointCharacterTest::enableSwingAbility()
+{
+	can_swing = true;
 }
 
 void AJointCharacterTest::setPlayerSpecificMaterial(UMaterial* mat)
@@ -237,11 +293,16 @@ bool AJointCharacterTest::isAlive()
 	return alive;
 }
 
+bool AJointCharacterTest::isGuarding()
+{
+	return guarding;
+}
+
 //COLLISION RESPONSE CALCULATIONS ===========================================================================
 
 void AJointCharacterTest::OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (NormalImpulse.Size() > 50000.f)
+	if (NormalImpulse.Size() > 40000.f)
 	{
 		TArray<USceneComponent*> tmp_child_comps;
 		HitComp->GetChildrenComponents(true, tmp_child_comps);
@@ -1111,6 +1172,8 @@ void AJointCharacterTest::fightModeOn()
 	fight_mode_state = 1;
 	fight_t = 0.0f;
 
+	target_speed = 220.f;
+
 	axis_rot_before_fight = camera_axis->GetComponentRotation();
 		
 	arm_rot_before_fight = FRotator(camera_spring_arm->GetRelativeTransform().GetRotation());
@@ -1125,6 +1188,8 @@ void AJointCharacterTest::fightModeOff()
 	fight_mode_state = 3;
 
 	locked_target = nullptr;
+
+	target_speed = 400.f;
 }
 
 void AJointCharacterTest::release()
@@ -1151,11 +1216,15 @@ void AJointCharacterTest::release()
 		holding_weapon = false;
 		wep_extended = false;
 
-		UE_LOG(LogTemp, Warning, TEXT("----------------------"));
+		/*UE_LOG(LogTemp, Warning, TEXT("----------------------"));*/
+		grip_indicator_beam->SetVisibility(true);
+		grip_indicator_decal->SetVisibility(true);
 		return;
 	}
 	else if (holding_object)
 	{
+		grip_indicator_beam->SetVisibility(true);
+		grip_indicator_decal->SetVisibility(true);
 		/*grip->UnWeldChildren();
 		grip->UpdateBodySetup();*/
 		holding_object = false;
@@ -1239,6 +1308,11 @@ void AJointCharacterTest::attachWeapon(AWeapon* _wep)
 	//wep_attachment->SetConstrainedComponents(grip, NAME_None, tmp_shaft, NAME_None);
 	held_weapon->AttachRootComponentTo(grip, NAME_None, EAttachLocation::KeepWorldPosition, true);
 	grip->UpdateBodySetup();
+
+	object_attach_audio->Activate();
+
+	grip_indicator_beam->SetVisibility(false);
+	grip_indicator_decal->SetVisibility(false);
 
 	w_up = FVector::ZeroVector;
 
@@ -1353,7 +1427,18 @@ void AJointCharacterTest::initWeapon()
 	wep_attachment = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("WeaponAttachment"));
 	wep_attachment->SetupAttachment(grip);
 	wep_attachment->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
-	
+
+	grip_indicator_decal = CreateDefaultSubobject<UDecalComponent>(TEXT("GripIndicatorDecal"));
+	grip_indicator_decal->SetupAttachment(grip);
+	grip_indicator_decal->bAbsoluteRotation = true;
+
+	grip_indicator_beam = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("GripIndicatorBeam"));
+	grip_indicator_beam->SetupAttachment(grip);
+	grip_indicator_beam->bAbsoluteRotation = true;
+
+	object_attach_audio = CreateDefaultSubobject<UAudioComponent>(TEXT("GripAttachmentAudio"));
+	object_attach_audio->SetupAttachment(grip);
+
 }
 
 void AJointCharacterTest::initWeaponJoints()
@@ -1691,7 +1776,7 @@ void AJointCharacterTest::initPIDs()
 
 	cdc.target = FVector2D(0.f, 0.f);
 	cdc.max_adjustment = FVector2D(0.f, 0.f);
-	cdc.P = FVector2D(15.f, 15.f);
+	cdc.P = FVector2D(50.f, 50.f);
 	cdc.I = FVector2D(0.f, 0.f);
 	cdc.D = FVector2D(0.005f, 0.005f);
 	cdc.integral = FVector2D::ZeroVector;
@@ -1716,9 +1801,12 @@ void AJointCharacterTest::initPIDs()
 
 	adc.target = FVector2D(0.f, 0.f);
 	adc.max_adjustment = FVector2D(0.f, 0.f);
-	adc.P = FVector2D(600.f, 10.f);
+	//adc.P = FVector2D(600.f, 10.f);
+	//adc.I = FVector2D(0.f, 0.f);
+	//adc.D = FVector2D(6.f, 0.f);
+	adc.P = FVector2D(200.f, 7.f);
 	adc.I = FVector2D(0.f, 0.f);
-	adc.D = FVector2D(6.f, 0.f);
+	adc.D = FVector2D(0.f, 0.f);
 	adc.integral = FVector2D::ZeroVector;
 	
 	atc.target = 0.0f;
@@ -1730,9 +1818,12 @@ void AJointCharacterTest::initPIDs()
 
 	gdc.target = FVector::ZeroVector;
 	gdc.max_adjustment = FVector::ZeroVector;
-	gdc.P = FVector(500.f, 10.f, 10000000.f);
+	//gdc.P = FVector(500.f, 10.f, 0.f);
+	//gdc.I = FVector::ZeroVector;
+	//gdc.D = FVector(10.0f, 0.f, 0.f);
+	gdc.P = FVector(300.f, 7.f, 0.f);
 	gdc.I = FVector::ZeroVector;
-	gdc.D = FVector(10.0f, 0.f, 0.25f);
+	gdc.D = FVector(2.f, 0.f, 0.f);
 	gdc.integral = FVector::ZeroVector;
 
 	wtc.target = 0.0f;

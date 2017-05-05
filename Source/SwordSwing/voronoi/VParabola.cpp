@@ -17,6 +17,7 @@ VParabola::VParabola(VSite* _s, VParabola* _parent)
 	is_leaf = true;
 	parent = _parent;
 	e = nullptr;
+	c_e = nullptr;
 }
 
 VParabola::VParabola(VHalfEdge* _e, VParabola* _parent)
@@ -25,10 +26,29 @@ VParabola::VParabola(VHalfEdge* _e, VParabola* _parent)
 	is_leaf = false;
 	parent = _parent;
 	e = _e;
+	c_e = nullptr;
+}
+
+VParabola::VParabola(VSite* _s, VHalfEdge* _e, VParabola* _parent)
+{
+	s = _s;
+	is_leaf = false;
+	parent = _parent;
+	e = _e;
+	c_e = nullptr;
 }
 
 VParabola::~VParabola()
 {
+}
+
+void  VParabola::setLeft(VParabola*  _left)
+{
+	left_child = _left; _left->parent = this;
+}
+void  VParabola::setRight(VParabola*  _right)
+{
+	right_child = _right; _right->parent = this;
 }
 
 float VParabola::getYAt(float x, float directrix_y)
@@ -114,4 +134,28 @@ VParabola* VParabola::getClosestRightLeave()
 	}
 
 	return par_it;
+}
+
+VParabola* VParabola::getClosestLeftParent()
+{
+	VParabola * par = this->parent;
+	VParabola * pLast = this;
+	while (par->left_child == pLast)
+	{
+		if (!par->parent) return nullptr;
+		pLast = par;
+		par = par->parent;
+	}
+	return par;
+}
+VParabola* VParabola::getClosestRightParent()
+{
+	VParabola * par = this->parent;
+	VParabola * pLast = this;
+	while (par->right_child == pLast)
+	{
+		if (!par->parent) return nullptr;
+		pLast = par; par = par->parent;
+	}
+	return par;
 }

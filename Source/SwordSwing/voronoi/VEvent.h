@@ -12,7 +12,7 @@ class SWORDSWING_API VEvent
 public:
 	VEvent();
 	VEvent(VSite* _s);
-	VEvent(VSite* _r, VSite* _m, VSite* _l, FVector2D _ccm);
+	VEvent(FVector2D _ce_point, VParabola* _par);
 	~VEvent();
 
 	bool operator <(const VEvent& rhs)
@@ -27,12 +27,12 @@ public:
 	
 	FVector2D pos;
 
-	bool point_event;
+	bool site_event;
+	//only used if this is a site event
 	VSite* s;
 
-	VSite* sr;
-	VSite* sm;
-	VSite* sl;
+	//only used if this is a circle event
+	VParabola* par;
 
 	struct CompareEvent : public std::binary_function<VEvent*, VEvent*, bool>
 	{

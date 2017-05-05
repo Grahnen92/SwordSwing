@@ -68,8 +68,107 @@ void AMeshGenerator::BeginPlay()
 	tmp_voro_sites.Add(FVector2D(50.f, 95.f));
 	tmp_voro_sites.Add(FVector2D(5.f, 55.f));
 	tmp_voro_sites.Add(FVector2D(95.f, 50.f));
+	tmp_voro_sites.Add(FVector2D(50.f, 30.f));
+	//tmp_voro_sites.Add(FVector2D(60.f, 30.f));
 	v.setDims(100.f, 100.f);
 	v.CalculateDiagram(&tmp_voro_sites);
+
+	{
+		DrawDebugLine(
+			GetWorld(),
+			FVector(0.f, 0.f, 300.f),
+			FVector(0.f, v.getDims().Y, 300.f), 					//size
+			FColor(255, 255, 255),  //pink
+			true,  				//persistent (never goes away)
+			0.0, 					//point leaves a trail on moving object
+			10,
+			1.f
+		);
+
+		DrawDebugLine(
+			GetWorld(),
+			FVector(0.f, v.getDims().Y, 300.f),
+			FVector(v.getDims().X, v.getDims().Y, 300.f), 					//size
+			FColor(255, 255, 255),  //pink
+			true,  				//persistent (never goes away)
+			0.0, 					//point leaves a trail on moving object
+			10,
+			1.f
+		);
+
+		DrawDebugLine(
+			GetWorld(),
+			FVector(v.getDims().X, v.getDims().Y, 300.f),
+			FVector(v.getDims().X, 0.f, 300.f), 					//size
+			FColor(255, 255, 255),  //pink
+			true,  				//persistent (never goes away)
+			0.0, 					//point leaves a trail on moving object
+			10,
+			1.f
+		);
+
+		DrawDebugLine(
+			GetWorld(),
+			FVector(v.getDims().X, 0.f, 300.f),
+			FVector(0.f, 0.f, 300.f), 					//size
+			FColor(255, 255, 255),  //pink
+			true,  				//persistent (never goes away)
+			0.0, 					//point leaves a trail on moving object
+			10,
+			1.f
+		);
+	}
+
+	std::vector<VSite>* v_sites = v.getSites();
+	int counter = 0;
+	for (const auto &v_site : *v_sites)
+	{
+		FVector site3D = FVector(v_site.pos.X, v_site.pos.Y, 300.f);
+		DrawDebugPoint(
+			GetWorld(),
+			site3D,
+			10,  					//size
+			FColor(counter*50, 0, (v_sites->size() -counter)*50),  //pink
+			true,  				//persistent (never goes away)
+			0.0 					//point leaves a trail on moving object
+		);
+		if (counter == 2)
+		{
+			for (const auto &edge : v_site.edges)
+			{
+				FVector start3D = FVector(edge->start.X, edge->start.Y, 300.f);
+				FVector end3D = FVector(edge->end.X, edge->end.Y, 300.f);
+				FVector dir3D = FVector(edge->direction.X, edge->direction.Y, 0.f)*100.f;
+				FVector right3D = FVector(edge->right->pos, 300.f) - start3D;
+				DrawDebugLine(
+					GetWorld(),
+					start3D,
+					start3D + dir3D, 					//size
+					FColor(counter * 50, 0, (v_sites->size() - counter) * 50),  //pink
+					true,  				//persistent (never goes away)
+					0.0, 					//point leaves a trail on moving object
+					10,
+					1.f
+				);
+
+				DrawDebugLine(
+					GetWorld(),
+					start3D,
+					start3D + right3D, 					//size
+					FColor(255, 255, 255),  //pink
+					true,  				//persistent (never goes away)
+					0.0, 					//point leaves a trail on moving object
+					10,
+					1.f
+				);
+			}
+		}
+		
+		counter++;
+	}
+
+	ScalarField<float> voronoi_sf(32, v.getDims());
+	voronoi_sf.voronoiSignedDist(&v, -v.getDims()/2.0f);
 
 	//Create signed distance function and level set from a model ===============================================================================
 	FStaticMeshSourceModel* sourceM = &baseModel->GetStaticMesh()->SourceModels[0];

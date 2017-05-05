@@ -20,7 +20,7 @@ public:
 	// Sets default values for this pawn's properties
 	AJointCharacterTest();
 
-	bool isAlive();
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -30,6 +30,7 @@ protected:
 
 	bool can_move = true;
 	bool can_swing = true;
+
 
 
 	//camera ------------------------------------------------------------------------
@@ -54,23 +55,32 @@ protected:
 	void aquireTarget();
 
 	//weapon ------------------------------------------------------------------------
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UPROPERTY(Category = "Arm", VisibleAnywhere)
 	USphereComponent* grip_axis;
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UPROPERTY(Category = "Arm", VisibleAnywhere)
 	UStaticMeshComponent* grip_axis_vis;
 	FBodyInstance* grip_axis_bi;
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UPROPERTY(Category = "Arm", VisibleAnywhere)
 	UPhysicsConstraintComponent* grip_axis_attachment;
 
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UPROPERTY(Category = "Grip", VisibleAnywhere)
 	USphereComponent* grip;
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UPROPERTY(Category = "Grip", VisibleAnywhere)
 	UStaticMeshComponent* grip_vis;
 	FBodyInstance* grip_bi;
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UPROPERTY(Category = "Grip", VisibleAnywhere)
 	UPhysicsConstraintComponent* grip_attachment;
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	UPROPERTY(Category = "Grip", VisibleAnywhere)
 	UPhysicsConstraintComponent* wep_attachment;
+
+	UPROPERTY(Category = "Grip", VisibleAnywhere)
+	UDecalComponent* grip_indicator_decal;
+
+	UPROPERTY(Category = "Grip", VisibleAnywhere)
+	UParticleSystemComponent* grip_indicator_beam;
+
+	UPROPERTY(Category = "Grip", VisibleAnywhere)
+	UAudioComponent* object_attach_audio;
 
 	FVector offset_wep_inertia;
 
@@ -242,7 +252,7 @@ protected:
 	void moveRight(float AxisValue);
 	//cm/s
 	
-	
+	void gripIndicatorCalculations(float DeltaTime);
 	
 	void jump();
 	bool jumping;
@@ -276,8 +286,15 @@ public:
 	
 	void setPlayerSpecificMaterial(UMaterial* mat);
 
+	bool isAlive();
+
+	bool isGuarding();
+
 	void setCanMove(bool new_state);
+
 	void setCanSwing(bool new_state);
+	void disableSwingAbility();
+	void enableSwingAbility();
 
 private:
 
@@ -473,7 +490,7 @@ private:
 	PIDData3D l_toe_position_controller;
 
 	UPROPERTY(EditAnywhere)
-	float target_speed = 300;
+	float target_speed = 400;
 	UPROPERTY(EditAnywhere)
 	float time_to_target_speed = 0.05f;
 	PIDData2D movement_velocity;

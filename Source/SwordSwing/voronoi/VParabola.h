@@ -18,6 +18,7 @@ public:
 	}
 	VParabola(VSite* _s, VParabola* _parent);
 	VParabola(VHalfEdge* _e, VParabola* _parent);
+	VParabola(VSite* _s, VHalfEdge* _e, VParabola* _parent);
 	~VParabola();
 
 	float getYAt(float x, float directrix_y);
@@ -28,16 +29,19 @@ public:
 
 	VParabola* parent;
 	VParabola* left_child;
+	void setLeft(VParabola*  _left);
 	VParabola* right_child;
+	void setRight(VParabola*  _right);
 
 	VSite* s;
-
 	VHalfEdge* e;
+	VEvent* c_e;
 
 	VParabola* getClosestLeftLeave();
 	VParabola* getClosestRightLeave();
-
-
+	
+	VParabola* getClosestLeftParent();
+	VParabola* getClosestRightParent();
 
 private:
 

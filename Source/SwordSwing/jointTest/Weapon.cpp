@@ -27,7 +27,7 @@ void AWeapon::BeginPlay()
 void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if(weapon_swish_audio->bIsActive)
+	if(weapon_swish_audio && weapon_swish_audio->bIsActive)
 		weaponSwishAudioMix();
 
 	//DrawDebugPoint(
@@ -49,14 +49,21 @@ void AWeapon::Tick(float DeltaTime)
 	//);
 }
 
+AJointCharacterTest* AWeapon::getHolder()
+{
+	return holder;
+}
+
 void AWeapon::OnWeaponHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	
 	FVector hit_vel = weapon_head->GetBodyInstance()->GetUnrealWorldVelocity() + FVector::CrossProduct(weapon_head->GetBodyInstance()->GetUnrealWorldAngularVelocity(), Hit.Location - weapon_head->GetBodyInstance()->GetCOMPosition());
 
 	if (holder)
 	{
 		if (hit_vel.Size() > 3500.f)
 		{
+			
 			FLatentActionInfo actionInfo;
 			actionInfo.CallbackTarget = this;
 			holder->GetController()->CastToPlayerController()->PlayDynamicForceFeedback(0.2f, 0.2f, false, true, false, true, EDynamicForceFeedbackAction::Start, actionInfo);
@@ -66,6 +73,7 @@ void AWeapon::OnWeaponHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPri
 
 	if (hit_vel.Size() > 11000.f && NormalImpulse.Size() > 4000.f)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("NormalImpulse.Size() 11 %f"), NormalImpulse.Size());
 		//UE_LOG(LogTemp, Warning, TEXT("hit_vel: %f"), hit_vel.Size());
 		FMath::Min(weapon_wood_impact_audio->VolumeMultiplier = NormalImpulse.Size() / 40000.f, 0.6f);
 		weapon_wood_impact_audio->Deactivate();
@@ -77,6 +85,13 @@ void AWeapon::OnWeaponHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPri
 			holder->GetController()->CastToPlayerController()->ClientPlayForceFeedback(weapon_impact, false, FName("SwordImpact"));
 			//GetController()->CastToPlayerController()->DynamicForceFeedbacks
 		}
+	}
+
+	if (NormalImpulse.Size() > 30000.f && holder)
+	{
+		holder->disableSwingAbility();
+		FTimerHandle unused_handle;
+		GetWorldTimerManager().SetTimer(unused_handle, holder, &AJointCharacterTest::enableSwingAbility, 0.7f, false);
 	}
 }
 
@@ -121,6 +136,8 @@ void AWeapon::initWeapon()
 	weapon_head->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
 	weapon_head->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
 	weapon_head->SetBoxExtent(FVector(10.f, 2.f, 75.f));
+	//weapon_head->SetCapsuleHalfHeight(75.f);
+	//weapon_head->SetCapsuleRadius(10.f);
 	weapon_head->SetSimulatePhysics(false);
 	weapon_head->SetEnableGravity(false);
 	weapon_head->SetPhysicsMaxAngularVelocity(5000.f);

@@ -11,16 +11,14 @@ VEvent::VEvent(VSite* _s)
 {
 	s = _s;
 	pos = _s->pos;
-	point_event = true;
+	site_event = true;
 }
 
-VEvent::VEvent(VSite* _r, VSite* _m, VSite* _l, FVector2D _ccm)
+VEvent::VEvent( FVector2D _ce_point, VParabola* _par)
 {
-	sr = _r;
-	sm = _m;
-	sl = _l;
-	pos = _ccm;
-	point_event = false;
+	par = _par;
+	pos = _ce_point;
+	site_event = false;
 }
 
 VEvent::~VEvent()

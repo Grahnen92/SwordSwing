@@ -6,6 +6,7 @@
 #include "math.h"
 #include <vector>
 #include "ProceduralMeshComponent.h"
+#include "voronoi/Voronoi.h"
 #include "RawMesh.h"
 #include <limits>
 
@@ -269,6 +270,74 @@ public:
 		}
 	}
 
+	void voronoiSignedDist(Voronoi* _diagram, const  FVector& _offset)
+	{
+		float x, y, z;
+		float ox = (dim.X / res.X)*0.5f;
+		float oy = (dim.Y / res.Y)*0.5f;
+		float oz = (dim.Z / res.Z)*0.5f;
+		float resxm1d2 = ((res.X - 1) / 2.f);
+		float resym1d2 = ((res.Y - 1) / 2.f);
+		float reszm1d2 = ((res.Z - 1) / 2.f);
+		float resxm1 = (res.X - 1);
+		float resym1 = (res.Y - 1);
+		float reszm1 = (res.Z - 1);
+		
+		std::vector<VSite>* v_sites = _diagram->getSites();
+
+		VSite* v_site_one = &(*v_sites)[0];
+		const VSite* closest;
+
+		FVector site_dist;
+		float site_dist_min;
+		//float min_dist;
+
+		for (int i = 0; i < res.X; i++)
+		{
+			for (int j = 0; j < res.Y; j++)
+			{
+				for (int k = 0; k < res.Z; k++)
+				{
+					x = ((i - resxm1d2) / resxm1)*dim.X + offset.X;
+					y = ((j - resym1d2) / resym1)*dim.Y + offset.Y;
+					z = ((k - reszm1d2) / reszm1)*dim.Z + offset.Z;
+					closest = v_site_one;
+					site_dist_min = (FVector(v_site_one->pos, 0) - FVector(x, y, z)).Size();
+
+					for (const auto &site : *v_sites)
+					{
+						site_dist = FVector(site.pos, 0) - FVector(x, y, z);
+
+						if (site_dist.Size() < site_dist_min)
+						{
+							closest = &site;
+							site_dist_min = site_dist.Size();
+						}
+					}
+
+					if (closest == v_site_one)
+					{
+
+					}
+					else
+					{
+						for (const auto &edge : v_site_one->edges)
+						{
+							FVector2D p1 = edge->start;
+							FVector2D p2 = edge->start + edge->direction;
+
+							float tmp_dist = FMath::Abs((p2.Y - p1.Y)*x - (p2.X - p1.X)*y + p2.X*p1.Y - p2.Y*p1.X) 
+											 / FMath::Sqrt(FMath::Pow(p2.Y - p1.Y, 2) + FMath::Pow(p2.X - p1.X, 2));
+
+
+						}
+					}
+					
+
+				}
+			}
+		}
+	}
 
 	void meshToLeveSet(FRawMesh* _rm, FVector& _offset)
 	{
