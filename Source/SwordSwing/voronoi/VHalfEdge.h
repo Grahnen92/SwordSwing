@@ -10,11 +10,17 @@ class SWORDSWING_API VHalfEdge
 {
 public:
 	VHalfEdge();
-	VHalfEdge(FVector2D _start);
-	VHalfEdge(FVector2D _start, VSite* _left, VSite* _right);
-	VHalfEdge(FVector2D _start, VHalfEdge* _twin);
+	VHalfEdge(FVector2D _tmp_start);
+	VHalfEdge(FVector2D _tmp_start, VSite* _left, VSite* _right);
+	VHalfEdge(VSite* _left, VSite* _right);
+	VHalfEdge(FVector2D _tmp_start, VHalfEdge* _twin);
 	~VHalfEdge();
 
+	void setStartOrEnd(FVector2D _p);
+
+	FVector2D tmp_start;
+
+	bool start_found = false;
 	FVector2D start;
 	FVector2D end;
 

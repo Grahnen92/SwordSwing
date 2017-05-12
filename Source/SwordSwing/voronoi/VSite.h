@@ -18,6 +18,10 @@ public:
 	FVector2D pos;
 
 	std::vector<VHalfEdge*> edges;
+	std::vector<VSite*> neighbours;
+
+	bool isNeighbour(VSite* _pn);
+	void addNeighbour(VSite* _pn);
 private:
 	
 	

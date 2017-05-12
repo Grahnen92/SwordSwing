@@ -1,21 +1,22 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #pragma once
 
+#ifndef SCALARFIELD_H
+#define SCALARFIELD_H
+
 #include "SwordSwing.h"
 #include <memory>
 #include "math.h"
 #include <vector>
 #include "ProceduralMeshComponent.h"
+
 #include "voronoi/Voronoi.h"
+#include "C:/Program Files (x86)/Epic Games/projects/SwordSwing/ThirdParty/voro++/includes/voro++.hh"
+
+#include "utilities/OMath.h"
 #include "RawMesh.h"
 #include <limits>
-
-template <typename scalar_value>
-using scalar_u_ptr_3d = std::unique_ptr < std::unique_ptr<std::unique_ptr<scalar_value[]>[]>[]>;
-template <typename scalar_value>
-using scalar_u_ptr_2d = std::unique_ptr < std::unique_ptr<scalar_value[]>[]>;
-template <typename scalar_value>
-using scalar_u_ptr_1d = std::unique_ptr < scalar_value[]>;
+#include <iostream>
 
 /**
  * 
@@ -29,10 +30,9 @@ class SWORDSWING_API ScalarField
 public:
 	ScalarField()
 	{
-		res = FVector(10.f, 10.f, 10.f);
-		dim = FVector(1.f, 1.f, 1.f);
+		res = FVector(0.f, 0.f, 0.f);
+		dim = FVector(0.f, 0.f, 0.f);
 		offset = FVector(0.f, 0.f, 0.f);
-		allocateData();
 	}
 	ScalarField(int _cubed_res)
 	{
@@ -78,6 +78,75 @@ public:
 	{
 		deAllocateData();
 	}
+
+	FVector getRes()
+	{
+		return res;
+	}
+	FVector* getResPtr()
+	{
+		return &res;
+	}
+	void setRes(FVector _res)
+	{
+		res = _res;
+		allocateData();
+	}
+	FVector getDims()
+	{
+		return dim;
+	}
+	FVector* getDimsPtr()
+	{
+		return &dim;
+	}
+	void setDims(FVector _dims)
+	{
+		dim = _dims;
+		//allocateData();
+	}
+	scalar_value getIsoValue()
+	{
+		return iso_value;
+	}
+	void setIsoValue(scalar_value _iv)
+	{
+		iso_value = _iv;
+	}
+
+	void setLargestValue(scalar_value _v)
+	{
+		largest_value = _v;
+	}
+
+	scalar_value getLargestValue()
+	{
+		return largest_value;
+	}
+
+	scalar_value* getLargestValuePtr()
+	{
+		return &largest_value;
+	}
+
+	scalar_value*** getDataPtr()
+	{
+		return data;
+	}
+	scalar_value** operator[](int i)
+	{
+		return data[i];
+	}
+	scalar_value getValue(int _x, int _y, int _z)
+	{
+		return data[_x][_y][_z];
+	}
+
+	unsigned char*** getSectionPtr()
+	{
+		return section;
+	}
+
 
 	void setAllValues(scalar_value _v)
 	{
@@ -270,7 +339,7 @@ public:
 		}
 	}
 
-	void voronoiSignedDist(Voronoi* _diagram, const  FVector& _offset)
+	void voronoiCellSignedDist(voro::voronoicell_neighbor* _v_cell, voro::container* _vcon, const int& _cell_id, const std::vector<FVector> &_v_particles, FVector &_vd_dims,  const  FVector& _offset = FVector(0.f, 0.f, 0.f))
 	{
 		float x, y, z;
 		float ox = (dim.X / res.X)*0.5f;
@@ -283,14 +352,27 @@ public:
 		float resym1 = (res.Y - 1);
 		float reszm1 = (res.Z - 1);
 		
-		std::vector<VSite>* v_sites = _diagram->getSites();
+		//Verts
+		std::vector<double> cell_verts;
+		//_v_cell->vertices(_offset.X, _offset.Y, _offset.Z, cell_verts);
+		_v_cell->vertices(cell_verts);
+		//edges
+		std::vector<int> cell_edges;
+		_v_cell->edges(cell_edges);
+		//faces
+		std::vector<int> cell_faces;
+		_v_cell->face_vertices(cell_faces);
+		std::vector<int> cell_face_orders;
+		_v_cell->face_orders(cell_face_orders);
+		std::vector<double> cell_face_normals;
+		_v_cell->normals(cell_face_normals);
 
-		VSite* v_site_one = &(*v_sites)[0];
-		const VSite* closest;
 
-		FVector site_dist;
-		float site_dist_min;
-		//float min_dist;
+		offset = _offset;
+		//int tmp_cell_id;
+		FVector curr_p;
+		
+		largest_value = 0.f;
 
 		for (int i = 0; i < res.X; i++)
 		{
@@ -298,41 +380,94 @@ public:
 			{
 				for (int k = 0; k < res.Z; k++)
 				{
-					x = ((i - resxm1d2) / resxm1)*dim.X + offset.X;
-					y = ((j - resym1d2) / resym1)*dim.Y + offset.Y;
-					z = ((k - reszm1d2) / reszm1)*dim.Z + offset.Z;
-					closest = v_site_one;
-					site_dist_min = (FVector(v_site_one->pos, 0) - FVector(x, y, z)).Size();
+					x = ((i - resxm1d2) / resxm1)*dim.X;// +offset.X;
+					y = ((j - resym1d2) / resym1)*dim.Y;// + offset.Y;
+					z = ((k - reszm1d2) / reszm1)*dim.Z;// +offset.Z;
+					curr_p = FVector(x, y, z);
 
-					for (const auto &site : *v_sites)
-					{
-						site_dist = FVector(site.pos, 0) - FVector(x, y, z);
+					data[i][j][k] = OMath::distToVoronoiCell(curr_p, cell_verts, cell_edges, cell_faces, cell_face_orders, cell_face_normals);
+					if (FMath::Abs(data[i][j][k]) > largest_value)
+						largest_value = data[i][j][k];
 
-						if (site_dist.Size() < site_dist_min)
-						{
-							closest = &site;
-							site_dist_min = site_dist.Size();
-						}
-					}
-
-					if (closest == v_site_one)
-					{
-
-					}
-					else
-					{
-						for (const auto &edge : v_site_one->edges)
-						{
-							FVector2D p1 = edge->start;
-							FVector2D p2 = edge->start + edge->direction;
-
-							float tmp_dist = FMath::Abs((p2.Y - p1.Y)*x - (p2.X - p1.X)*y + p2.X*p1.Y - p2.Y*p1.X) 
-											 / FMath::Sqrt(FMath::Pow(p2.Y - p1.Y, 2) + FMath::Pow(p2.X - p1.X, 2));
-
-
-						}
-					}
+					curr_p = curr_p + offset;
+					/*double rx, ry, rz;
+					if (!_vcon->find_voronoi_cell(curr_p.X, curr_p.Y, curr_p.Z, rx, ry, rz, tmp_cell_id))
+						data[i][j][k] = -data[i][j][k];
+					else if (tmp_cell_id != _cell_id)
+						data[i][j][k] = -data[i][j][k];*/
+					if(!OMath::pointIsInsideCube(curr_p, FVector::ZeroVector, _vd_dims))
+						data[i][j][k] = -data[i][j][k];
+					else if (OMath::closestPoint(curr_p, _v_particles) != _cell_id)
+						data[i][j][k] = -data[i][j][k];
 					
+					//UE_LOG(LogTemp, Warning, TEXT("aweawe %d"), tmp_cell_id);
+
+				}
+			}
+		}
+	}
+
+	void voronoiDiagramSignedDist(std::vector<voro::voronoicell_neighbor> *_v_cells, const std::vector<FVector> &_v_particles, FVector &_vd_dims, const  FVector& _offset = FVector(0.f, 0.f, 0.f))
+	{
+		float x, y, z;
+		float ox = (dim.X / res.X)*0.5f;
+		float oy = (dim.Y / res.Y)*0.5f;
+		float oz = (dim.Z / res.Z)*0.5f;
+		float resxm1d2 = ((res.X - 1) / 2.f);
+		float resym1d2 = ((res.Y - 1) / 2.f);
+		float reszm1d2 = ((res.Z - 1) / 2.f);
+		float resxm1 = (res.X - 1);
+		float resym1 = (res.Y - 1);
+		float reszm1 = (res.Z - 1);
+
+		allocateSectionData();
+
+		//Verts
+		std::vector<std::vector<double>> cell_verts(_v_cells->size());
+		//edges
+		std::vector<std::vector<int>> cell_edges(_v_cells->size());
+		//faces
+		std::vector<std::vector<int>> cell_faces(_v_cells->size());
+		std::vector<std::vector<int>> cell_face_orders(_v_cells->size());
+		std::vector<std::vector<double>> cell_face_normals(_v_cells->size());
+		
+
+		for (int i = 0; i < _v_cells->size(); i++)
+		{
+			(*_v_cells)[i].vertices(_v_particles[i].X, _v_particles[i].Y, _v_particles[i].Z, cell_verts[i]);
+			(*_v_cells)[i].edges(cell_edges[i]);
+			(*_v_cells)[i].face_vertices(cell_faces[i]);
+			(*_v_cells)[i].face_orders(cell_face_orders[i]);
+			(*_v_cells)[i].normals(cell_face_normals[i]);
+		}
+		
+
+
+		offset = _offset;
+		//int tmp_cell_id;
+		FVector curr_p;
+		int cell_id;
+
+		largest_value = 0.f;
+
+		for (int i = 0; i < res.X; i++)
+		{
+			for (int j = 0; j < res.Y; j++)
+			{
+				for (int k = 0; k < res.Z; k++)
+				{
+					x = ((i - resxm1d2) / resxm1)*dim.X;// +offset.X;
+					y = ((j - resym1d2) / resym1)*dim.Y;// + offset.Y;
+					z = ((k - reszm1d2) / reszm1)*dim.Z;// +offset.Z;
+
+					curr_p = FVector(x, y, z);
+					cell_id = OMath::closestPoint(curr_p, _v_particles);
+					section[i][j][k] = cell_id;
+					
+					data[i][j][k] = OMath::distToVoronoiCell(curr_p, cell_verts[cell_id], cell_edges[cell_id], cell_faces[cell_id], cell_face_orders[cell_id], cell_face_normals[cell_id]);
+					if (FMath::Abs(data[i][j][k]) > largest_value)
+						largest_value = data[i][j][k];
+					//UE_LOG(LogTemp, Warning, TEXT("aweawe %d"), tmp_cell_id);
 
 				}
 			}
@@ -400,12 +535,12 @@ public:
 	//_rel_transform is the transform that puts the origin of sf2 at a certain point relative to the origin of sf1
 	static void mergeLevelSets(ScalarField* _sf1, ScalarField* _sf2, FMatrix _rel_rotation, FVector rel_position, FVector frag_offset, ScalarField* _sf_out)
 	{
-		_sf_out->deAllocateData();
+		
 		_sf_out->res = _sf2->res;
 		_sf_out->dim = _sf2->dim;
 		_sf_out->offset = _sf2->offset;
 		_sf_out->iso_value = _sf2->iso_value;
-		_sf_out->allocateData();
+		_sf_out->reAllocateData();
 
 		FVector xyz1;
 		//int i1, j1, k1;
@@ -467,15 +602,7 @@ public:
 		}
 	}
 
-	scalar_value*** getData()
-	{
-		return data;
-	}
-	scalar_value getValue(int _x, int _y, int _z)
-	{
-		return data[_x][_y][_z];
-	}
-	
+
 	scalar_value getTLIValue(FVector _pos)
 	{
 		FVector data_pos = transform2BoundedDataPos(_pos);
@@ -504,46 +631,133 @@ public:
 		return v;
 	}
 
-	FVector getRes()
-	{
-		return res;
-	}
-	FVector getDim()
-	{
-		return dim;
-	}
-	scalar_value getIsoValue()
-	{
-		return iso_value;
-	}
-	void setIsoValue(scalar_value _iv)
-	{
-		iso_value = _iv;
+	
+
+	void drawBounds(UWorld * _world, const FVector& _offset = FVector(0.f, 0.f, 0.f)) {
+
+		FVector v1 = FVector(dim.X, dim.Y, dim.Z)*0.5f + _offset;
+		FVector v2 = FVector(-dim.X, dim.Y, dim.Z)*0.5f + _offset;
+		FVector v3 = FVector(-dim.X, -dim.Y, dim.Z)*0.5f + _offset;
+		FVector v4 = FVector(dim.X, -dim.Y, dim.Z)*0.5f + _offset;
+
+		FVector v5 = FVector(dim.X, dim.Y, -dim.Z)*0.5f + _offset;
+		FVector v6 = FVector(-dim.X, dim.Y, -dim.Z)*0.5f + _offset;
+		FVector v7 = FVector(-dim.X, -dim.Y, -dim.Z)*0.5f + _offset;
+		FVector v8 = FVector(dim.X, -dim.Y, -dim.Z)*0.5f + _offset;
+
+		DrawDebugLine(_world, v1, v2, FColor(255, 255, 255), true,0.0,10,1.f);
+		DrawDebugLine(_world, v2, v3, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		DrawDebugLine(_world, v3, v4, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		DrawDebugLine(_world, v4, v1, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+
+		DrawDebugLine(_world, v1, v5, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		DrawDebugLine(_world, v2, v6, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		DrawDebugLine(_world, v3, v7, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		DrawDebugLine(_world, v4, v8, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+
+		DrawDebugLine(_world, v5, v6, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		DrawDebugLine(_world, v6, v7, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		DrawDebugLine(_world, v7, v8, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		DrawDebugLine(_world, v8, v5, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+
 	}
 
-	void deAllocateData() {
-		
+	void drawScalars(UWorld * _world, const FVector& _offset = FVector(0.f, 0.f, 0.f)) {
+		float x, y, z;
+		float ox = (dim.X / res.X)*0.5f;
+		float oy = (dim.Y / res.Y)*0.5f;
+		float oz = (dim.Z / res.Z)*0.5f;
+		float resxm1d2 = ((res.X - 1) / 2.f);
+		float resym1d2 = ((res.Y - 1) / 2.f);
+		float reszm1d2 = ((res.Z - 1) / 2.f);
+		float resxm1 = (res.X - 1);
+		float resym1 = (res.Y - 1);
+		float reszm1 = (res.Z - 1);
 		for (int i = 0; i < res.X; i++)
 		{
 			for (int j = 0; j < res.Y; j++)
 			{
-				delete[] data[i][j];
+				for (int k = 0; k < res.Z; k++) {
+					x = ((i - resxm1d2) / resxm1)*dim.X + _offset.X;
+					y = ((j - resym1d2) / resym1)*dim.Y + _offset.Y;
+					z = ((k - reszm1d2) / reszm1)*dim.Z + _offset.Z;
+					FColor col;
+					
+
+					float scaled_val = FMath::Abs(data[i][j][k]) / largest_value;
+					/*col = FColor(255 * scaled_val, 0, 255 * (1 - scaled_val));*/
+					if(data[i][j][k]> 0.f)
+						col = FColor(255* scaled_val, 0, 0);
+					else
+						col = FColor(0, 0, 255*scaled_val);
+
+
+					DrawDebugPoint(
+						_world,
+						FVector(x,y,z),
+						2,//size
+						col,
+						true, //persistent (never goes away)
+						0.0 //point leaves a trail on moving object
+					);
+				}
 			}
-			delete[] data[i];
 		}
-		delete[] data;
+
 	}
 
-private:
-	//scalar_u_ptr_3d<scalar_value> data;
-	scalar_value*** data;
-	FVector res;
-	FVector dim;
-	FVector offset;
+	void drawScalarSections(UWorld * _world, const FVector& _offset = FVector(0.f, 0.f, 0.f)) {
+		float x, y, z;
+		float ox = (dim.X / res.X)*0.5f;
+		float oy = (dim.Y / res.Y)*0.5f;
+		float oz = (dim.Z / res.Z)*0.5f;
+		float resxm1d2 = ((res.X - 1) / 2.f);
+		float resym1d2 = ((res.Y - 1) / 2.f);
+		float reszm1d2 = ((res.Z - 1) / 2.f);
+		float resxm1 = (res.X - 1);
+		float resym1 = (res.Y - 1);
+		float reszm1 = (res.Z - 1);
+		for (int i = 0; i < res.X; i++)
+		{
+			for (int j = 0; j < res.Y; j++)
+			{
+				for (int k = 0; k < res.Z; k++) {
+					x = ((i - resxm1d2) / resxm1)*dim.X + _offset.X;
+					y = ((j - resym1d2) / resym1)*dim.Y + _offset.Y;
+					z = ((k - reszm1d2) / reszm1)*dim.Z + _offset.Z;
+					FColor col;
 
-	scalar_value iso_value;
 
+					float scaled_val = FMath::Abs(data[i][j][k]) / largest_value;
+					/*col = FColor(255 * scaled_val, 0, 255 * (1 - scaled_val));*/
+					if (section[i][j][k] == (char)0)
+						col = FColor(255 * scaled_val, 0, 0);
+					else if(section[i][j][k] == (char)1)
+						col = FColor(0, 0, 255 * scaled_val);
+					else if(section[i][j][k] == (char)2)
+						col = FColor(0, 255 * scaled_val, 0);
+
+
+					DrawDebugPoint(
+						_world,
+						FVector(x, y, z),
+						2,//size
+						col,
+						true, //persistent (never goes away)
+						0.0 //point leaves a trail on moving object
+					);
+				}
+			}
+		}
+
+	}
 	void allocateData() {
+		if (data)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("data already allocated, returning."));
+			std::cout << "data already allocated, returning.";
+			return;
+		}
 		//data = scalar_u_ptr_3d<scalar_value>(new scalar_u_ptr_2d<scalar_value>[res.X]);
 		data = new scalar_value**[res.X];
 		for (int i = 0; i < res.X; i++)
@@ -557,6 +771,93 @@ private:
 			}
 		}
 	}
+
+	void deAllocateData() {
+
+		if (!data)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("data already deallocated, returning."));
+			std::cout << "data already deallocated, returning.";
+			return;
+		}
+
+		for (int i = 0; i < res.X; i++)
+		{
+			for (int j = 0; j < res.Y; j++)
+			{
+				delete[] data[i][j];
+			}
+			delete[] data[i];
+		}
+		delete[] data;
+
+		data = nullptr;
+	}
+
+	void reAllocateData() {
+		deAllocateData();
+		allocateData();
+	}
+
+	void allocateSectionData() {
+		if (section)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("sectiondata already allocated, returning."));
+			std::cout << "sectiondata already allocated, returning.";
+			return;
+		}
+		//data = scalar_u_ptr_3d<scalar_value>(new scalar_u_ptr_2d<scalar_value>[res.X]);
+		section = new unsigned char**[res.X];
+		for (int i = 0; i < res.X; i++)
+		{
+			//data[i] = scalar_u_ptr_2d<scalar_value>(new scalar_u_ptr_1d<scalar_value>[res.Y]);
+			section[i] = new unsigned char*[res.Y];
+			for (int j = 0; j < res.Y; j++)
+			{
+				//data[i][j] = scalar_u_ptr_1d<scalar_value>(new scalar_value[res.Z]);
+				section[i][j] = new unsigned char[res.Z];
+			}
+		}
+	}
+
+	void deAllocateSectionData() {
+
+		if (!section)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("sectiondata already deallocated, returning."));
+			std::cout << "sectiondata already deallocated, returning.";
+			return;
+		}
+
+		for (int i = 0; i < res.X; i++)
+		{
+			for (int j = 0; j < res.Y; j++)
+			{
+				delete[] section[i][j];
+			}
+			delete[] section[i];
+		}
+		delete[] section;
+
+		data = nullptr;
+	}
+
+	void reAllocateSectionData() {
+		deAllocateSectionData();
+		allocateSectionData();
+	}
+
+private:
+	//scalar_u_ptr_3d<scalar_value> data;
+	scalar_value*** data = nullptr;
+	unsigned char*** section = nullptr;
+	FVector res;
+	FVector dim;
+	FVector offset;
+
+	scalar_value iso_value;
+	scalar_value largest_value;
+
 
 	float distanceToMesh(FRawMesh* _rm, FVector _p) 
 	{
@@ -647,3 +948,4 @@ private:
 //
 //	}
 //}
+#endif

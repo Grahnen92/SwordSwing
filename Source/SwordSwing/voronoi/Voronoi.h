@@ -22,6 +22,7 @@ public:
 
 	void CalculateDiagram(TArray<FVector2D>* _sites);
 
+	//all coordinates within the diagram go from 0-x and 0-y
 	void setDims(float x, float y) 
 	{
 		dims.X = x; dims.Y = y;
@@ -46,6 +47,9 @@ private:
 	bool getEdgeIntersection(VHalfEdge* _he1, VHalfEdge* _he2, FVector2D& _out);
 
 	void handleCircleEvent(VEvent* _circle_event);
+
+	void finishEdges(VSite* _site);
+	void withinDims(FVector2D& _point);
 
 	std::vector<VSite> sites;
 	std::vector<FVector2D> vertices;

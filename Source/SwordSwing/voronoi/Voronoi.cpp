@@ -54,6 +54,11 @@ void Voronoi::CalculateDiagram(TArray<FVector2D>* _sites)
 		delete(e);
 		
 	}
+
+	for (auto &site : sites)
+	{
+		finishEdges(&site);
+	}
 }
 
 void Voronoi::addParabola(VSite * _s)
@@ -61,6 +66,7 @@ void Voronoi::addParabola(VSite * _s)
 	VParabola* par_to_split;
 
 	par_to_split = findParabolaAtX(_s->pos.X);
+	par_to_split->is_leaf = false;
 
 	if (par_to_split->c_e)
 	{
@@ -88,7 +94,6 @@ void Voronoi::addParabola(VSite * _s)
 		//this is an edgeNode that holds the created edge and is parent to the new parabola and the right split of parent parabola
 	VParabola* edge_node = new VParabola(left_edge, par_to_split);
 	par_to_split->right_child = edge_node;
-	par_to_split->is_leaf = false;
 
 	//create and assign children of the edgeNode
 	VParabola* new_par = new VParabola(_s, edge_node);
@@ -133,8 +138,15 @@ void Voronoi::checkCircle(VParabola* _p1)
 	VParabola * right_leave = right_parent->getClosestRightLeave();
 	if (!left_leave || !right_leave || left_leave->s == right_leave->s)
 	{
-		std::cout << "either no left or right parent, wont disappear" << std::endl;
-		UE_LOG(LogTemp, Warning, TEXT("either no left or right parent, wont disappear"));
+		std::cout << "did not find left or right parabola or left and right were the same" << std::endl;
+		UE_LOG(LogTemp, Warning, TEXT("did not find left or right parabola or left and right were the same"));
+		return;
+	}
+
+	if (_p1->s->isNeighbour(left_leave->s) && _p1->s->isNeighbour(right_leave->s) && left_leave->s->isNeighbour(right_leave->s))
+	{
+		std::cout << "circle event has already been handled" << std::endl;
+		UE_LOG(LogTemp, Warning, TEXT("circle event has already been handled"));
 		return;
 	}
 
@@ -144,36 +156,46 @@ void Voronoi::checkCircle(VParabola* _p1)
 
 	FVector2D radial_vec = right_leave->s->pos - i_point;
 	float event_y = i_point.Y - radial_vec.Size();
-	if (event_y >= directrix_y)
+	if (event_y >= directrix_y)// || FMath::IsNearlyEqual(event_y, directrix_y, 0.001f))
 	{
 		std::cout << "circle is completely above the directrix and is therefore not a legit event" << std::endl;
 		UE_LOG(LogTemp, Warning, TEXT("circle is completely above the directrix and is therefore not a legit event"));
 		return;
 	}
-	if(event_y < 0.f)
-	{
-		std::cout << "event is outside of voronoi dims and will not be considered" << std::endl;
-		UE_LOG(LogTemp, Warning, TEXT("event is outside of voronoi dims and will not be considered"));
-		return;
-	}
+	//else if (_p1->s->isNeighbour(left_leave->s) && _p1->s->isNeighbour(right_leave->s) && left_leave->s->isNeighbour(right_leave->s))
+	//{
+	//	std::cout << "circle event has already been handled" << std::endl;
+	//	UE_LOG(LogTemp, Warning, TEXT("circle event has already been handled"));
+	//	return;
+	//}
 
 	VEvent* new_circle_event = new VEvent(FVector2D(i_point.X, event_y), _p1);
 	vertices.push_back(new_circle_event->pos);
 	_p1->c_e = new_circle_event;
 	event_queue.push(new_circle_event);
+
+
+	_p1->s->addNeighbour(left_leave->s);
+	_p1->s->addNeighbour(right_leave->s);
+
+	left_leave->s->addNeighbour(_p1->s);
+	left_leave->s->addNeighbour(right_leave->s);
+
+	right_leave->s->addNeighbour(left_leave->s);
+	right_leave->s->addNeighbour(_p1->s);
 }
 
 bool Voronoi::getEdgeIntersection(VHalfEdge* _he1, VHalfEdge* _he2, FVector2D& _out)
 {
-	FVector2D l1_end = (_he1->start + _he1->direction);
-	float x1 = _he1->start.X;
-	float y1 = _he1->start.Y;
+	FVector2D l1_end = (_he1->tmp_start + _he1->direction);
+	float x1 = _he1->tmp_start.X;
+	float y1 = _he1->tmp_start.Y;
 	float x2 = l1_end.X;
 	float y2 = l1_end.Y;
 
-	FVector2D l2_end = (_he2->start + _he2->direction);
-	float x3 = _he2->start.X;
-	float y3 = _he2->start.Y;
+	FVector2D l2_end = (_he2->tmp_start + _he2->direction);
+	float x3 = _he2->tmp_start.X;
+	float y3 = _he2->tmp_start.Y;
 	float x4 = l2_end.X;
 	float y4 = l2_end.Y;
 
@@ -198,6 +220,13 @@ bool Voronoi::getEdgeIntersection(VHalfEdge* _he1, VHalfEdge* _he2, FVector2D& _
 		return false;
 	}
 
+	/*FVector2D check = (_out - _he1->start) / _he1->direction;
+	if (check.X < 0.f || check.Y < 0.f)
+		return false;
+
+	check = (_out - _he2->start) / _he2->direction;
+	if (check.X < 0.f || check.Y < 0.f)
+		return false;*/
 
 	return true;
 }
@@ -232,10 +261,9 @@ void Voronoi::handleCircleEvent(VEvent* _circle_event)
 	FVector2D end_point = FVector2D(_circle_event->pos.X, par_to_remove->getYAt(_circle_event->pos.X, directrix_y));
 	vertices.push_back(end_point);
 
-	left_parent->e->end = end_point;
-	left_parent->e->twin->end = end_point;
-	right_parent->e->end = end_point;
-	right_parent->e->twin->end = end_point;
+	//determine if this is a start or endpoint of the edge and then assign the point
+	left_parent->e->setStartOrEnd(end_point);
+	right_parent->e->setStartOrEnd(end_point);
 	
 	//find the highest parent and assign the new edge to it
 	VParabola * highest = nullptr;
@@ -263,24 +291,11 @@ void Voronoi::handleCircleEvent(VEvent* _circle_event)
 	
 	highest->e->twin = left_leave->s->edges.back();
 	left_leave->s->edges.back()->twin = highest->e;
+	highest->e->setStartOrEnd(end_point);
 	//edges.push_back(highest->e);
 
 	//reassing parabolas to correct order
 	VParabola* removed_parent = par_to_remove->parent->parent;
-	//if (par_to_remove->parent->right_child == par_to_remove)
-	//{
-	//	if (removed_parent->right_child == par_to_remove->parent)
-	//		removed_parent->setRight(par_to_remove->parent->left_child);
-	//	if (removed_parent->left_child == par_to_remove->parent)
-	//		removed_parent->setLeft(par_to_remove->parent->left_child);
-	//}
-	//else
-	//{
-	//	if (removed_parent->right_child == par_to_remove->parent)
-	//		removed_parent->setRight(par_to_remove->parent->right_child);
-	//	if (removed_parent->left_child == par_to_remove->parent)
-	//		removed_parent->setLeft(par_to_remove->parent->left_child);
-	//}
 	if (par_to_remove->parent->left_child == par_to_remove)
 	{
 		if (removed_parent->left_child == par_to_remove->parent) removed_parent->setLeft(par_to_remove->parent->right_child);
@@ -297,4 +312,57 @@ void Voronoi::handleCircleEvent(VEvent* _circle_event)
 
 	checkCircle(left_leave);
 	checkCircle(right_leave);
+}
+
+void Voronoi::finishEdges(VSite* _site)
+{
+	for (auto edge : _site->edges)
+	{
+		//check if edge is already complete
+		if (edge->start_found && edge->twin->start_found)
+			continue;
+
+		//complete edge
+		VHalfEdge* e;
+		if (edge->start_found)
+			e = edge;
+		else
+			e = edge->twin;
+
+		//check if we intersect x border before y
+		// if it does assign the intersection as the final point and continue to next loop iteration
+		if (e->direction.X > 0.f) {
+			float t = (dims.X - e->start.X) / e->direction.X;
+			float y = e->start.Y + e->direction.Y*t;
+			if (y > 0.f && y < dims.Y) {
+				e->end = FVector2D(dims.X, y);
+				e->twin->start = FVector2D(dims.X, y);
+				continue;
+			}
+		}
+		else {
+			float t = (0.f - e->start.X) / e->direction.X;
+			float y = e->start.Y + e->direction.Y*t;
+			if (y > 0.f && y < dims.Y) {
+				e->end = FVector2D(0.f, y);
+				e->twin->start = FVector2D(0.f, y);
+				continue;
+			}
+		}
+
+		//The line will intersect y border before x border
+		//assign the intersection as the final point
+		if (e->direction.Y > 0.f) {
+			float t = (dims.Y - e->start.Y) / e->direction.Y;
+			float x = e->start.X + e->direction.X*t;
+			e->end = FVector2D(x, dims.Y);
+			e->twin->start = FVector2D(x, dims.Y);
+		}
+		else {
+			float t = (0.f - e->start.Y) / e->direction.Y;
+			float x = e->start.X + e->direction.X*t;
+			e->end = FVector2D(x, 0.f);
+			e->twin->start = FVector2D(x, 0.f);
+		}
+	}
 }

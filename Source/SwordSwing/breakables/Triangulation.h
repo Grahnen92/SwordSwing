@@ -1,15 +1,19 @@
 #pragma once
+#ifndef TRIANGULATION_H
+#define TRIANGULATION_H
 
 #include "SwordSwing.h"
 #include "ScalarField.h"
 #include "ProceduralMeshComponent.h"
+
+//#include "voro++/src/voro++.hh"
+//#include "voro++/src/voro++.cc"
+
 #include <vector>
 
 namespace triangulation {
-
-	void test(){
-		int t = 1;
-	}
+		
+	
 
 	struct cacheCell {
 		bool isoBool;
@@ -18,7 +22,7 @@ namespace triangulation {
 	};
 
 	template <typename scalar_value>
-	void marchingCubes(UProceduralMeshComponent* _mesh, ScalarField<scalar_value>* _sf, FVector& _mid_point = FVector(0.0f, 0.0f, 0.0f)) {
+	void marchingCubes(UProceduralMeshComponent* _mesh, ScalarField<scalar_value>* _sf, const FVector& _mid_point = FVector(0.0f, 0.0f, 0.0f)) {
 		//UE_LOG(LogTemp, Warning, TEXT("generating mesh..."));
 		int cubeIndex;
 
@@ -34,9 +38,6 @@ namespace triangulation {
 		int x, y, z;
 		int layerIndex = 0;
 
-
-
-
 		TArray<FVector> vertexArray;
 		TArray<int32> triangleArray;
 		TArray<FVector> normalArray;
@@ -49,9 +50,9 @@ namespace triangulation {
 
 
 		FVector _res = _sf->getRes();
-		FVector _dim = _sf->getDim();
+		FVector _dim = _sf->getDims();
 		scalar_value _iso_value = _sf->getIsoValue();
-		scalar_value*** _data = _sf->getData();
+		scalar_value*** _data = _sf->getDataPtr();
 
 		float resxm1 = (_res.X - 1);
 		float resxm1d2 = resxm1 / 2.0f;
@@ -1544,7 +1545,7 @@ namespace triangulation {
 
 		calcNormals(&vertexArray, &triangleArray, &normalArray, &tangentArray);
 
-		_mesh->CreateMeshSection_LinearColor(_mesh->GetNumSections(), vertexArray, triangleArray, normalArray, UV0, Colors, tangentArray, true);
+		_mesh->CreateMeshSection_LinearColor(_mesh->GetNumSections(), vertexArray, triangleArray, normalArray, UV0, Colors, tangentArray, false);
 		TArray<TArray<FVector>> tmp_convex;
 		tmp_convex.Add(vertexArray);
 		_mesh->SetCollisionConvexMeshes(tmp_convex);
@@ -1609,6 +1610,56 @@ namespace triangulation {
 			(*tangentArray)[(*triangleArray)[i + 2]] = FProcMeshTangent(tangentX, false);
 			(*normalArray)[(*triangleArray)[i + 2]] = tangentZ;
 
+		}
+	}
+
+	void bindTriangleIndicies(int **triTable, int cubeIndex, int* vertList, int &triangleCap)
+	{
+		//for (int i = 0; triTable[cubeIndex][i] != -1; i += 3) {
+		//	/*triangleArray[triangleCap*3 + 2] = vertList[triTable[cubeIndex][i]];
+		//	triangleArray[triangleCap*3 + 1] = vertList[triTable[cubeIndex][i + 1]];
+		//	triangleArray[triangleCap*3] = vertList[triTable[cubeIndex][i + 2]];*/
+		//	triangleArray.Add(vertList[triTable[cubeIndex][i]]);
+		//	triangleArray.Add(vertList[triTable[cubeIndex][i + 1]]);
+		//	triangleArray.Add(vertList[triTable[cubeIndex][i + 2]]);
+
+		//	triangleCap++;
+		//}
+	}
+
+	void findMaxMinExtent(TArray<FVector>& _vertexArray, FVector& _min, FVector& _max) 
+	{
+		_min = _vertexArray[0];
+		_max = _vertexArray[0];
+
+		for (int i = 1; i < _vertexArray.Num(); i++) {
+			//X
+			if (_vertexArray[i].X > _max.X)
+			{
+				_max.X = _vertexArray[i].X;
+			}
+			else if (_vertexArray[i].X < _min.X)
+			{
+				_min.X = _vertexArray[i].X;
+			}
+			//Y
+			if (_vertexArray[i].Y >_max.Y)
+			{
+				_max.Y = _vertexArray[i].Y;
+			}
+			else if (_vertexArray[i].Y < _min.Y)
+			{
+				_min.Y = _vertexArray[i].Y;
+			}
+			//Z
+			if (_vertexArray[i].Z >_max.Z)
+			{
+				_max.Z = _vertexArray[i].Z;
+			}
+			else if (_vertexArray[i].Z < _min.Z)
+			{
+				_min.Z = _vertexArray[i].Z;
+			}
 		}
 	}
 
@@ -1914,40 +1965,6 @@ namespace triangulation {
 		}
 	}
 
-	void findMaxMinExtent(TArray<FVector>& _vertexArray, FVector& _min, FVector& _max) 
-	{
-		_min = _vertexArray[0];
-		_max = _vertexArray[0];
-
-		for (int i = 1; i < _vertexArray.Num(); i++) {
-			//X
-			if (_vertexArray[i].X > _max.X)
-			{
-				_max.X = _vertexArray[i].X;
-			}
-			else if (_vertexArray[i].X < _min.X)
-			{
-				_min.X = _vertexArray[i].X;
-			}
-			//Y
-			if (_vertexArray[i].Y >_max.Y)
-			{
-				_max.Y = _vertexArray[i].Y;
-			}
-			else if (_vertexArray[i].Y < _min.Y)
-			{
-				_min.Y = _vertexArray[i].Y;
-			}
-			//Z
-			if (_vertexArray[i].Z >_max.Z)
-			{
-				_max.Z = _vertexArray[i].Z;
-			}
-			else if (_vertexArray[i].Z < _min.Z)
-			{
-				_min.Z = _vertexArray[i].Z;
-			}
-		}
-	}
-
 }
+
+#endif

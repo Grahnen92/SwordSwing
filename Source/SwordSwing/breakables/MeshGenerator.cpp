@@ -1,13 +1,25 @@
 // Fill out your copyright notice in the Description page of Project Settings.
+#pragma once
+
+using namespace std;
 
 
 #include "SwordSwing.h"
+
+#include "C:/Program Files (x86)/Epic Games/projects/SwordSwing/ThirdParty/voro++/includes/voro++.hh"
+//#include "voro++.cc"
 
 #include <string>
 #include <list>
 
 #include "MeshGenerator.h"
 #include "Triangulation.h"
+#include "MCTriangulator.h"
+#include "ScalarField.h"
+#include "LevelSet.h"
+
+//#include "utilities/OMath.h"
+
 
 #include "voronoi/Voronoi.h"
 
@@ -62,113 +74,291 @@ void AMeshGenerator::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//TODO: this 
-	Voronoi v;
-	TArray<FVector2D> tmp_voro_sites;
-	tmp_voro_sites.Add(FVector2D(50.f, 95.f));
-	tmp_voro_sites.Add(FVector2D(5.f, 55.f));
-	tmp_voro_sites.Add(FVector2D(95.f, 50.f));
-	tmp_voro_sites.Add(FVector2D(50.f, 30.f));
-	//tmp_voro_sites.Add(FVector2D(60.f, 30.f));
-	v.setDims(100.f, 100.f);
-	v.CalculateDiagram(&tmp_voro_sites);
-
+	//container test(-100, 100, -100, 100, -100, 100, 6, 6, 6, false, false, false, 8);
+	FVector con_dims(50.f, 50.f, 50.f);
+	voro::container con(-con_dims.X, con_dims.X, -con_dims.Y, con_dims.Y, -con_dims.Z, con_dims.Z, 6, 6, 6, false, false, false, 8);
+	std::vector<FVector> v_particles;
+	v_particles.push_back(FVector(40, 0.f, 0.f));
+	v_particles.push_back(FVector(0.f, 40.f, 0.f));
+	v_particles.push_back(FVector(-40.f, 0.f, 0.f));
+	//v_particles.push_back(FVector(50.f, 30.f, 0.f));
+	//v_particles.push_back(FVector(50.f, 10.f, 0.f));
+	//v_particles.push_back(FVector(90.f, 10.f, 0.f));
+	for (int i = 0; i < v_particles.size(); i++)
 	{
-		DrawDebugLine(
-			GetWorld(),
-			FVector(0.f, 0.f, 300.f),
-			FVector(0.f, v.getDims().Y, 300.f), 					//size
-			FColor(255, 255, 255),  //pink
-			true,  				//persistent (never goes away)
-			0.0, 					//point leaves a trail on moving object
-			10,
-			1.f
-		);
-
-		DrawDebugLine(
-			GetWorld(),
-			FVector(0.f, v.getDims().Y, 300.f),
-			FVector(v.getDims().X, v.getDims().Y, 300.f), 					//size
-			FColor(255, 255, 255),  //pink
-			true,  				//persistent (never goes away)
-			0.0, 					//point leaves a trail on moving object
-			10,
-			1.f
-		);
-
-		DrawDebugLine(
-			GetWorld(),
-			FVector(v.getDims().X, v.getDims().Y, 300.f),
-			FVector(v.getDims().X, 0.f, 300.f), 					//size
-			FColor(255, 255, 255),  //pink
-			true,  				//persistent (never goes away)
-			0.0, 					//point leaves a trail on moving object
-			10,
-			1.f
-		);
-
-		DrawDebugLine(
-			GetWorld(),
-			FVector(v.getDims().X, 0.f, 300.f),
-			FVector(0.f, 0.f, 300.f), 					//size
-			FColor(255, 255, 255),  //pink
-			true,  				//persistent (never goes away)
-			0.0, 					//point leaves a trail on moving object
-			10,
-			1.f
-		);
-	}
-
-	std::vector<VSite>* v_sites = v.getSites();
-	int counter = 0;
-	for (const auto &v_site : *v_sites)
-	{
-		FVector site3D = FVector(v_site.pos.X, v_site.pos.Y, 300.f);
 		DrawDebugPoint(
 			GetWorld(),
-			site3D,
+			v_particles[i],
 			10,  					//size
-			FColor(counter*50, 0, (v_sites->size() -counter)*50),  //pink
+			FColor(255, 0, 255),  //pink
 			true,  				//persistent (never goes away)
 			0.0 					//point leaves a trail on moving object
 		);
-		if (counter == 2)
-		{
-			for (const auto &edge : v_site.edges)
-			{
-				FVector start3D = FVector(edge->start.X, edge->start.Y, 300.f);
-				FVector end3D = FVector(edge->end.X, edge->end.Y, 300.f);
-				FVector dir3D = FVector(edge->direction.X, edge->direction.Y, 0.f)*100.f;
-				FVector right3D = FVector(edge->right->pos, 300.f) - start3D;
-				DrawDebugLine(
-					GetWorld(),
-					start3D,
-					start3D + dir3D, 					//size
-					FColor(counter * 50, 0, (v_sites->size() - counter) * 50),  //pink
-					true,  				//persistent (never goes away)
-					0.0, 					//point leaves a trail on moving object
-					10,
-					1.f
-				);
+		con.put(i, v_particles[i].X, v_particles[i].Y, v_particles[i].Z);
+	}
+		
 
-				DrawDebugLine(
-					GetWorld(),
-					start3D,
-					start3D + right3D, 					//size
-					FColor(255, 255, 255),  //pink
-					true,  				//persistent (never goes away)
-					0.0, 					//point leaves a trail on moving object
-					10,
-					1.f
-				);
+	std::vector<voro::voronoicell_neighbor> v_cells(v_particles.size());
+	voro::voronoicell_neighbor tmp_cell;
+	int loop_counter = 0;
+	voro::c_loop_all cl(con);
+	if (cl.start())
+	{
+		double x, y, z;
+		//do if(con.compute_cell(tmp_cell, cl)){
+		do if (con.compute_cell(v_cells[loop_counter], cl)) {
+			cl.pos(x, y, z);
+			v_particles[loop_counter] = FVector(x, y, z);
+			loop_counter++;
+		} while (cl.inc());
+	}
+	
+	//{
+	//	Voronoi v;
+	//	TArray<FVector2D> tmp_voro_sites;
+	//	tmp_voro_sites.Add(FVector2D(50.f, 95.f));
+	//	tmp_voro_sites.Add(FVector2D(5.f, 55.f));
+	//	tmp_voro_sites.Add(FVector2D(95.f, 50.f));
+	//	tmp_voro_sites.Add(FVector2D(50.f, 30.f));
+	//	tmp_voro_sites.Add(FVector2D(50.f, 10.f));
+	//	tmp_voro_sites.Add(FVector2D(90.f, 10.f));
+
+	//	//tmp_voro_sites.Add(FVector2D(50.f, 95.f));
+	//	//tmp_voro_sites.Add(FVector2D(55.f, 90.f));
+	//	//tmp_voro_sites.Add(FVector2D(45.f, 65.f));
+
+	//
+	//	//tmp_voro_sites.Add(FVector2D(50.f, 30.f));
+
+	//	v.setDims(100.f, 100.f);
+	//	v.CalculateDiagram(&tmp_voro_sites);
+
+	//	{
+	//		DrawDebugLine(
+	//			GetWorld(),
+	//			FVector(0.f, 0.f, 300.f),
+	//			FVector(0.f, v.getDims().Y, 300.f), 					//size
+	//			FColor(255, 255, 255),  //pink
+	//			true,  				//persistent (never goes away)
+	//			0.0, 					//point leaves a trail on moving object
+	//			10,
+	//			1.f
+	//		);
+
+	//		DrawDebugLine(
+	//			GetWorld(),
+	//			FVector(0.f, v.getDims().Y, 300.f),
+	//			FVector(v.getDims().X, v.getDims().Y, 300.f), 					//size
+	//			FColor(255, 255, 255),  //pink
+	//			true,  				//persistent (never goes away)
+	//			0.0, 					//point leaves a trail on moving object
+	//			10,
+	//			1.f
+	//		);
+
+	//		DrawDebugLine(
+	//			GetWorld(),
+	//			FVector(v.getDims().X, v.getDims().Y, 300.f),
+	//			FVector(v.getDims().X, 0.f, 300.f), 					//size
+	//			FColor(255, 255, 255),  //pink
+	//			true,  				//persistent (never goes away)
+	//			0.0, 					//point leaves a trail on moving object
+	//			10,
+	//			1.f
+	//		);
+
+	//		DrawDebugLine(
+	//			GetWorld(),
+	//			FVector(v.getDims().X, 0.f, 300.f),
+	//			FVector(0.f, 0.f, 300.f), 					//size
+	//			FColor(255, 255, 255),  //pink
+	//			true,  				//persistent (never goes away)
+	//			0.0, 					//point leaves a trail on moving object
+	//			10,
+	//			1.f
+	//		);
+	//	}
+
+	//	std::vector<VSite>* v_sites = v.getSites();
+	//	int counter = 0;
+	//	for (const auto &v_site : *v_sites)
+	//	{
+	//		FVector site3D = FVector(v_site.pos.X, v_site.pos.Y, 300.f);
+	//		DrawDebugPoint(
+	//			GetWorld(),
+	//			site3D,
+	//			10,  					//size
+	//			FColor(counter*50, 0, (v_sites->size() -counter)*50),  //pink
+	//			true,  				//persistent (never goes away)
+	//			0.0 					//point leaves a trail on moving object
+	//		);
+	//		//if (counter == 2)
+	//		{
+	//			for (const auto &edge : v_site.edges)
+	//			{
+	//				FVector start3D = FVector(edge->start.X, edge->start.Y, 300.f);
+	//				FVector end3D = FVector(edge->end.X, edge->end.Y, 300.f);
+	//				FVector dir3D = FVector(edge->direction.X, edge->direction.Y, 0.f)*100.f;
+	//				FVector right3D = FVector(edge->right->pos, 300.f) - start3D;
+	//				DrawDebugLine(
+	//					GetWorld(),
+	//					start3D,
+	//					end3D,
+	//					//start3D + dir3D, 					//size
+	//					FColor(counter * 50, 0, (v_sites->size() - counter) * 50),  //pink
+	//					true,  				//persistent (never goes away)
+	//					0.0, 					//point leaves a trail on moving object
+	//					10,
+	//					0.5f
+	//				);
+
+	//				//DrawDebugLine(
+	//				//	GetWorld(),
+	//				//	start3D,
+	//				//	start3D + right3D, 					//size
+	//				//	FColor(255, 255, 255),  //pink
+	//				//	true,  				//persistent (never goes away)
+	//				//	0.0, 					//point leaves a trail on moving object
+	//				//	10,
+	//				//	1.f
+	//				//);
+	//			}
+	//		}
+	//	
+	//		counter++;
+	//	}
+	//}
+	
+	//int i, j, k, l, m;
+	//bool e_found = false;
+	//for (i = 1; i < v_cells[0].p; i++) {
+	//	for (j = 0; j < v_cells[0].nu[i]; j++) {
+	//		k = v_cells[0].ed[i][j];
+	//		if (k >= 0) {
+	//			FVector v1 = FVector(0.5*v_cells[0].pts[3 * i], 0.5*v_cells[0].pts[3 * i + 1], 0.5*v_cells[0].pts[3 * i + 2]);
+	//			l = i; m = j;
+	//			do {
+	//				v_cells[0].ed[k][v_cells[0].ed[l][v_cells[0].nu[l] + m]] = -1 - l;
+	//				v_cells[0].ed[l][m] = -1 - k;
+	//				l = k;
+	//				FVector v2 = FVector(0.5*v_cells[0].pts[3 * k], 0.5*v_cells[0].pts[3 * k + 1], 0.5*v_cells[0].pts[3 * k + 2]);
+
+	//				if(i == 9 )
+	//				DrawDebugLine(
+	//					GetWorld(),
+	//					v1,
+	//					v2, 					//size
+	//					FColor(255, 255, 255),  //pink
+	//					true,  				//persistent (never goes away)
+	//					0.0, 					//point leaves a trail on moving object
+	//					10,
+	//					1.f
+	//				);
+
+	//				v1 = v2;
+	//				e_found = false;
+	//				for (m = 0; m < v_cells[0].nu[l]; m++) {
+	//					k = v_cells[0].ed[l][m];
+	//					if (k >= 0) {
+	//						e_found = true;
+	//						break;
+	//					}
+	//				}
+	//			} while (e_found);
+	//		}
+	//	}
+	//}
+	//int i2, j2;
+	//for (i2 = 0; i2 < v_cells[0].p; i2++){
+	//	for (j2 = 0; j2<v_cells[0].nu[i2]; j2++) {
+	//		if (v_cells[0].ed[i2][j2] >= 0)
+	//			UE_LOG(LogTemp, Warning, TEXT("oh no"));
+
+	//		v_cells[0].ed[i2][j2] = -1 - v_cells[0].ed[i2][j2];
+	//	}
+	//}
+
+	DrawDebugPoint(
+		GetWorld(),
+		FVector(0.f, 0.f, 0.f),
+		20,  					//size
+		FColor(255, 255, 0),  //pink
+		true,  				//persistent (never goes away)
+		0.0 					//point leaves a trail on moving object
+	);
+
+	for (int i = 0; i < v_cells.size(); i++)
+	{
+		std::vector<double> vert_test;
+		v_cells[i].vertices(v_particles[i].X, v_particles[i].Y, v_particles[i].Z, vert_test);
+		//v_cells[i].vertices(vert_test);
+
+		std::vector<int> edge_test;
+		int nroe = v_cells[i].number_of_edges();
+		v_cells[i].edges(edge_test);
+
+		std::vector<int> face_test;
+		v_cells[i].face_vertices(face_test);
+
+		std::vector<int> face_orders_test;
+		v_cells[i].face_orders(face_orders_test);
+		//for (int j = 0; j < face_orders_test[0]; j = j + 1)
+		//{
+		//	FVector v1 = FVector(vert_test[face_test[j] * 3], vert_test[face_test[j] * 3 + 1], vert_test[face_test[j] * 3 + 2]);
+		//	DrawDebugPoint(GetWorld(),v1,10,FColor(255, 0, 0),true,0.0);
+		//}
+
+
+		//if (i == 2)
+		{
+			for (int j = 0; j < edge_test.size(); j = j + 2)
+			{
+				float x1 = vert_test[edge_test[j] * 3];
+				float y1 = vert_test[edge_test[j] * 3 + 1];
+				float z1 = vert_test[edge_test[j] * 3 + 2];
+				FVector v1 = FVector(x1, y1, z1);
+				float x2 = vert_test[edge_test[j + 1] * 3];
+				float y2 = vert_test[edge_test[j + 1] * 3 + 1];
+				float z2 = vert_test[edge_test[j + 1] * 3 + 2];
+				FVector v2 = FVector(x2, y2, z2);
+				DrawDebugLine(GetWorld(), v1, v2, FColor(255, 255, 255), true, 0.0, 10, 1.f);
 			}
 		}
-		
-		counter++;
-	}
 
-	ScalarField<float> voronoi_sf(32, v.getDims());
-	voronoi_sf.voronoiSignedDist(&v, -v.getDims()/2.0f);
+	}
+	
+
+	float v_point_interval = FMath::Sqrt(v_cells[0].max_radius_squared()) / 32;
+	ScalarField<float> v_sf(32, FMath::Sqrt(v_cells[0].max_radius_squared()) + 2* v_point_interval);
+	v_sf.voronoiCellSignedDist(&v_cells[0], &con, 0, v_particles, con_dims, v_particles[0]);
+	//v_sf.drawBounds(GetWorld());
+	//v_sf.drawScalars(GetWorld());
+
+	LevelSet v_ls(32, FMath::Sqrt(v_cells[0].max_radius_squared()) + 2 * v_point_interval);
+	v_ls.voronoiCellSignedDist(&v_cells[0], &con, 0, v_particles, con_dims, v_particles[0]);
+	//v_ls.drawBounds(GetWorld());
+	//v_ls.drawScalars(GetWorld());
+
+	mesh_frags.Add(ConstructObject<UProceduralMeshComponent>(UProceduralMeshComponent::StaticClass(), this, FName("test")));
+	mesh_frags[0]->RegisterComponent();
+	mesh_frags[0]->AttachTo(baseModel);
+	mesh_frags[0]->InitializeComponent();
+	mesh_frags[0]->bUseComplexAsSimpleCollision = false;
+	mesh_frags[0]->SetMaterial(0, base_material);
+	//triangulation::marchingCubes(mesh_frags[0], &v_sf);
+	MCTriangulator mc_tri;
+	mc_tri.marchingCubes(mesh_frags[0], v_ls.getScalarField(), v_ls.getIsoVal());
+
+	ScalarField<float> vd_sf(32, con_dims*2.f);
+	vd_sf.voronoiDiagramSignedDist(&v_cells, v_particles, con_dims);
+	//vd_sf.drawBounds(GetWorld());
+	//vd_sf.drawScalarSections(GetWorld());
+	//Triangulator mc_tri;
+	//mc_tri.marchingCubes(mesh_frags[0], &v_sf);
+	LevelSet vd_ls(32, con_dims.X*2.f);
+	vd_ls.voronoiDiagramSignedDist(&v_cells, v_particles, con_dims);
+	vd_ls.drawBounds(GetWorld());
+	vd_ls.drawScalarSections(GetWorld());
 
 	//Create signed distance function and level set from a model ===============================================================================
 	FStaticMeshSourceModel* sourceM = &baseModel->GetStaticMesh()->SourceModels[0];
@@ -199,6 +389,7 @@ void AMeshGenerator::BeginPlay()
 	base_model_sf->meshToLeveSet(&rawMesh, mid_point);
 
 	base_material = baseModel->GetMaterial(0);
+	baseModel->ToggleVisibility();
 }
 
 // Called every frame
@@ -209,6 +400,7 @@ void AMeshGenerator::Tick( float DeltaTime )
 
 void AMeshGenerator::OnOriginalModelHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {	
+	return;
 	if (NormalImpulse.Size() > 10000.f)
 	{
 
