@@ -16,6 +16,9 @@ struct FVector;
 
 namespace OMath {
 	
+	void findMaxMinExtent(TArray<FVector>& _vertexArray, FVector& _min, FVector& _max);
+	void findMaxMinExtent(std::vector<double>& _vertexArray, FVector& _min, FVector& _max);
+
 	FVector distToPolygon(const FVector &_point, const std::vector<int> &_indices, const std::vector<std::vector<double>> &vertices, std::vector<double> &normal);
 
 	double distanceToLine(FVector _point, FVector lp1, FVector lp2);

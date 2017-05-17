@@ -175,6 +175,9 @@ void LevelSet::cubeSignedDistance(FVector _w_pos)
 	FVector p2;
 	FVector dist_vec;
 
+	float *lv = sf.getLargestValuePtr();
+	*lv = 0.f;
+
 	float x, y, z;
 	for (int i = 0; i < res->X; i++)
 	{
@@ -226,6 +229,10 @@ void LevelSet::cubeSignedDistance(FVector _w_pos)
 				z_dist = -z_dist;
 
 				data[i][j][k] = FMath::Min3(x_dist, y_dist, z_dist);
+				if (FMath::Abs(data[i][j][k]) > *lv)
+				{
+					*lv = FMath::Abs(data[i][j][k]);
+				}
 			}
 		}
 	}
@@ -235,18 +242,6 @@ void LevelSet::voronoiCellSignedDist(voro::voronoicell_neighbor* _v_cell, voro::
 {
 	//FVector dim = sf.getDims();
 	//FVector res = sf.getRes();
-	float*** data = sf.getDataPtr();
-
-	float x, y, z;
-	float ox = (dims->X / res->X)*0.5f;
-	float oy = (dims->Y / res->Y)*0.5f;
-	float oz = (dims->Z / res->Z)*0.5f;
-	float resxm1d2 = ((res->X - 1) / 2.f);
-	float resym1d2 = ((res->Y - 1) / 2.f);
-	float reszm1d2 = ((res->Z - 1) / 2.f);
-	float resxm1 = (res->X - 1);
-	float resym1 = (res->Y - 1);
-	float reszm1 = (res->Z - 1);
 
 	//Verts
 	std::vector<double> cell_verts;
@@ -263,9 +258,53 @@ void LevelSet::voronoiCellSignedDist(voro::voronoicell_neighbor* _v_cell, voro::
 	std::vector<double> cell_face_normals;
 	_v_cell->normals(cell_face_normals);
 
+	double cx, cy, cz;
+	_v_cell->centroid(cx, cy, cz);
+	FVector centroid(cx, cy, cz);
 
-	w_pos = _w_pos;
-	//int tmp_cell_id;
+	FVector min_extent;
+	FVector max_extent;
+	FVector tmp_dims;
+	OMath::findMaxMinExtent(cell_verts, min_extent, max_extent);
+
+	tmp_dims = (max_extent - min_extent);
+	tmp_dims = FVector(FMath::Ceil(tmp_dims.X), FMath::Ceil(tmp_dims.Y), FMath::Ceil(tmp_dims.Z));
+
+	//float max_dim = FMath::Max3(tmp_dims.X, tmp_dims.Y, tmp_dims.Z);
+	//max_dim = FMath::Floor(max_dim);
+	//setDims(FVector(max_dim, max_dim, max_dim));
+	setDims(tmp_dims);
+	//max_dim = max_dim*0.25f;
+	setRes(FMath::Floor(tmp_dims.X*0.5f), FMath::Floor(tmp_dims.Y*0.5f), FMath::Floor(tmp_dims.Z*0.5f));
+	//setRes(max_dim, max_dim, max_dim);
+
+	FVector c_offset = min_extent + (tmp_dims/2.f);
+	_v_cell->vertices(-c_offset.X, -c_offset.Y, -c_offset.Z, cell_verts);
+
+
+	reallocateData();
+
+	float*** data = sf.getDataPtr();
+
+	FVector nb_res = *res - FVector(2.f, 2.f, 2.f);
+
+	float x, y, z;
+	float ox = (dims->X / nb_res.X);
+	float oy = (dims->Y / nb_res.Y);
+	float oz = (dims->Z / nb_res.Z);
+	*dims = FVector(ox, oy, oz) + *dims;
+	ox = ox*0.5f; oy = oy*0.5f; oz = oz*0.5f;
+	float resxm1 = (res->X - 1);
+	float resym1 = (res->Y - 1);
+	float reszm1 = (res->Z - 1);
+	float resxm1d2 = (resxm1 / 2.f);
+	float resym1d2 = (resym1 / 2.f);
+	float reszm1d2 = (reszm1 / 2.f);
+
+	
+	w_pos = _v_particles[_cell_id] + c_offset;
+	//w_pos = centroid;
+	int tmp_cell_id;
 	FVector curr_p;
 
 	float *lv = sf.getLargestValuePtr();
@@ -277,9 +316,9 @@ void LevelSet::voronoiCellSignedDist(voro::voronoicell_neighbor* _v_cell, voro::
 		{
 			for (int k = 0; k < res->Z; k++)
 			{
-				x = ((i - resxm1d2) / resxm1)*dims->X;// +w_pos.X;
-				y = ((j - resym1d2) / resym1)*dims->Y;// + w_pos.Y;
-				z = ((k - reszm1d2) / reszm1)*dims->Z;// +w_pos.Z;
+				x = ((i - resxm1d2) / resxm1)*dims->X;// +c_offset.X;
+				y = ((j - resym1d2) / resym1)*dims->Y;// +c_offset.Y;
+				z = ((k - reszm1d2) / reszm1)*dims->Z;// +c_offset.Y;
 				curr_p = FVector(x, y, z);
 
 				data[i][j][k] = OMath::distToVoronoiCell(curr_p, cell_verts, cell_edges, cell_faces, cell_face_orders, cell_face_normals);
@@ -287,16 +326,22 @@ void LevelSet::voronoiCellSignedDist(voro::voronoicell_neighbor* _v_cell, voro::
 					*lv = data[i][j][k];
 
 				curr_p = curr_p + w_pos;
-				/*double rx, ry, rz;
-				if (!_vcon->find_voronoi_cell(curr_p.X, curr_p.Y, curr_p.Z, rx, ry, rz, tmp_cell_id))
+				double rx, ry, rz;
+				/*if (!_vcon->find_voronoi_cell(curr_p.X, curr_p.Y, curr_p.Z, rx, ry, rz, tmp_cell_id))
 				data[i][j][k] = -data[i][j][k];
 				else if (tmp_cell_id != _cell_id)
 				data[i][j][k] = -data[i][j][k];*/
 				if (!OMath::pointIsInsideCube(curr_p, FVector::ZeroVector, _vd_dims))
 					data[i][j][k] = -data[i][j][k];
-				else if (OMath::closestPoint(curr_p, _v_particles) != _cell_id)
-					data[i][j][k] = -data[i][j][k];
+				//else if (OMath::closestPoint(curr_p, _v_particles) != _cell_id)
+				else if (_vcon->find_voronoi_cell(curr_p.X, curr_p.Y, curr_p.Z, rx, ry, rz, tmp_cell_id))
+				{
+					if(tmp_cell_id != _cell_id)
+						data[i][j][k] = -data[i][j][k];
+				}
+					
 
+				
 				//UE_LOG(LogTemp, Warning, TEXT("aweawe %d"), tmp_cell_id);
 
 			}
@@ -307,23 +352,48 @@ void LevelSet::voronoiCellSignedDist(voro::voronoicell_neighbor* _v_cell, voro::
 void LevelSet::voronoiDiagramSignedDist(std::vector<voro::voronoicell_neighbor> *_v_cells, const std::vector<FVector> &_v_particles, FVector &_vd_dims, const  FVector& _w_pos)
 {
 	sf.allocateSectionData();
+	sf.setNrOfSections(_v_cells->size());
+
 	unsigned char*** section = sf.getSectionPtr();
-	//FVector dim = sf.getDims();
-	//FVector res = sf.getRes();
 	float*** data = sf.getDataPtr();
 
 	float x, y, z;
-	float ox = (dims->X / res->X)*0.5f;
-	float oy = (dims->Y / res->Y)*0.5f;
-	float oz = (dims->Z / res->Z)*0.5f;
-	float resxm1d2 = ((res->X - 1) / 2.f);
-	float resym1d2 = ((res->Y - 1) / 2.f);
-	float reszm1d2 = ((res->Z - 1) / 2.f);
+
+	//resolution of non padding data
+	FVector nb_res = *res - FVector(2.f, 2.f, 2.f);
+
+	float ox = (dims->X / nb_res.X);
+	float oy = (dims->Y / nb_res.Y);
+	float oz = (dims->Z / nb_res.Z);
+	*dims = FVector(ox, oy, oz) + *dims;
+	ox = ox*0.5f; oy = oy*0.5f; oz = oz*0.5f;
 	float resxm1 = (res->X - 1);
 	float resym1 = (res->Y - 1);
 	float reszm1 = (res->Z - 1);
+	float resxm1d2 = (resxm1 / 2.f);
+	float resym1d2 = (resym1 / 2.f);
+	float reszm1d2 = (reszm1 / 2.f);
 
-	
+
+	//create padding data
+	for (int i = 0; i < res->X; i++){
+		for (int j = 0; j < res->Y; j++){
+			data[i][j][0] = oz;
+			data[i][j][(int)res->Z - 1] = oz;
+		}
+	}
+	for (int i = 0; i < res->X; i++) {
+		for (int j = 0; j < res->Z; j++) {
+			data[i][0][j] = oy;
+			data[i][(int)res->Y - 1][j] = oy;
+		}
+	}
+	for (int i = 0; i < res->Y; i++) {
+		for (int j = 0; j < res->Z; j++) {
+			data[0][i][j] = ox;
+			data[(int)res->X - 1][i][j] = ox;
+		}
+	}
 
 	//Verts
 	std::vector<std::vector<double>> cell_verts(_v_cells->size());
@@ -353,15 +423,15 @@ void LevelSet::voronoiDiagramSignedDist(std::vector<voro::voronoicell_neighbor> 
 	float *lv = sf.getLargestValuePtr();
 	*lv = 0.f;
 
-	for (int i = 0; i < res->X; i++)
+	for (int i = 1; i < res->X -1; i++)
 	{
-		for (int j = 0; j < res->Y; j++)
+		for (int j = 1; j < res->Y - 1; j++)
 		{
-			for (int k = 0; k < res->Z; k++)
+			for (int k = 1; k < res->Z - 1; k++)
 			{
-				x = ((i - resxm1d2) / resxm1)*dims->X;// +w_pos.X;
-				y = ((j - resym1d2) / resym1)*dims->Y;// + w_pos.Y;
-				z = ((k - reszm1d2) / reszm1)*dims->Z;// +w_pos.Z;
+				x = ((i - resxm1d2) / resxm1)*dims->X;// +ox;// +w_pos.X;
+				y = ((j - resym1d2) / resym1)*dims->Y;// +oy;// + w_pos.Y;
+				z = ((k - reszm1d2) / reszm1)*dims->Z;// + oz;// +w_pos.Z;
 
 				curr_p = FVector(x, y, z);
 				cell_id = OMath::closestPoint(curr_p, _v_particles);
@@ -440,7 +510,7 @@ void LevelSet::meshToLeveSet(FRawMesh* _rm, FVector& _w_pos)
 }
 
 //_rel_transform is the transform that puts the origin of sf2 at a certain point relative to the origin of sf1
-void LevelSet::mergeLevelSets(LevelSet* _ls1, LevelSet* _ls2, FMatrix _rel_rotation, FVector rel_position, FVector frag_w_pos, LevelSet* _ls_out)
+void LevelSet::mergeLevelSets(LevelSet* _ls1, LevelSet* _ls2, FMatrix _rel_rotation, FVector rel_position, FVector frag_w_pos, LevelSet* _ls_out, UWorld * _world )
 {
 	_ls_out->setRes(_ls2->getRes());
 	_ls_out->setDims(_ls2->getDims());
@@ -496,15 +566,24 @@ void LevelSet::mergeLevelSets(LevelSet* _ls1, LevelSet* _ls2, FMatrix _rel_rotat
 				//inside fragment
 				if (data2[i2][j2][k2] >= _ls2->iso_val)
 				{
-					x = ((i2 - resxm1d2_2) / resxm1_2)*dim2.X + pos2.X;
-					y = ((j2 - resym1d2_2) / resym1_2)*dim2.Y + pos2.Y;
-					z = ((k2 - reszm1d2_2) / reszm1_2)*dim2.Z + pos2.Z;
+					x = ((i2 - resxm1d2_2) / resxm1_2)*dim2.X;// +pos2.X;
+					y = ((j2 - resym1d2_2) / resym1_2)*dim2.Y;// + pos2.Y;
+					z = ((k2 - reszm1d2_2) / reszm1_2)*dim2.Z;// + pos2.Z;
 
 
 
 					xyz2 = FVector(x, y, z) + frag_w_pos;
 
 					xyz1 = _rel_rotation.TransformPosition(xyz2) + rel_position;
+
+					//DrawDebugPoint(
+					//	_world,
+					//	FVector(x, y, z),
+					//	2,//size
+					//	FColor(255, 0, 0),
+					//	true, //persistent (never goes away)
+					//	0.0 //point leaves a trail on moving object
+					//);
 					interp_val_1 = _ls1->getTLIValue(xyz1);
 					//inside original model
 					if (interp_val_1 >= _ls1->iso_val)

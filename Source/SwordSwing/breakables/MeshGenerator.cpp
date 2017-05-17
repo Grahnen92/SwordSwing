@@ -6,15 +6,15 @@ using namespace std;
 
 #include "SwordSwing.h"
 
-#include "C:/Program Files (x86)/Epic Games/projects/SwordSwing/ThirdParty/voro++/includes/voro++.hh"
+//#include "C:/Program Files (x86)/Epic Games/projects/SwordSwing/ThirdParty/voro++/includes/voro++.hh"
 //#include "voro++.cc"
 
 #include <string>
 #include <list>
+#include <ctime>
 
 #include "MeshGenerator.h"
 #include "Triangulation.h"
-#include "MCTriangulator.h"
 #include "ScalarField.h"
 #include "LevelSet.h"
 
@@ -26,6 +26,7 @@ using namespace std;
 #include "RawMesh.h"
 #include "Components/StaticMeshComponent.h"
 
+using namespace std;
 
 FMatrix axisRotMatrix(float _a, FVector _axis) {
 	FMatrix result;
@@ -74,219 +75,304 @@ void AMeshGenerator::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//container test(-100, 100, -100, 100, -100, 100, 6, 6, 6, false, false, false, 8);
-	FVector con_dims(50.f, 50.f, 50.f);
-	voro::container con(-con_dims.X, con_dims.X, -con_dims.Y, con_dims.Y, -con_dims.Z, con_dims.Z, 6, 6, 6, false, false, false, 8);
-	std::vector<FVector> v_particles;
-	v_particles.push_back(FVector(40, 0.f, 0.f));
-	v_particles.push_back(FVector(0.f, 40.f, 0.f));
-	v_particles.push_back(FVector(-40.f, 0.f, 0.f));
-	//v_particles.push_back(FVector(50.f, 30.f, 0.f));
-	//v_particles.push_back(FVector(50.f, 10.f, 0.f));
-	//v_particles.push_back(FVector(90.f, 10.f, 0.f));
-	for (int i = 0; i < v_particles.size(); i++)
-	{
-		DrawDebugPoint(
-			GetWorld(),
-			v_particles[i],
-			10,  					//size
-			FColor(255, 0, 255),  //pink
-			true,  				//persistent (never goes away)
-			0.0 					//point leaves a trail on moving object
-		);
-		con.put(i, v_particles[i].X, v_particles[i].Y, v_particles[i].Z);
-	}
-		
+	CreateFragmentLevelSet();
 
-	std::vector<voro::voronoicell_neighbor> v_cells(v_particles.size());
+	//Create signed distance function and level set from a model ===============================================================================
+	FStaticMeshSourceModel* sourceM = &baseModel->GetStaticMesh()->SourceModels[0];
+	FRawMesh rawMesh;
+	sourceM->RawMeshBulkData->LoadRawMesh(rawMesh);
+
+	float max_dim = 2.0f*FMath::Max(FMath::Max(baseModel->Bounds.BoxExtent.X, baseModel->Bounds.BoxExtent.Y), baseModel->Bounds.BoxExtent.Z);
+	FVector min_dims;
+	FVector max_dims;
+	OMath::findMaxMinExtent(rawMesh.VertexPositions, min_dims, max_dims);
+	FVector extent = max_dims - min_dims;
+	//extent = extent*baseModel->GetComponentScale();
+
+	//<-- Used to create a scalar field that always have the same amount of scalar values but distributed 
+	// at cubic intervals along boxes of different dimensions
+	float k = std::cbrt((extent.Z*extent.Z) / (extent.X*extent.Y));
+	float j = (extent.Y / extent.Z)*k;
+	float i = (extent.X / extent.Z)*k;
+	FVector res(std::ceilf(resolution*i), std::ceilf(resolution*j), std::ceilf(resolution*k));
+	FVector point_interval = extent / res;
+	//FVector increased_extent(extent.X + (extent.X / res.X) * 2, extent.Y + (extent.Y / res.Y) * 2, extent.Z + (extent.Z / res.Z) * 2);
+	increased_extent = extent + 2 * point_interval;
+	mid_point = (min_dims)+(extent / 2.0f);
+
+	//<-- create the scalar field with the determined resolution and with a somewhat increased dimension so that scalar values exist outside and around the original model
+	base_model_ls = new LevelSet(res, increased_extent);
+	base_model_ls->setIsoVal(0.0f);
+	base_model_ls->meshToLeveSet(&rawMesh, mid_point);
+
+	base_material = baseModel->GetMaterial(0);
+	//baseModel->ToggleVisibility();
+}
+
+// Called every frame
+void AMeshGenerator::Tick( float DeltaTime )
+{
+	Super::Tick( DeltaTime );
+}
+
+void AMeshGenerator::OnOriginalModelHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{	
+	
+	if (NormalImpulse.Size() > 10000.f)
+	{
+
+		FVector test_mid = baseModel->GetCenterOfMass();
+
+		//Create signed distance function and level set for fragments ===============================================================================
+		/*frag_ls.resize(1);
+		frag_ls[0] = ( new LevelSet(resolution, increased_extent.Z + (increased_extent.Z / resolution)));
+		frag_ls[0]->setIsoVal(0.0f);
+		frag_ls[0]->cubeSignedDistance(FVector::ZeroVector);
+		frag_ls[0]->drawScalars(GetWorld());*/
+
+		//Transform impulsnormal and hit location to model space
+		FVector localImpulseNormal = baseModel->ComponentToWorld.Inverse().TransformVector(NormalImpulse.GetSafeNormal());
+		FVector local_hit_location = baseModel->ComponentToWorld.InverseTransformPositionNoScale(Hit.Location);
+		
+		//create the rotation matrix that align the fragments to the impulsenormal
+		float rot_angle = FMath::Acos(FVector::DotProduct(FVector::UpVector, localImpulseNormal));// *180.f / PI;
+		FVector rot_axis = FVector::CrossProduct( FVector::UpVector, localImpulseNormal);
+		FMatrix rot_mat;
+		rot_mat = axisRotMatrix(rot_angle, rot_axis);
+		//rot_mat = FMatrix::Identity;
+
+		//calculate the individual positions of the fragments and then merge them with the model level set and the triangulate the merged level set
+		for (int i = 0; i < frag_ls.size(); i++)
+		{
+			//float frag_offset = increased_extent.Z / 2.0f;
+			FVector frag_offset = frag_ls[i]->getPos();
+			CreateFragment(rot_mat, local_hit_location, frag_offset, i);
+		}
+
+		////calculate the individual positions of the fragments and then merge them with the model level set and the triangulate the merged level set
+		//float frag_offset = increased_extent.Z / 2.0f;
+		//FVector corner1 = FVector(frag_offset, -frag_offset, -frag_offset);
+		//CreateFragment(rot_mat, local_hit_location, corner1, 0);
+
+		//FVector corner2 = FVector(frag_offset, frag_offset, -frag_offset);
+		//CreateFragment(rot_mat, local_hit_location, corner2, 0);
+
+		//FVector corner3 = FVector(frag_offset, -frag_offset, frag_offset);
+		//CreateFragment(rot_mat, local_hit_location, corner3, 0);
+
+		//FVector corner4 = FVector(frag_offset, frag_offset, frag_offset);
+		//CreateFragment(rot_mat, local_hit_location, corner4, 0);
+
+		//FVector corner5 = FVector(-frag_offset, -frag_offset, -frag_offset);
+		//CreateFragment(rot_mat, local_hit_location, corner5, 0);
+
+		//FVector corner6 = FVector(-frag_offset, frag_offset, -frag_offset);
+		//CreateFragment(rot_mat, local_hit_location, corner6, 0);
+
+		//FVector corner7 = FVector(-frag_offset, -frag_offset, frag_offset);
+		//CreateFragment(rot_mat, local_hit_location, corner7, 0);
+
+		//FVector corner8 = FVector(-frag_offset, frag_offset, frag_offset);
+		//CreateFragment(rot_mat, local_hit_location, corner8, 0);
+		//
+
+		baseModel->UnregisterComponent();
+		baseModel->DestroyComponent();
+	//	baseModel->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	}
+
+	
+}
+
+
+void AMeshGenerator::CreateFragment(FMatrix _collision_rot, FVector _collision_loc, FVector _frag_offset, int _frag_index)
+{
+
+	int mf_i = mesh_frags.Num();
+	std::string comp_name = "ProceduralMesh" + std::to_string(mf_i);
+	mesh_frags.Add(ConstructObject<UProceduralMeshComponent>(UProceduralMeshComponent::StaticClass(), this, FName(&comp_name[0])));
+	mesh_frags[mf_i]->RegisterComponent();
+	mesh_frags[mf_i]->AttachTo(baseModel);
+	mesh_frags[mf_i]->InitializeComponent();
+	mesh_frags[mf_i]->bUseComplexAsSimpleCollision = false;
+
+	mesh_frags[mf_i]->SetMaterial(0, base_material);
+
+	LevelSet merging_ls;
+	LevelSet::mergeLevelSets(base_model_ls, frag_ls[_frag_index], _collision_rot, _collision_loc, _frag_offset, &merging_ls, GetWorld());
+	FVector tmp_zero = FVector::ZeroVector;
+	//triangulation::marchingCubes(mesh_frags[mf_i], &merging_ls, tmp_zero);
+	mc_tri.marchingCubes(mesh_frags[mf_i], merging_ls.getScalarField(), merging_ls.getIsoVal());
+	mesh_frags[mf_i]->AddRelativeLocation(_collision_rot.TransformPosition(_frag_offset), false, nullptr, ETeleportType::TeleportPhysics);
+	mesh_frags[mf_i]->AddRelativeRotation(_collision_rot.Rotator(), false, nullptr, ETeleportType::TeleportPhysics);
+	mesh_frags[mf_i]->AddRelativeLocation(_collision_loc, false, nullptr, ETeleportType::TeleportPhysics);
+
+	mesh_frags[mf_i]->SetCollisionObjectType(ECollisionChannel::ECC_PhysicsBody);
+
+	mesh_frags[mf_i]->SetSimulatePhysics(true);
+	mesh_frags[mf_i]->ComponentVelocity = baseModel->ComponentVelocity;
+
+	//DEBUG
+	//std::vector<double> vert_test;
+	//v_cells[_frag_index].vertices(vert_test);
+	//std::vector<FVector> vert_test_vectors(vert_test.size() / 3);
+	////v_cells[i].vertices(vert_test);
+	//for (int i = 0; i < vert_test_vectors.size(); i = ++i)
+	//{
+	//	vert_test_vectors[i].X = vert_test[i * 3];
+	//	vert_test_vectors[i].Y = vert_test[i * 3 + 1];
+	//	vert_test_vectors[i].Z = vert_test[i * 3 + 2];
+	//	//vert_test_vectors[i] = baseModel->GetComponentTransform().TransformVector(vert_test_vectors[i]);
+
+	//	vert_test_vectors[i] = _collision_rot.TransformVector(vert_test_vectors[i]);
+
+	//	vert_test_vectors[i] += _collision_rot.TransformPosition(_frag_offset);
+	//	//TODO: remove line below
+	//	//vert_test_vectors[i] += _frag_offset;
+	//	//vert_test_vectors[i] += v_particles[_frag_index];
+	//	
+	//	vert_test_vectors[i] += _collision_loc;
+	//	vert_test_vectors[i] += baseModel->GetComponentLocation();
+	//}
+
+	//std::vector<int> edge_test;
+	//int nroe = v_cells[_frag_index].number_of_edges();
+	//v_cells[_frag_index].edges(edge_test);
+
+	//std::vector<int> face_orders_test;
+	//v_cells[_frag_index].face_orders(face_orders_test);
+	//
+	//for (int j = 0; j < edge_test.size(); j = j + 2)
+	//{
+	//	float x1 = vert_test[edge_test[j] * 3];
+	//	float y1 = vert_test[edge_test[j] * 3 + 1];
+	//	float z1 = vert_test[edge_test[j] * 3 + 2];
+	//	//FVector v1 = FVector(x1, y1, z1);
+	//	FVector v1 = vert_test_vectors[edge_test[j]];
+	//	float x2 = vert_test[edge_test[j + 1] * 3];
+	//	float y2 = vert_test[edge_test[j + 1] * 3 + 1];
+	//	float z2 = vert_test[edge_test[j + 1] * 3 + 2];
+	//	//FVector v2 = FVector(x2, y2, z2);
+	//	FVector v2 = vert_test_vectors[edge_test[j + 1]];
+	//	DrawDebugLine(GetWorld(), v1, v2, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+	//}
+}
+
+void AMeshGenerator::CreateFragmentLevelSet()
+{
+	FVector con_dims(100.f, 100.f, 100.f);
+	con = new voro::container(-con_dims.X, con_dims.X, -con_dims.Y, con_dims.Y, -con_dims.Z, con_dims.Z, 6, 6, 6, false, false, false, 8);
+	
+	//v_particles.push_back(FVector(50.f, 0.f, -75.f));
+	//v_particles.push_back(FVector(0.f, 50.f, -75.f));
+	//v_particles.push_back(FVector(-50.f, 0.f, -75.f));
+	//v_particles.push_back(FVector(0.f, -50.f, -75.f));
+	//v_particles.push_back(FVector(50.f, 0.f, 0.f));
+	//v_particles.push_back(FVector(0.f, 50.f, 0.f));
+	//v_particles.push_back(FVector(-50.f, 0.f, 0.f));
+	//v_particles.push_back(FVector(0.f, -50.f, 0.f));
+	//v_particles.push_back(FVector(50.f, 0.f, 75.f));
+	//v_particles.push_back(FVector(0.f, 50.f, 75.f));
+	//v_particles.push_back(FVector(-50.f, 0.f, 75.f));
+	//v_particles.push_back(FVector(0.f, -50.f, 75.f));
+
+	//v_particles.push_back(FVector(77.7f - 50.f, 25.0f - 50.f, 0)*2.f);
+	//v_particles.push_back(FVector(53.3f - 50.f, 12.9f - 50.f, 0)*2.f);
+	//v_particles.push_back(FVector(16.1f - 50.f, 34.4f - 50.f, 0)*2.f);
+	//v_particles.push_back(FVector(17.6f - 50.f, 68.3f - 50.f, 0)*2.f);
+	//v_particles.push_back(FVector(33.9f - 50.f, 83.7f - 50.f, 0)*2.f);
+	//v_particles.push_back(FVector(80.9f - 50.f, 69.7f - 50.f, 0)*2.f);
+	//v_particles.push_back(FVector(91.1f - 50.f, 43.1f - 50.f, 0)*2.f);
+	//v_particles.push_back(FVector(62.5f - 50.f, 92.1f - 50.f, 0)*2.f);
+	//v_particles.push_back(FVector(66.f - 50.f, 51.1f - 50.f, 0)*2.f);
+	//v_particles.push_back(FVector(92.2f - 50.f, 62.8f - 50.f, 0)*2.f);
+	//v_particles.push_back(FVector(22.9f - 50.f, 76.6f - 50.f, 0)*2.f);
+	//v_particles.push_back(FVector(18.7f - 50.f, 17.3f - 50.f, 0)*2.f);
+	//v_particles.push_back(FVector(18.5f - 50.f, 27.4f - 50.f, 0)*2.f);
+	//v_particles.push_back(FVector(66.7f - 50.f, 15.6f - 50.f, 0)*2.f);
+	//v_particles.push_back(FVector(75.8f - 50.f, 21.7f - 50.f, 0)*2.f);
+	
+	v_particles.push_back(FVector(68.6f - 50.f, 32.5f - 50.f, 0.f)*2.f);
+	v_particles.push_back(FVector(52.3f - 50.f, 24.6f - 50.f, 0.f)*2.f);
+	v_particles.push_back(FVector(31.2f - 50.f, 32.3f - 50.f, 0.f)*2.f);
+	v_particles.push_back(FVector(26.3f - 50.f, 60.9f - 50.f, 0.f)*2.f);
+	v_particles.push_back(FVector(45.0f - 50.f, 75.3f - 50.f, 0.f)*2.f);
+	v_particles.push_back(FVector(72.8f - 50.f, 62.6f - 50.f, 0.f)*2.f);
+	v_particles.push_back(FVector(60.5f - 50.f, 77.8f - 50.f, 0.f)*2.f);
+	v_particles.push_back(FVector(80.8f - 50.f, 58.9f - 50.f, 0.f)*2.f);
+	v_particles.push_back(FVector(60.9f - 50.f, 26.4f - 50.f, 0.f)*2.f);
+	v_particles.push_back(FVector(55.4f - 50.f, 24.5f - 50.f, 0.f)*2.f);
+	v_particles.push_back(FVector(25.0f - 50.f, 24.3f - 50.f, 0.f)*2.f);
+	v_particles.push_back(FVector(21.5f - 50.f, 47.9f - 50.f, 0.f)*2.f);
+	v_particles.push_back(FVector(52.4f - 50.f, 80.6f - 50.f, 0.f)*2.f);
+
+	//put particles into container
+	for (int i = 0; i < v_particles.size(); i++)
+		con->put(i, v_particles[i].X, v_particles[i].Y, v_particles[i].Z);
+
+	//Verts
+	cell_verts.resize(v_particles.size());
+	//edges
+	cell_edges.resize(v_particles.size());
+	//faces
+	cell_faces.resize(v_particles.size());
+	cell_face_orders.resize(v_particles.size());
+	cell_face_normals.resize(v_particles.size());
+
+	//voronoi cells
+	v_cells.resize(v_particles.size());
 	voro::voronoicell_neighbor tmp_cell;
+	//Levelsets
+	frag_ls.resize(v_particles.size());
+
 	int loop_counter = 0;
-	voro::c_loop_all cl(con);
+	int current_id;
+	voro::c_loop_all cl(*con);
 	if (cl.start())
 	{
 		double x, y, z;
 		//do if(con.compute_cell(tmp_cell, cl)){
-		do if (con.compute_cell(v_cells[loop_counter], cl)) {
+		do if (con->compute_cell(tmp_cell, cl)) {
 			cl.pos(x, y, z);
-			v_particles[loop_counter] = FVector(x, y, z);
+			//v_particles[loop_counter] = FVector(x, y, z);
+			current_id = cl.pid();
+			v_cells[current_id] = tmp_cell;
+			v_cells[current_id].vertices(cell_verts[current_id]);
+			v_cells[current_id].edges(cell_edges[current_id]);
+			v_cells[current_id].face_vertices(cell_faces[current_id]);
+			v_cells[current_id].face_orders(cell_face_orders[current_id]);
+			v_cells[current_id].normals(cell_face_normals[current_id]);
+
+			frag_ls[current_id] = new LevelSet;
+			frag_ls[current_id]->voronoiCellSignedDist(&v_cells[current_id], con, current_id, v_particles, con_dims);
 			loop_counter++;
 		} while (cl.inc());
 	}
-	
-	//{
-	//	Voronoi v;
-	//	TArray<FVector2D> tmp_voro_sites;
-	//	tmp_voro_sites.Add(FVector2D(50.f, 95.f));
-	//	tmp_voro_sites.Add(FVector2D(5.f, 55.f));
-	//	tmp_voro_sites.Add(FVector2D(95.f, 50.f));
-	//	tmp_voro_sites.Add(FVector2D(50.f, 30.f));
-	//	tmp_voro_sites.Add(FVector2D(50.f, 10.f));
-	//	tmp_voro_sites.Add(FVector2D(90.f, 10.f));
 
-	//	//tmp_voro_sites.Add(FVector2D(50.f, 95.f));
-	//	//tmp_voro_sites.Add(FVector2D(55.f, 90.f));
-	//	//tmp_voro_sites.Add(FVector2D(45.f, 65.f));
 
+	float v_point_interval = FMath::Sqrt(v_cells[0].max_radius_squared()) / 32;
+	//LevelSet v_ls(32, FMath::Sqrt(v_cells[0].max_radius_squared()) + 2 * v_point_interval);
+	//LevelSet v_ls;
+	//v_ls.voronoiCellSignedDist(&v_cells[0], &con, 0, v_particles, con_dims, v_particles[0]);
+	//v_ls.drawBounds(GetWorld());
+	//v_ls.drawScalars(GetWorld());
+	/*LevelSet vd_ls(32, con_dims.X*2.f);
+	vd_ls.voronoiDiagramSignedDist(&v_cells, v_particles, con_dims);
+	vd_ls.drawBounds(GetWorld());
+	vd_ls.drawScalarSections(GetWorld());*/
 	//
-	//	//tmp_voro_sites.Add(FVector2D(50.f, 30.f));
+	//int mf_i = mesh_frags.Num();
+	//std::string comp_name = "ProceduralMesh" + std::to_string(mf_i);
+	//mesh_frags.Add(ConstructObject<UProceduralMeshComponent>(UProceduralMeshComponent::StaticClass(), this, FName(&comp_name[0])));
+	//mesh_frags[mf_i]->RegisterComponent();
+	//mesh_frags[mf_i]->AttachTo(baseModel);
+	//mesh_frags[mf_i]->InitializeComponent();
+	//mesh_frags[mf_i]->bUseComplexAsSimpleCollision = false;
+	//mc_tri.marchingCubes(mesh_frags[0], frag_ls[0]->getScalarField(), frag_ls[2]->getIsoVal());
 
-	//	v.setDims(100.f, 100.f);
-	//	v.CalculateDiagram(&tmp_voro_sites);
-
-	//	{
-	//		DrawDebugLine(
-	//			GetWorld(),
-	//			FVector(0.f, 0.f, 300.f),
-	//			FVector(0.f, v.getDims().Y, 300.f), 					//size
-	//			FColor(255, 255, 255),  //pink
-	//			true,  				//persistent (never goes away)
-	//			0.0, 					//point leaves a trail on moving object
-	//			10,
-	//			1.f
-	//		);
-
-	//		DrawDebugLine(
-	//			GetWorld(),
-	//			FVector(0.f, v.getDims().Y, 300.f),
-	//			FVector(v.getDims().X, v.getDims().Y, 300.f), 					//size
-	//			FColor(255, 255, 255),  //pink
-	//			true,  				//persistent (never goes away)
-	//			0.0, 					//point leaves a trail on moving object
-	//			10,
-	//			1.f
-	//		);
-
-	//		DrawDebugLine(
-	//			GetWorld(),
-	//			FVector(v.getDims().X, v.getDims().Y, 300.f),
-	//			FVector(v.getDims().X, 0.f, 300.f), 					//size
-	//			FColor(255, 255, 255),  //pink
-	//			true,  				//persistent (never goes away)
-	//			0.0, 					//point leaves a trail on moving object
-	//			10,
-	//			1.f
-	//		);
-
-	//		DrawDebugLine(
-	//			GetWorld(),
-	//			FVector(v.getDims().X, 0.f, 300.f),
-	//			FVector(0.f, 0.f, 300.f), 					//size
-	//			FColor(255, 255, 255),  //pink
-	//			true,  				//persistent (never goes away)
-	//			0.0, 					//point leaves a trail on moving object
-	//			10,
-	//			1.f
-	//		);
-	//	}
-
-	//	std::vector<VSite>* v_sites = v.getSites();
-	//	int counter = 0;
-	//	for (const auto &v_site : *v_sites)
-	//	{
-	//		FVector site3D = FVector(v_site.pos.X, v_site.pos.Y, 300.f);
-	//		DrawDebugPoint(
-	//			GetWorld(),
-	//			site3D,
-	//			10,  					//size
-	//			FColor(counter*50, 0, (v_sites->size() -counter)*50),  //pink
-	//			true,  				//persistent (never goes away)
-	//			0.0 					//point leaves a trail on moving object
-	//		);
-	//		//if (counter == 2)
-	//		{
-	//			for (const auto &edge : v_site.edges)
-	//			{
-	//				FVector start3D = FVector(edge->start.X, edge->start.Y, 300.f);
-	//				FVector end3D = FVector(edge->end.X, edge->end.Y, 300.f);
-	//				FVector dir3D = FVector(edge->direction.X, edge->direction.Y, 0.f)*100.f;
-	//				FVector right3D = FVector(edge->right->pos, 300.f) - start3D;
-	//				DrawDebugLine(
-	//					GetWorld(),
-	//					start3D,
-	//					end3D,
-	//					//start3D + dir3D, 					//size
-	//					FColor(counter * 50, 0, (v_sites->size() - counter) * 50),  //pink
-	//					true,  				//persistent (never goes away)
-	//					0.0, 					//point leaves a trail on moving object
-	//					10,
-	//					0.5f
-	//				);
-
-	//				//DrawDebugLine(
-	//				//	GetWorld(),
-	//				//	start3D,
-	//				//	start3D + right3D, 					//size
-	//				//	FColor(255, 255, 255),  //pink
-	//				//	true,  				//persistent (never goes away)
-	//				//	0.0, 					//point leaves a trail on moving object
-	//				//	10,
-	//				//	1.f
-	//				//);
-	//			}
-	//		}
-	//	
-	//		counter++;
-	//	}
-	//}
-	
-	//int i, j, k, l, m;
-	//bool e_found = false;
-	//for (i = 1; i < v_cells[0].p; i++) {
-	//	for (j = 0; j < v_cells[0].nu[i]; j++) {
-	//		k = v_cells[0].ed[i][j];
-	//		if (k >= 0) {
-	//			FVector v1 = FVector(0.5*v_cells[0].pts[3 * i], 0.5*v_cells[0].pts[3 * i + 1], 0.5*v_cells[0].pts[3 * i + 2]);
-	//			l = i; m = j;
-	//			do {
-	//				v_cells[0].ed[k][v_cells[0].ed[l][v_cells[0].nu[l] + m]] = -1 - l;
-	//				v_cells[0].ed[l][m] = -1 - k;
-	//				l = k;
-	//				FVector v2 = FVector(0.5*v_cells[0].pts[3 * k], 0.5*v_cells[0].pts[3 * k + 1], 0.5*v_cells[0].pts[3 * k + 2]);
-
-	//				if(i == 9 )
-	//				DrawDebugLine(
-	//					GetWorld(),
-	//					v1,
-	//					v2, 					//size
-	//					FColor(255, 255, 255),  //pink
-	//					true,  				//persistent (never goes away)
-	//					0.0, 					//point leaves a trail on moving object
-	//					10,
-	//					1.f
-	//				);
-
-	//				v1 = v2;
-	//				e_found = false;
-	//				for (m = 0; m < v_cells[0].nu[l]; m++) {
-	//					k = v_cells[0].ed[l][m];
-	//					if (k >= 0) {
-	//						e_found = true;
-	//						break;
-	//					}
-	//				}
-	//			} while (e_found);
-	//		}
-	//	}
-	//}
-	//int i2, j2;
-	//for (i2 = 0; i2 < v_cells[0].p; i2++){
-	//	for (j2 = 0; j2<v_cells[0].nu[i2]; j2++) {
-	//		if (v_cells[0].ed[i2][j2] >= 0)
-	//			UE_LOG(LogTemp, Warning, TEXT("oh no"));
-
-	//		v_cells[0].ed[i2][j2] = -1 - v_cells[0].ed[i2][j2];
-	//	}
-	//}
-
-	DrawDebugPoint(
-		GetWorld(),
-		FVector(0.f, 0.f, 0.f),
-		20,  					//size
-		FColor(255, 255, 0),  //pink
-		true,  				//persistent (never goes away)
-		0.0 					//point leaves a trail on moving object
-	);
-
+	//frag_ls[0]->drawScalars(GetWorld());
+	//frag_ls[1]->drawScalars(GetWorld());
+	//frag_ls[2]->drawScalars(GetWorld());
 	for (int i = 0; i < v_cells.size(); i++)
 	{
 		std::vector<double> vert_test;
@@ -297,19 +383,8 @@ void AMeshGenerator::BeginPlay()
 		int nroe = v_cells[i].number_of_edges();
 		v_cells[i].edges(edge_test);
 
-		std::vector<int> face_test;
-		v_cells[i].face_vertices(face_test);
-
 		std::vector<int> face_orders_test;
 		v_cells[i].face_orders(face_orders_test);
-		//for (int j = 0; j < face_orders_test[0]; j = j + 1)
-		//{
-		//	FVector v1 = FVector(vert_test[face_test[j] * 3], vert_test[face_test[j] * 3 + 1], vert_test[face_test[j] * 3 + 2]);
-		//	DrawDebugPoint(GetWorld(),v1,10,FColor(255, 0, 0),true,0.0);
-		//}
-
-
-		//if (i == 2)
 		{
 			for (int j = 0; j < edge_test.size(); j = j + 2)
 			{
@@ -326,157 +401,5 @@ void AMeshGenerator::BeginPlay()
 		}
 
 	}
-	
-
-	float v_point_interval = FMath::Sqrt(v_cells[0].max_radius_squared()) / 32;
-	ScalarField<float> v_sf(32, FMath::Sqrt(v_cells[0].max_radius_squared()) + 2* v_point_interval);
-	v_sf.voronoiCellSignedDist(&v_cells[0], &con, 0, v_particles, con_dims, v_particles[0]);
-	//v_sf.drawBounds(GetWorld());
-	//v_sf.drawScalars(GetWorld());
-
-	LevelSet v_ls(32, FMath::Sqrt(v_cells[0].max_radius_squared()) + 2 * v_point_interval);
-	v_ls.voronoiCellSignedDist(&v_cells[0], &con, 0, v_particles, con_dims, v_particles[0]);
-	//v_ls.drawBounds(GetWorld());
-	//v_ls.drawScalars(GetWorld());
-
-	mesh_frags.Add(ConstructObject<UProceduralMeshComponent>(UProceduralMeshComponent::StaticClass(), this, FName("test")));
-	mesh_frags[0]->RegisterComponent();
-	mesh_frags[0]->AttachTo(baseModel);
-	mesh_frags[0]->InitializeComponent();
-	mesh_frags[0]->bUseComplexAsSimpleCollision = false;
-	mesh_frags[0]->SetMaterial(0, base_material);
-	//triangulation::marchingCubes(mesh_frags[0], &v_sf);
-	MCTriangulator mc_tri;
-	mc_tri.marchingCubes(mesh_frags[0], v_ls.getScalarField(), v_ls.getIsoVal());
-
-	ScalarField<float> vd_sf(32, con_dims*2.f);
-	vd_sf.voronoiDiagramSignedDist(&v_cells, v_particles, con_dims);
-	//vd_sf.drawBounds(GetWorld());
-	//vd_sf.drawScalarSections(GetWorld());
-	//Triangulator mc_tri;
-	//mc_tri.marchingCubes(mesh_frags[0], &v_sf);
-	LevelSet vd_ls(32, con_dims.X*2.f);
-	vd_ls.voronoiDiagramSignedDist(&v_cells, v_particles, con_dims);
-	vd_ls.drawBounds(GetWorld());
-	vd_ls.drawScalarSections(GetWorld());
-
-	//Create signed distance function and level set from a model ===============================================================================
-	FStaticMeshSourceModel* sourceM = &baseModel->GetStaticMesh()->SourceModels[0];
-	FRawMesh rawMesh;
-	sourceM->RawMeshBulkData->LoadRawMesh(rawMesh);
-
-	float max_dim = 2.0f*FMath::Max(FMath::Max(baseModel->Bounds.BoxExtent.X, baseModel->Bounds.BoxExtent.Y), baseModel->Bounds.BoxExtent.Z);
-	FVector min_dims;
-	FVector max_dims;
-	triangulation::findMaxMinExtent(rawMesh.VertexPositions, min_dims, max_dims);
-	FVector extent = max_dims - min_dims;
-	//extent = extent*baseModel->GetComponentScale();
-
-	//<-- Used to create a scalar field that always have the same amount of scalar values but distributed 
-	// at cubic intervals along boxes of different dimensions
-	float k = std::cbrt((extent.Z*extent.Z) / (extent.X*extent.Y));
-	float j = (extent.Y / extent.Z)*k;
-	float i = (extent.X / extent.Z)*k;
-	FVector res(std::ceilf(resolution*i), std::ceilf(resolution*j), std::ceilf(resolution*k));
-	FVector point_interval = extent / res;
-	//FVector increased_extent(extent.X + (extent.X / res.X) * 2, extent.Y + (extent.Y / res.Y) * 2, extent.Z + (extent.Z / res.Z) * 2);
-	increased_extent = extent + 2 * point_interval;
-	mid_point = (min_dims)+(extent / 2.0f);
-
-	//<-- create the scalar field with the determined resolution and with a somewhat increased dimension so that scalar values exist outside and around the original model
-	base_model_sf = new ScalarField<float>(res, increased_extent);
-	base_model_sf->setIsoValue(0.0f);
-	base_model_sf->meshToLeveSet(&rawMesh, mid_point);
-
-	base_material = baseModel->GetMaterial(0);
-	baseModel->ToggleVisibility();
 }
 
-// Called every frame
-void AMeshGenerator::Tick( float DeltaTime )
-{
-	Super::Tick( DeltaTime );
-}
-
-void AMeshGenerator::OnOriginalModelHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
-{	
-	return;
-	if (NormalImpulse.Size() > 10000.f)
-	{
-
-		FVector test_mid = baseModel->GetCenterOfMass();
-
-		//Create signed distance function and level set for fragments ===============================================================================
-		frag_sf.Add( new ScalarField<float>(resolution, increased_extent.Z + (increased_extent.Z / resolution)));
-		frag_sf[0]->setIsoValue(0.0f);
-		frag_sf[0]->cubeSignedDistance(FVector::ZeroVector);
-
-		//Transform impulsnormal and hit location to model space
-		FVector localImpulseNormal = baseModel->ComponentToWorld.Inverse().TransformVector(NormalImpulse.GetSafeNormal());
-		FVector local_hit_location = baseModel->ComponentToWorld.InverseTransformPositionNoScale(Hit.Location);
-		
-		//create the rotation matrix that align the fragments to the impulsenormal
-		float rot_angle = FMath::Acos(FVector::DotProduct(FVector::UpVector, localImpulseNormal));// *180.f / PI;
-		FVector rot_axis = FVector::CrossProduct( FVector::UpVector, localImpulseNormal);
-		FMatrix rot_mat;
-		rot_mat = axisRotMatrix(rot_angle, rot_axis);
-
-		//calculate the individual positions of the fragments and then merge them with the model level set and the triangulate the merged level set
-		float frag_offset = increased_extent.Z / 2.0f;
-		FVector corner1 = FVector(frag_offset, -frag_offset, -frag_offset);
-		CreateFragment(rot_mat, local_hit_location, corner1);
-
-		FVector corner2 = FVector(frag_offset, frag_offset, -frag_offset);
-		CreateFragment(rot_mat, local_hit_location, corner2);
-
-		FVector corner3 =  FVector(frag_offset, -frag_offset, frag_offset);
-		CreateFragment(rot_mat, local_hit_location, corner3);
-
-		FVector corner4 =  FVector(frag_offset, frag_offset, frag_offset);
-		CreateFragment(rot_mat, local_hit_location, corner4);
-
-		FVector corner5 =  FVector(-frag_offset, -frag_offset, -frag_offset);
-		CreateFragment(rot_mat, local_hit_location, corner5);
-
-		FVector corner6 =  FVector(-frag_offset, frag_offset, -frag_offset);
-		CreateFragment(rot_mat, local_hit_location, corner6);
-
-		FVector corner7 = FVector(-frag_offset, -frag_offset, frag_offset);
-		CreateFragment(rot_mat, local_hit_location, corner7);
-
-		FVector corner8 = FVector(-frag_offset, frag_offset, frag_offset);
-		CreateFragment(rot_mat, local_hit_location, corner8);
-
-		baseModel->UnregisterComponent();
-		baseModel->DestroyComponent();
-		//baseModel->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	}
-
-	
-}
-
-void AMeshGenerator::CreateFragment(FMatrix _collision_rot, FVector _collision_loc, FVector _frag_offset)
-{
-	int mf_i = mesh_frags.Num();
-	std::string comp_name = "ProceduralMesh" + std::to_string(mf_i);
-	mesh_frags.Add(ConstructObject<UProceduralMeshComponent>(UProceduralMeshComponent::StaticClass(), this, FName(&comp_name[0])));
-	mesh_frags[mf_i]->RegisterComponent();
-	mesh_frags[mf_i]->AttachTo(baseModel);
-	mesh_frags[mf_i]->InitializeComponent();
-	mesh_frags[mf_i]->bUseComplexAsSimpleCollision = false;
-
-	mesh_frags[mf_i]->SetMaterial(0, base_material);
-
-	ScalarField<float> merging_sf;
-	ScalarField<float>::mergeLevelSets(base_model_sf, frag_sf[0], _collision_rot, _collision_loc, _frag_offset, &merging_sf);
-	FVector tmp_zero = FVector::ZeroVector;
-	triangulation::marchingCubes(mesh_frags[mf_i], &merging_sf, tmp_zero);
-	mesh_frags[mf_i]->AddRelativeLocation(_collision_rot.TransformPosition(_frag_offset), false, nullptr, ETeleportType::TeleportPhysics);
-	mesh_frags[mf_i]->AddRelativeRotation(_collision_rot.Rotator(), false, nullptr, ETeleportType::TeleportPhysics);
-	mesh_frags[mf_i]->AddRelativeLocation(_collision_loc, false, nullptr, ETeleportType::TeleportPhysics);
-	
-	mesh_frags[mf_i]->SetCollisionObjectType(ECollisionChannel::ECC_PhysicsBody);
-
-	mesh_frags[mf_i]->SetSimulatePhysics(true);
-	mesh_frags[mf_i]->ComponentVelocity = baseModel->ComponentVelocity;
-}

@@ -21,8 +21,9 @@ public:
 	~MCTriangulator();
 
 	void marchingCubes(UProceduralMeshComponent* _mesh, ScalarField<float>* _sf, float _iso_val = 0.f, const FVector& _mid_point = FVector(0.0f, 0.0f, 0.0f));
+	void sectionedMarchingCubes(UProceduralMeshComponent* _mesh, ScalarField<float>* _sf, float _iso_val = 0.f, const FVector& _mid_point = FVector(0.0f, 0.0f, 0.0f));
 	//void marchingCubes(UProceduralMeshComponent* _mesh, LevelSet* _ls, const FVector& _mid_point = FVector(0.0f, 0.0f, 0.0f));
-	void calcNormals();
+	
 private:
 
 	//MC cell iterator data structures =======================
@@ -34,11 +35,26 @@ private:
 	bool cellIsoBool[8];
 	double dVal;
 
-	int vertexCap = 0;
-	int triangleCap = 0;
+	unsigned char sections[8];
+	std::vector<unsigned char> cell_sections;
 
 	int x, y, z;
 	int layerIndex = 0;
+
+	//variables dependant on the scalarfield being triangulated
+	float*** data = nullptr;
+	unsigned char*** section = nullptr;
+
+	float iso_val;
+
+	FVector dim;
+
+	float resxm1;
+	float resxm1d2;
+	float resym1;
+	float resym1d2;
+	float reszm1;
+	float reszm1d2;
 
 	/*int edgeTable[256];
 	int triTable[256][16];
@@ -58,11 +74,25 @@ private:
 
 	//arrays to store generated data =============================
 
-	TArray<FVector> vertexArray;
-	TArray<int32> triangleArray;
-	TArray<FVector> normalArray;
-	TArray<FProcMeshTangent> tangentArray;
+	std::vector<TArray<FVector>> vertexArrays;
+	std::vector<TArray<int32>> triangleArrays;
+	std::vector<TArray<FVector>> normalArrays;
+	std::vector<TArray<FProcMeshTangent>> tangentArrays;
 
+	std::vector<int> vertexCaps;
+	std::vector<int> triangleCaps;
 
+	//functions used during the algorithm
+	void calcNormals();
+	void calcSectionedNormals();
+
+	void prepSectionedCell(unsigned char _section);
+	void calculateSectionedCellPositions();
+	void calculateSectionedCell(unsigned char _section);
+
+	void calcSixthCorner();
+	void setCubeIndex();
+	void bindTriangleIndicies();
+	void bindSectionedTriangleIndicies(unsigned char _section);
 };
 #endif

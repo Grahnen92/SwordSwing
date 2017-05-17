@@ -3,8 +3,9 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "ScalarField.h"
 #include "ProceduralMeshComponent.h"
+#include "MCTriangulator.h"
+#include "C:/Program Files (x86)/Epic Games/projects/SwordSwing/ThirdParty/voro++/includes/voro++.hh"
 #include "MeshGenerator.generated.h"
 
 UCLASS()
@@ -30,7 +31,7 @@ public:
 	UStaticMeshComponent* baseModel;
 	UMaterialInterface* base_material;
 
-	ScalarField<float>* base_model_sf;
+	class LevelSet* base_model_ls;
 	FVector mid_point;
 	FVector increased_extent;
 	
@@ -45,9 +46,25 @@ public:
 	void OnOriginalModelHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 private:
-	
-	void CreateFragment(FMatrix _collision_rot, FVector _collision_loc, FVector _frag_offset);
+	voro::container* con;
+	std::vector<FVector> v_particles;
+	std::vector<std::vector<double>> cell_verts;
+	//edges
+	std::vector<std::vector<int>> cell_edges;
+	//faces
+	std::vector<std::vector<int>> cell_faces;
+	std::vector<std::vector<int>> cell_face_orders;
+	std::vector<std::vector<double>> cell_face_normals;
 
-	TArray<ScalarField<float>*> frag_sf;
+	//voronoi cells
+	std::vector<voro::voronoicell_neighbor> v_cells;
+	void CreateFragmentLevelSet();
+	
+	void CreateFragment(FMatrix _collision_rot, FVector _collision_loc, FVector _frag_offset, int _frag_index);
+
+
+	std::vector<class LevelSet*> frag_ls;
+
+	MCTriangulator mc_tri;
 	
 };

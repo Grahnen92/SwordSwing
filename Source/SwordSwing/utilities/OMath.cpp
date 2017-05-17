@@ -4,6 +4,57 @@
 
 
 namespace OMath {
+
+	void findMaxMinExtent(TArray<FVector>& _vertexArray, FVector& _min, FVector& _max)
+	{
+		_min = _vertexArray[0];
+		_max = _vertexArray[0];
+
+		for (int i = 1; i < _vertexArray.Num(); i++) {
+			//X
+			if (_vertexArray[i].X > _max.X)
+				_max.X = _vertexArray[i].X;
+			else if (_vertexArray[i].X < _min.X)
+				_min.X = _vertexArray[i].X;
+			//Y
+			if (_vertexArray[i].Y >_max.Y)
+				_max.Y = _vertexArray[i].Y;
+			else if (_vertexArray[i].Y < _min.Y)
+				_min.Y = _vertexArray[i].Y;
+			//Z
+			if (_vertexArray[i].Z >_max.Z)
+				_max.Z = _vertexArray[i].Z;
+			else if (_vertexArray[i].Z < _min.Z)
+				_min.Z = _vertexArray[i].Z;
+			
+		}
+	}
+
+	void findMaxMinExtent(std::vector<double>& _vertexArray, FVector& _min, FVector& _max)
+	{
+		_min.X = _vertexArray[0]; _min.Y = _vertexArray[1]; _min.Z = _vertexArray[2];
+		_max.X = _vertexArray[0]; _max.Y = _vertexArray[1]; _max.Z = _vertexArray[2];
+
+		for (int i = 3; i < _vertexArray.size(); i = i +3) {
+			//X
+			if (_vertexArray[i] > _max.X)
+				_max.X = _vertexArray[i];
+			else if (_vertexArray[i] < _min.X)
+				_min.X = _vertexArray[i];
+			//Y
+			if (_vertexArray[i + 1] >_max.Y)
+				_max.Y = _vertexArray[i + 1];
+			else if (_vertexArray[i + 1] < _min.Y)
+				_min.Y = _vertexArray[i + 1];
+			//Z
+			if (_vertexArray[i + 2] >_max.Z)
+				_max.Z = _vertexArray[i + 2];
+			else if (_vertexArray[i + 2] < _min.Z)
+				_min.Z = _vertexArray[i + 2];
+		}
+	}
+
+
 	FVector distToPolygon(const FVector &_point, const std::vector<int> &_indices, const std::vector<std::vector<double>> &vertices, std::vector<double> &normal)
 	{
 		FVector p0 = FVector(vertices[_indices[0]][0], vertices[_indices[0]][1], vertices[_indices[0]][2]);
