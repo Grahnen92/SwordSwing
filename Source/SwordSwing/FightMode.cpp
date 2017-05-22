@@ -49,7 +49,7 @@ void AFightMode::BeginPlay()
 	std::stringstream ss_round;
 	ss_round << "Round " << current_round << "/" << (2*score_to_win)-1  << "<br>" << "0-0";
 
-	while (GameState->PlayerArray.Num() < current_player_amount)
+	while (GameState->PlayerArray.Num() < 2)
 	{
 		UGameplayStatics::CreatePlayer(GetWorld(), -1, true);
 	}

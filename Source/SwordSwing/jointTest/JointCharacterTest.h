@@ -125,6 +125,8 @@ protected:
 
 
 	//Upper body ------------------------------------------------------------------------
+	UPROPERTY(VisibleAnywhere)
+	USkeletalMeshComponent* body;
 
 	UPROPERTY(VisibleAnywhere)
 	UBoxComponent* torso;

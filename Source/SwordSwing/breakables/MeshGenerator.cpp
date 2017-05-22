@@ -66,8 +66,6 @@ AMeshGenerator::AMeshGenerator()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	baseModel->OnComponentHit.AddDynamic(this, &AMeshGenerator::OnOriginalModelHit);
-	
-
 }
 
 // Called when the game starts or when spawned
@@ -75,7 +73,7 @@ void AMeshGenerator::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CreateFragmentLevelSet();
+
 
 	//Create signed distance function and level set from a model ===============================================================================
 	FStaticMeshSourceModel* sourceM = &baseModel->GetStaticMesh()->SourceModels[0];
@@ -104,15 +102,31 @@ void AMeshGenerator::BeginPlay()
 	base_model_ls = new LevelSet(res, increased_extent);
 	base_model_ls->setIsoVal(0.0f);
 	base_model_ls->meshToLeveSet(&rawMesh, mid_point);
-
 	base_material = baseModel->GetMaterial(0);
+
+	//int mf_i = mesh_frags.Num();
+	//std::string comp_name = "ProceduralMesh" + std::to_string(mf_i);
+	//mesh_frags.Add(ConstructObject<UProceduralMeshComponent>(UProceduralMeshComponent::StaticClass(), this, FName(&comp_name[0])));
+	//mesh_frags[mf_i]->RegisterComponent();
+	//mesh_frags[mf_i]->AttachTo(baseModel);
+	//mesh_frags[mf_i]->InitializeComponent();
+	//mesh_frags[mf_i]->bUseComplexAsSimpleCollision = false;
+
+	//mc_tri.marchingCubes(mesh_frags[mf_i], base_model_ls->getScalarField(), base_model_ls->getIsoVal());
+	//mesh_frags[mf_i]->SetMaterial(0, base_material);
+	
+	
 	//baseModel->ToggleVisibility();
+
+	//create fragment levelsets
+	CreateFragmentLevelSet();
 }
 
 // Called every frame
 void AMeshGenerator::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
+	
 }
 
 void AMeshGenerator::OnOriginalModelHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -122,13 +136,6 @@ void AMeshGenerator::OnOriginalModelHit(UPrimitiveComponent* HitComp, AActor* Ot
 	{
 
 		FVector test_mid = baseModel->GetCenterOfMass();
-
-		//Create signed distance function and level set for fragments ===============================================================================
-		/*frag_ls.resize(1);
-		frag_ls[0] = ( new LevelSet(resolution, increased_extent.Z + (increased_extent.Z / resolution)));
-		frag_ls[0]->setIsoVal(0.0f);
-		frag_ls[0]->cubeSignedDistance(FVector::ZeroVector);
-		frag_ls[0]->drawScalars(GetWorld());*/
 
 		//Transform impulsnormal and hit location to model space
 		FVector localImpulseNormal = baseModel->ComponentToWorld.Inverse().TransformVector(NormalImpulse.GetSafeNormal());
@@ -147,38 +154,46 @@ void AMeshGenerator::OnOriginalModelHit(UPrimitiveComponent* HitComp, AActor* Ot
 			//float frag_offset = increased_extent.Z / 2.0f;
 			FVector frag_offset = frag_ls[i]->getPos();
 			CreateFragment(rot_mat, local_hit_location, frag_offset, i);
+			float dist_to_collision = FMath::Max((baseModel->Bounds.GetSphere().W - (mesh_frags[i]->GetBodyInstance()->GetCOMPosition() - Hit.Location).Size())/ baseModel->Bounds.GetSphere().W,0.f);
+			float relative_volume = mesh_frags[i]->Bounds.GetBox().GetVolume() / baseModel->Bounds.GetBox().GetVolume();
+			mesh_frags[i]->AddImpulse(-NormalImpulse*dist_to_collision*relative_volume);
+			
 		}
 
-		////calculate the individual positions of the fragments and then merge them with the model level set and the triangulate the merged level set
-		//float frag_offset = increased_extent.Z / 2.0f;
-		//FVector corner1 = FVector(frag_offset, -frag_offset, -frag_offset);
-		//CreateFragment(rot_mat, local_hit_location, corner1, 0);
+		//FVector dim = mesh_frags[0]->Bounds.GetBox().GetExtent();
+		//FVector _offset = mesh_frags[0]->GetBodyInstance()->GetCOMPosition();
+		//mesh_frags[0]->SetMaterial(0, base_material);
 
-		//FVector corner2 = FVector(frag_offset, frag_offset, -frag_offset);
-		//CreateFragment(rot_mat, local_hit_location, corner2, 0);
+		//FVector v1 = FVector(dim.X, dim.Y, dim.Z) + _offset;
+		//FVector v2 = FVector(-dim.X, dim.Y, dim.Z)+ _offset;
+		//FVector v3 = FVector(-dim.X, -dim.Y, dim.Z)+ _offset;
+		//FVector v4 = FVector(dim.X, -dim.Y, dim.Z)+ _offset;
 
-		//FVector corner3 = FVector(frag_offset, -frag_offset, frag_offset);
-		//CreateFragment(rot_mat, local_hit_location, corner3, 0);
+		//FVector v5 = FVector(dim.X, dim.Y, -dim.Z)+ _offset;
+		//FVector v6 = FVector(-dim.X, dim.Y, -dim.Z)+ _offset;
+		//FVector v7 = FVector(-dim.X, -dim.Y, -dim.Z)+ _offset;
+		//FVector v8 = FVector(dim.X, -dim.Y, -dim.Z)+ _offset;
 
-		//FVector corner4 = FVector(frag_offset, frag_offset, frag_offset);
-		//CreateFragment(rot_mat, local_hit_location, corner4, 0);
+		//DrawDebugLine(GetWorld(), v1, v2, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		//DrawDebugLine(GetWorld(), v2, v3, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		//DrawDebugLine(GetWorld(), v3, v4, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		//DrawDebugLine(GetWorld(), v4, v1, FColor(255, 255, 255), true, 0.0, 10, 1.f);
 
-		//FVector corner5 = FVector(-frag_offset, -frag_offset, -frag_offset);
-		//CreateFragment(rot_mat, local_hit_location, corner5, 0);
+		//DrawDebugLine(GetWorld(), v1, v5, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		//DrawDebugLine(GetWorld(), v2, v6, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		//DrawDebugLine(GetWorld(), v3, v7, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		//DrawDebugLine(GetWorld(), v4, v8, FColor(255, 255, 255), true, 0.0, 10, 1.f);
 
-		//FVector corner6 = FVector(-frag_offset, frag_offset, -frag_offset);
-		//CreateFragment(rot_mat, local_hit_location, corner6, 0);
-
-		//FVector corner7 = FVector(-frag_offset, -frag_offset, frag_offset);
-		//CreateFragment(rot_mat, local_hit_location, corner7, 0);
-
-		//FVector corner8 = FVector(-frag_offset, frag_offset, frag_offset);
-		//CreateFragment(rot_mat, local_hit_location, corner8, 0);
-		//
+		//DrawDebugLine(GetWorld(), v5, v6, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		//DrawDebugLine(GetWorld(), v6, v7, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		//DrawDebugLine(GetWorld(), v7, v8, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+		//DrawDebugLine(GetWorld(), v8, v5, FColor(255, 255, 255), true, 0.0, 10, 1.f);
 
 		baseModel->UnregisterComponent();
 		baseModel->DestroyComponent();
 	//	baseModel->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		APlayerController* const MyPlayer = Cast<APlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
+		MyPlayer->SetPause(true);
 	}
 
 	
@@ -198,11 +213,10 @@ void AMeshGenerator::CreateFragment(FMatrix _collision_rot, FVector _collision_l
 
 	mesh_frags[mf_i]->SetMaterial(0, base_material);
 
-	LevelSet merging_ls;
-	LevelSet::mergeLevelSets(base_model_ls, frag_ls[_frag_index], _collision_rot, _collision_loc, _frag_offset, &merging_ls, GetWorld());
+	LevelSet::mergeLevelSets(base_model_ls, frag_ls[_frag_index], _collision_rot, _collision_loc, _frag_offset);
 	FVector tmp_zero = FVector::ZeroVector;
 	//triangulation::marchingCubes(mesh_frags[mf_i], &merging_ls, tmp_zero);
-	mc_tri.marchingCubes(mesh_frags[mf_i], merging_ls.getScalarField(), merging_ls.getIsoVal());
+	mc_tri.marchingCubes(mesh_frags[mf_i], frag_ls[_frag_index]->getScalarField(), frag_ls[_frag_index]->getIsoVal());
 	mesh_frags[mf_i]->AddRelativeLocation(_collision_rot.TransformPosition(_frag_offset), false, nullptr, ETeleportType::TeleportPhysics);
 	mesh_frags[mf_i]->AddRelativeRotation(_collision_rot.Rotator(), false, nullptr, ETeleportType::TeleportPhysics);
 	mesh_frags[mf_i]->AddRelativeLocation(_collision_loc, false, nullptr, ETeleportType::TeleportPhysics);
@@ -210,7 +224,8 @@ void AMeshGenerator::CreateFragment(FMatrix _collision_rot, FVector _collision_l
 	mesh_frags[mf_i]->SetCollisionObjectType(ECollisionChannel::ECC_PhysicsBody);
 
 	mesh_frags[mf_i]->SetSimulatePhysics(true);
-	mesh_frags[mf_i]->ComponentVelocity = baseModel->ComponentVelocity;
+		
+	//mesh_frags[mf_i]->ComponentVelocity = baseModel->ComponentVelocity;
 
 	//DEBUG
 	//std::vector<double> vert_test;
@@ -260,7 +275,7 @@ void AMeshGenerator::CreateFragment(FMatrix _collision_rot, FVector _collision_l
 
 void AMeshGenerator::CreateFragmentLevelSet()
 {
-	FVector con_dims(100.f, 100.f, 100.f);
+	FVector con_dims(increased_extent.Z, increased_extent.Z, increased_extent.Z);
 	con = new voro::container(-con_dims.X, con_dims.X, -con_dims.Y, con_dims.Y, -con_dims.Z, con_dims.Z, 6, 6, 6, false, false, false, 8);
 	
 	//v_particles.push_back(FVector(50.f, 0.f, -75.f));
@@ -373,33 +388,33 @@ void AMeshGenerator::CreateFragmentLevelSet()
 	//frag_ls[0]->drawScalars(GetWorld());
 	//frag_ls[1]->drawScalars(GetWorld());
 	//frag_ls[2]->drawScalars(GetWorld());
-	for (int i = 0; i < v_cells.size(); i++)
-	{
-		std::vector<double> vert_test;
-		v_cells[i].vertices(v_particles[i].X, v_particles[i].Y, v_particles[i].Z, vert_test);
-		//v_cells[i].vertices(vert_test);
+	//for (int i = 0; i < v_cells.size(); i++)
+	//{
+	//	std::vector<double> vert_test;
+	//	v_cells[i].vertices(v_particles[i].X, v_particles[i].Y, v_particles[i].Z, vert_test);
+	//	//v_cells[i].vertices(vert_test);
 
-		std::vector<int> edge_test;
-		int nroe = v_cells[i].number_of_edges();
-		v_cells[i].edges(edge_test);
+	//	std::vector<int> edge_test;
+	//	int nroe = v_cells[i].number_of_edges();
+	//	v_cells[i].edges(edge_test);
 
-		std::vector<int> face_orders_test;
-		v_cells[i].face_orders(face_orders_test);
-		{
-			for (int j = 0; j < edge_test.size(); j = j + 2)
-			{
-				float x1 = vert_test[edge_test[j] * 3];
-				float y1 = vert_test[edge_test[j] * 3 + 1];
-				float z1 = vert_test[edge_test[j] * 3 + 2];
-				FVector v1 = FVector(x1, y1, z1);
-				float x2 = vert_test[edge_test[j + 1] * 3];
-				float y2 = vert_test[edge_test[j + 1] * 3 + 1];
-				float z2 = vert_test[edge_test[j + 1] * 3 + 2];
-				FVector v2 = FVector(x2, y2, z2);
-				DrawDebugLine(GetWorld(), v1, v2, FColor(255, 255, 255), true, 0.0, 10, 1.f);
-			}
-		}
+	//	std::vector<int> face_orders_test;
+	//	v_cells[i].face_orders(face_orders_test);
+	//	{
+	//		for (int j = 0; j < edge_test.size(); j = j + 2)
+	//		{
+	//			float x1 = vert_test[edge_test[j] * 3];
+	//			float y1 = vert_test[edge_test[j] * 3 + 1];
+	//			float z1 = vert_test[edge_test[j] * 3 + 2];
+	//			FVector v1 = FVector(x1, y1, z1);
+	//			float x2 = vert_test[edge_test[j + 1] * 3];
+	//			float y2 = vert_test[edge_test[j + 1] * 3 + 1];
+	//			float z2 = vert_test[edge_test[j + 1] * 3 + 2];
+	//			FVector v2 = FVector(x2, y2, z2);
+	//			DrawDebugLine(GetWorld(), v1, v2, FColor(255, 255, 255), true, 0.0, 10, 1.f);
+	//		}
+	//	}
 
-	}
+	//}
 }
 

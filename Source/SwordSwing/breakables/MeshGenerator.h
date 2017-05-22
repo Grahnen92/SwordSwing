@@ -37,7 +37,7 @@ public:
 	
 
 	UPROPERTY(Category = "Mesh", BlueprintReadWrite, EditAnywhere)
-	int32 resolution = 30;
+	int32 resolution = 40;
 	// Called every frame
 	virtual void Tick( float DeltaSeconds ) override;
 

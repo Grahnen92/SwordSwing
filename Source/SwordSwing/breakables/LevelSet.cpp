@@ -275,7 +275,7 @@ void LevelSet::voronoiCellSignedDist(voro::voronoicell_neighbor* _v_cell, voro::
 	//setDims(FVector(max_dim, max_dim, max_dim));
 	setDims(tmp_dims);
 	//max_dim = max_dim*0.25f;
-	setRes(FMath::Floor(tmp_dims.X*0.5f), FMath::Floor(tmp_dims.Y*0.5f), FMath::Floor(tmp_dims.Z*0.5f));
+	setRes(FMath::Floor(tmp_dims.X*0.3f), FMath::Floor(tmp_dims.Y*0.3f), FMath::Floor(tmp_dims.Z*0.3f));
 	//setRes(max_dim, max_dim, max_dim);
 
 	FVector c_offset = min_extent + (tmp_dims/2.f);
@@ -510,15 +510,8 @@ void LevelSet::meshToLeveSet(FRawMesh* _rm, FVector& _w_pos)
 }
 
 //_rel_transform is the transform that puts the origin of sf2 at a certain point relative to the origin of sf1
-void LevelSet::mergeLevelSets(LevelSet* _ls1, LevelSet* _ls2, FMatrix _rel_rotation, FVector rel_position, FVector frag_w_pos, LevelSet* _ls_out, UWorld * _world )
+void LevelSet::mergeLevelSets(LevelSet* _ls1, LevelSet* _ls2, FMatrix _rel_rotation, FVector rel_position, FVector frag_w_pos)
 {
-	_ls_out->setRes(_ls2->getRes());
-	_ls_out->setDims(_ls2->getDims());
-	
-	_ls_out->setPos(_ls2->getPos());
-	_ls_out->iso_val = _ls2->iso_val;
-	_ls_out->reallocateData();
-	float*** out_data = _ls_out->sf.getDataPtr();
 
 	FVector res1;
 	_ls1->getRes(res1);
@@ -576,29 +569,17 @@ void LevelSet::mergeLevelSets(LevelSet* _ls1, LevelSet* _ls2, FMatrix _rel_rotat
 
 					xyz1 = _rel_rotation.TransformPosition(xyz2) + rel_position;
 
-					//DrawDebugPoint(
-					//	_world,
-					//	FVector(x, y, z),
-					//	2,//size
-					//	FColor(255, 0, 0),
-					//	true, //persistent (never goes away)
-					//	0.0 //point leaves a trail on moving object
-					//);
 					interp_val_1 = _ls1->getTLIValue(xyz1);
 					//inside original model
 					if (interp_val_1 >= _ls1->iso_val)
 					{
-						out_data[i2][j2][k2] = std::fmin(interp_val_1, data2[i2][j2][k2]);
+						data2[i2][j2][k2] = std::fmin(interp_val_1, data2[i2][j2][k2]);
 					}
 					else
 					{
-						out_data[i2][j2][k2] = interp_val_1;
+						data2[i2][j2][k2] = interp_val_1;
 					}
 
-				}
-				else
-				{
-					out_data[i2][j2][k2] = data2[i2][j2][k2];
 				}
 			}
 		}

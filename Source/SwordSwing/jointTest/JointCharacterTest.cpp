@@ -302,7 +302,7 @@ bool AJointCharacterTest::isGuarding()
 
 void AJointCharacterTest::OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (NormalImpulse.Size() > 40000.f)
+	if (NormalImpulse.Size() > 30000.f)
 	{
 		TArray<USceneComponent*> tmp_child_comps;
 		HitComp->GetChildrenComponents(true, tmp_child_comps);
@@ -1358,6 +1358,9 @@ void AJointCharacterTest::initCamera()
 
 void AJointCharacterTest::initUpperBody()
 {
+
+	//body = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Body"));
+	//body->SetupAttachment(RootComponent);
 
 	spine = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Spine"));
 	spine->SetupAttachment(pelvis);

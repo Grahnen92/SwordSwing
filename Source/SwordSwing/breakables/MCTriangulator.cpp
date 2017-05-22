@@ -1521,7 +1521,7 @@ void MCTriangulator::marchingCubes(UProceduralMeshComponent* _mesh, ScalarField<
 	auto UV0 = TArray<FVector2D>();
 	auto Colors = TArray<FLinearColor>();
 	for (int i = 0; i < vertexArrays[0].Num(); i++)
-		Colors.Add(FLinearColor(1.0f, 0.0f, 0.0f));
+		Colors.Add(FLinearColor(1.0f, 1.0f, 1.0f));
 
 
 	//calcNormals(&vertexArrays[0], &triangleArray, &normalArray, &tangentArray);

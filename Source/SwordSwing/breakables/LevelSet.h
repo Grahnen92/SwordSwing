@@ -46,7 +46,8 @@ public:
 	void meshToLeveSet(FRawMesh* _rm, FVector& _world_pos);
 
 	//_rel_transform is the transform that puts the origin of sf2 at a certain point relative to the origin of sf1
-	static void mergeLevelSets(LevelSet* _ls1, LevelSet* _ls2, FMatrix _rel_rotation, FVector rel_position, FVector frag_offset, LevelSet* _ls_out, UWorld * _world );
+	static void mergeLevelSets(LevelSet* _ls1, LevelSet* _ls2, FMatrix _rel_rotation, FVector rel_position, FVector frag_offset);
+	static void mergeLevelSets(LevelSet* _ls1, LevelSet* _ls2, FMatrix _rel_rotation, FVector rel_position, FVector frag_offset, LevelSet* _ls_out);
 		
 	void drawBounds(UWorld * _world);
 
