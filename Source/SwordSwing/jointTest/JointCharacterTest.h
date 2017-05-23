@@ -10,6 +10,84 @@
 #include "GameFramework/Pawn.h"
 #include "JointCharacterTest.generated.h"
 
+USTRUCT(BlueprintType)
+struct FPIDData
+{
+	GENERATED_USTRUCT_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float target;
+	
+	float error;
+	float prev_err;
+	float integral;
+	float derivative;
+	float adjustment;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float max_adjustment;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float P;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float I;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float D;
+};
+USTRUCT(BlueprintType)
+struct FPIDData2D
+{
+	GENERATED_USTRUCT_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector2D target;
+
+	FVector2D error;
+	FVector2D prev_err;
+	FVector2D integral;
+	FVector2D derivative;
+	FVector2D adjustment;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector2D max_adjustment;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector2D P;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector2D I;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector2D D;
+};
+USTRUCT(BlueprintType)
+struct FPIDData3D
+{
+	GENERATED_USTRUCT_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector target;
+
+	FVector error;
+	FVector prev_err;
+	FVector integral;
+	FVector derivative;
+	FVector adjustment;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector max_adjustment;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector P;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector I;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector D;
+};
+
+USTRUCT()
+struct FBIState
+{
+	GENERATED_USTRUCT_BODY()
+		
+	FVector pos;
+	FVector forward;
+	FVector right;
+	FVector up;
+	FVector prev_up;
+};
 
 UCLASS()
 class SWORDSWING_API AJointCharacterTest : public APawn
@@ -59,7 +137,7 @@ protected:
 	USphereComponent* grip_axis;
 	UPROPERTY(Category = "Arm", VisibleAnywhere)
 	UStaticMeshComponent* grip_axis_vis;
-	FBodyInstance* grip_axis_bi;
+	
 	UPROPERTY(Category = "Arm", VisibleAnywhere)
 	UPhysicsConstraintComponent* grip_axis_attachment;
 
@@ -67,7 +145,7 @@ protected:
 	USphereComponent* grip;
 	UPROPERTY(Category = "Grip", VisibleAnywhere)
 	UStaticMeshComponent* grip_vis;
-	FBodyInstance* grip_bi;
+	
 	UPROPERTY(Category = "Grip", VisibleAnywhere)
 	UPhysicsConstraintComponent* grip_attachment;
 	UPROPERTY(Category = "Grip", VisibleAnywhere)
@@ -75,12 +153,16 @@ protected:
 
 	UPROPERTY(Category = "Grip", VisibleAnywhere)
 	UDecalComponent* grip_indicator_decal;
-
 	UPROPERTY(Category = "Grip", VisibleAnywhere)
 	UParticleSystemComponent* grip_indicator_beam;
-
 	UPROPERTY(Category = "Grip", VisibleAnywhere)
 	UAudioComponent* object_attach_audio;
+
+	TArray<FBodyInstance*> arm_BIs;
+
+
+	//FBodyInstance* grip_axis_bi;
+	//FBodyInstance* grip_bi;
 
 	FVector offset_wep_inertia;
 
@@ -127,121 +209,9 @@ protected:
 	//Upper body ------------------------------------------------------------------------
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* body;
-
-	UPROPERTY(VisibleAnywhere)
-	UBoxComponent* torso;
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* torso_vis;
-	FBodyInstance* torso_bi;
-
-	UPROPERTY(VisibleAnywhere)
-	UCapsuleComponent* spine;
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* spine_vis;
-	FBodyInstance* spine_bi;
-	UPROPERTY(Category = "UpperBody", VisibleAnywhere)
-	UPhysicsConstraintComponent* spine_attachment;
-
-
-	//legs -----------------------------------------------------------------------
 	
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UCapsuleComponent* pelvis;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* pelvis_visu;
-	FBodyInstance* pelvis_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* pelvis_attachment;
+	FBodyInstance* torsoBI;
 
-	//right leg ------------------------------------------------------------------------
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	USceneComponent* right_leg_axis;
-	
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	USphereComponent* r_hip_motor;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* r_hip_motor_vis;
-	FBodyInstance* r_hip_motor_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* r_hip_attachment;
-
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UCapsuleComponent* r_thigh;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* r_thigh_vis;
-	FBodyInstance* r_thigh_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* r_thigh_attachment;
-
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	USphereComponent* r_knee_motor;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* r_knee_motor_vis;
-	FBodyInstance* r_knee_motor_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* r_knee_attachment;
-
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UCapsuleComponent* r_shin;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* r_shin_vis;
-	FBodyInstance* r_shin_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* r_shin_attachment;
-
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UCapsuleComponent* r_toe;
-	FBodyInstance* r_toe_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* r_toe_vis;
-	//UPROPERTY(Category = "Legs", VisibleAnywhere)
-	//UPhysicsConstraintComponent* r_toe_attachment;
-	//left leg ------------------------------------------------------------------------
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	USceneComponent* left_leg_axis;
-
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	USphereComponent* l_hip_motor;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* l_hip_motor_vis;
-	FBodyInstance* l_hip_motor_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* l_hip_attachment;
-
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UCapsuleComponent* l_thigh;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* l_thigh_vis;
-	FBodyInstance* l_thigh_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* l_thigh_attachment;
-
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	USphereComponent* l_knee_motor;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* l_knee_motor_vis;
-	FBodyInstance* l_knee_motor_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* l_knee_attachment;
-
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UCapsuleComponent* l_shin;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* l_shin_vis;
-	FBodyInstance* l_shin_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UPhysicsConstraintComponent* l_shin_attachment;
-
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UCapsuleComponent* l_toe;
-	FBodyInstance* l_toe_bi;
-	UPROPERTY(Category = "Legs", VisibleAnywhere)
-	UStaticMeshComponent* l_toe_vis;
-	//UPROPERTY(Category = "Legs", VisibleAnywhere)
-	//UPhysicsConstraintComponent* l_toe_attachment;
-
-	
-	
 
 	void cameraCalculations(float DeltaTime);
 	FVector2D camera_input;
@@ -298,16 +268,73 @@ public:
 	void disableSwingAbility();
 	void enableSwingAbility();
 
+	//PIDS =================================================================================
+	//CAMERA -----------------------------------------------------------------
+	//camera_direction_control
+	//X = horizontal rotation
+	//Y = vertical rotation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FPIDData2D cdc;
+
+	//WEAPON -----------------------------------------------------------------
+	
+	//arm joint direction controllers(plural)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FPIDData2D> ajdc;
+	//arm joint direction targets(plural)
+	TArray<FVector> ajdc_targets;
+	
+	//arm_direction_controller
+	//X = direction control
+	//Y = rotational speed control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FPIDData2D adc;
+	//arm_twist_controller
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FPIDData atc;
+
+	//g_direction_controller
+	//X = direction control
+	//Y = rotational speed control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FPIDData3D gdc;
+	//weapon_twist_controller
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FPIDData wtc;
+
+	//weapon_grab_direction_controller
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FPIDData2D wgdc;
+	//weapon_grab_controller
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FPIDData3D wgc;
+
+	//Movement control --------------------------------------------------------------
+
+	UPROPERTY(EditAnywhere)
+	float target_hover_height = 200;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FPIDData hover_height;
+
+	UPROPERTY(EditAnywhere)
+	float target_speed = 400;
+	UPROPERTY(EditAnywhere)
+	float time_to_target_speed = 0.05f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FPIDData2D movement_velocity;
+
 private:
 
 	void initInputVars();
 
 	FCalculateCustomPhysics OnCalculateCustomHoverPhysics; //HOVER
 	void customHoverPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-	FCalculateCustomPhysics OnCalculateCustomStabilizerPhysics;//MOVEMENT
-	void customStabilizerPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateControlGripPhysics; //GRIP
 	void ControlGripPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+
+	FCalculateCustomPhysics OnCalculateControlArmJointDirectionPhysics; //GRIP POSITION
+	void ControlArmJointDirectionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+
 	FCalculateCustomPhysics OnCalculateControlArmDirectionPhysics; //GRIP POSITION
 	void ControlArmDirectionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateControlGripDirectionPhysics; //GRIP DIRECTION
@@ -322,20 +349,14 @@ private:
 	void weaponGrabControl(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateCustomInitGripPhysics;
 	void customInitGripPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-	FCalculateCustomPhysics OnCalculateCustomWalkingPhysics;
-	void customWalkingPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	
 	void controlCameraDirection(float DeltaTime);
 	void initCamera();
 
-	void initUpperBody();
-	void initUpperBodyJoints();
+	void initBody();
 
 	void initWeapon();
 	void initWeaponJoints();
-
-	void initLegs();
-	void initLegJoints();
 
 	void initPIDs();
 
@@ -344,60 +365,9 @@ private:
 	//calculates the inertia of a bodyinstance relative to a point in worldspace
 	void calculateRelativeInertia(FBodyInstance* offset_bi, const FVector& cor, FMatrix* out_inertia);
 	float inertiaAboutAxis(const FMatrix& inertia_mat, const FVector& axis);
-	struct PIDData
-	{
-		
-		float target;
-		float error = 0.0f;
-		float prev_err = 0.0f;
-		float integral = 0.0f;
-		float derivative;
-		float adjustment;
-		float max_adjustment;
-
-		float P;
-		float I;
-		float D;
-	};
-
-	struct PIDData2D
-	{
-
-		FVector2D target;
-		FVector2D error;
-		FVector2D prev_err;
-		FVector2D integral;
-		FVector2D derivative;
-		FVector2D adjustment;
-		FVector2D max_adjustment;
-
-		FVector2D P;
-		FVector2D I;
-		FVector2D D;
-	};
-
-	struct PIDData3D
-	{
-
-		FVector target;
-		FVector error;
-		FVector prev_err;
-		FVector integral;
-		FVector derivative;
-		FVector adjustment;
-		FVector max_adjustment;
-
-		FVector P;
-		FVector I;
-		FVector D;
-	};
+	
 
 	//Camera control --------------------------------------------------------------
-	//camera_direction_control
-	//X = horizontal rotation
-	//Y = vertical rotation
-	PIDData2D cdc;
-
 	FVector locked_target_dir;
 	FVector locked_target_dir_xy;
 
@@ -406,25 +376,6 @@ private:
 	bool was_standing_still = true;
 	bool wep_extended = false;
 	bool rot_forward = true;
-
-	//arm_direction_controller
-	//X = direction control
-	//Y = rotational speed control
-	PIDData2D adc;
-	//arm_twist_controller
-	PIDData atc;
-
-	//g_direction_controller
-	//X = direction control
-	//Y = rotational speed control
-	PIDData3D gdc;
-	//weapon_twist_controller
-	PIDData wtc;
-
-	//weapon_grab_direction_controller
-	PIDData2D wgdc;
-	//weapon_grab_controller
-	PIDData3D wgc;
 
 	//general variables used across several function
 	FVector weapon_twist_solder;
@@ -442,6 +393,10 @@ private:
 	FVector target_wep_dir_curr_wep_proj;
 	
 	//variables used for readability across several function
+
+	//arm body instance states
+	TArray<FBIState> abis;
+
 	FVector ga_pos;
 	FVector ga_forward;
 	FVector ga_right;
@@ -461,39 +416,5 @@ private:
 	FVector w_up;
 	FVector w_prev_up;
 
-	//Movement control --------------------------------------------------------------
 
-	UPROPERTY(EditAnywhere)
-	float target_hover_height = 200;
-	PIDData hover_height;
-
-	//torso_twist_controller
-	PIDData3D ttc;
-	//torso_position_controller
-	PIDData2D pose_controller;
-
-	//spine_swing_controller
-	PIDData3D ssc;
-	//spine_twist_controller
-	PIDData3D stc;
-
-	//pelvis_twist_controller
-	PIDData3D ptc;
-
-	//r_thigh_direction_controller
-	PIDData3D rtdc;
-	//r_knee_extension_controller
-	PIDData rkec;
-	PIDData3D r_toe_position_controller;
-	//l_thigh_direction_controller
-	PIDData3D ltdc;
-	//l_knee_extension_controller
-	PIDData lkec;
-	PIDData3D l_toe_position_controller;
-
-	UPROPERTY(EditAnywhere)
-	float target_speed = 400;
-	UPROPERTY(EditAnywhere)
-	float time_to_target_speed = 0.05f;
-	PIDData2D movement_velocity;
 };
