@@ -77,8 +77,9 @@ struct FPIDData3D
 	FVector D;
 };
 
+
 USTRUCT()
-struct FBIState
+struct FLimbState
 {
 	GENERATED_USTRUCT_BODY()
 		
@@ -87,6 +88,34 @@ struct FBIState
 	FVector right;
 	FVector up;
 	FVector prev_up;
+};
+
+USTRUCT()
+struct FLimbTarget
+{
+	GENERATED_USTRUCT_BODY()
+
+	FVector dir;
+	FVector prev_dir;
+	FVector dir_xy;
+	FVector prev_dir_xy;
+
+	FVector twist_dir;
+};
+
+USTRUCT()
+struct FLimbNode
+{
+	GENERATED_USTRUCT_BODY()
+
+	FBodyInstance* bi;
+	FLimbNode* next;
+
+	FLimbState state;
+
+	FPIDData3D* pid;
+	FLimbTarget target;
+
 };
 
 UCLASS()
@@ -137,7 +166,6 @@ protected:
 	USphereComponent* grip_axis;
 	UPROPERTY(Category = "Arm", VisibleAnywhere)
 	UStaticMeshComponent* grip_axis_vis;
-	
 	UPROPERTY(Category = "Arm", VisibleAnywhere)
 	UPhysicsConstraintComponent* grip_axis_attachment;
 
@@ -145,7 +173,6 @@ protected:
 	USphereComponent* grip;
 	UPROPERTY(Category = "Grip", VisibleAnywhere)
 	UStaticMeshComponent* grip_vis;
-	
 	UPROPERTY(Category = "Grip", VisibleAnywhere)
 	UPhysicsConstraintComponent* grip_attachment;
 	UPROPERTY(Category = "Grip", VisibleAnywhere)
@@ -163,8 +190,7 @@ protected:
 
 	//FBodyInstance* grip_axis_bi;
 	//FBodyInstance* grip_bi;
-
-	FVector offset_wep_inertia;
+	//FVector offset_wep_inertia;
 
 	void fightModeOn();
 	void fightModeOff();
@@ -210,6 +236,20 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* body;
 	
+	//upper body joint chain root
+	FLimbNode upbr;
+	void setTorsoTargets();
+	void setPelvisTargets();
+
+	//right leg joint chain root
+	FLimbNode rlr;
+	void setRThighTargets();
+	void setRShinTargets();
+	//left leg joint chain root
+	FLimbNode llr;
+	void setLThighTargets();
+	void setLShinTargets();
+
 	FBodyInstance* torsoBI;
 
 
@@ -282,22 +322,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FPIDData2D> ajdc;
 	//arm joint direction targets(plural)
-	TArray<FVector> ajdc_targets;
+	TArray<FLimbTarget> ajdc_targets;
 	
-	//arm_direction_controller
-	//X = direction control
-	//Y = rotational speed control
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FPIDData2D adc;
 	//arm_twist_controller
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FPIDData atc;
 
-	//g_direction_controller
-	//X = direction control
-	//Y = rotational speed control
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FPIDData3D gdc;
 	//weapon_twist_controller
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FPIDData wtc;
@@ -323,32 +353,58 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FPIDData2D movement_velocity;
 
+	//BODY PIDS -----------------------------------------------------
+
+	//Right thigh controller
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BodyPID")
+	FPIDData3D right_thigh_controller;
+	//Right shin controller
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BodyPID")
+	FPIDData3D right_shin_controller;
+
+	//Left thigh controller
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BodyPID")
+	FPIDData3D left_thigh_controller;
+	//Left shin controller
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BodyPID")
+	FPIDData3D left_shin_controller;
+
+	//pelvis controller
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BodyPID")
+	FPIDData3D pelvis_controller;
+	//torso controller
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BodyPID")
+	FPIDData3D torso_controller;
+
+
+
 private:
 
 	void initInputVars();
+	void setArmTwistTargets();
 
 	FCalculateCustomPhysics OnCalculateCustomHoverPhysics; //HOVER
 	void customHoverPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	
 	FCalculateCustomPhysics OnCalculateControlGripPhysics; //GRIP
 	void ControlGripPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-
 	FCalculateCustomPhysics OnCalculateControlArmJointDirectionPhysics; //GRIP POSITION
 	void ControlArmJointDirectionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-
-	FCalculateCustomPhysics OnCalculateControlArmDirectionPhysics; //GRIP POSITION
-	void ControlArmDirectionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-	FCalculateCustomPhysics OnCalculateControlGripDirectionPhysics; //GRIP DIRECTION
-	void ControlGripDirectionPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateControlArmTwistPhysics; // WEAPON TWist
 	void ControlArmTwistPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-	FCalculateCustomPhysics OnCalculateControlGripInclinePhysics; //GRIP INCLINE
-	void ControlGripInclinePhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateControlWeaponTwistPhysics; // WEAPON TWist
 	void ControlWeaponTwistPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+	
 	FCalculateCustomPhysics OnCalculateWeaponGrabControl; // WEAPON Grabbing
 	void weaponGrabControl(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateCustomInitGripPhysics;
 	void customInitGripPhysics(float DeltaTime, FBodyInstance* BodyInstance);
+
+	FCalculateCustomPhysics CalculateControlBody; //GRIP POSITION
+	void ControlBody(float DeltaTime, FBodyInstance* BodyInstance);
+
+	void updateLimbStates(FLimbNode* limb);
+	void ControlLimb(float DeltaTime, FLimbNode* limb);
 	
 	void controlCameraDirection(float DeltaTime);
 	void initCamera();
@@ -359,6 +415,7 @@ private:
 	void initWeaponJoints();
 
 	void initPIDs();
+	void initBodyJoints();
 
 	void initCustomPhysics();
 
@@ -381,21 +438,12 @@ private:
 	FVector weapon_twist_solder;
 	FVector weapon_twist_target;
 	FVector input_dir;
-	FVector prev_input_dir;
-	FVector target_arm_dir;
-	FVector target_arm_dir_xy;
-	FVector prev_target_arm_dir_xy;
-
-	FVector target_wep_dir;
-	FVector prev_target_wep_dir;
-	FVector prev_target_wep_dir_xy;
-	FVector target_wep_dir_xy;
-	FVector target_wep_dir_curr_wep_proj;
+	FVector prev_input_dir;	
 	
 	//variables used for readability across several function
 
 	//arm body instance states
-	TArray<FBIState> abis;
+	TArray<FLimbState> abis;
 
 	FVector ga_pos;
 	FVector ga_forward;
