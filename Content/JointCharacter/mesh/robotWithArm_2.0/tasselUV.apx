@@ -1,0 +1,576 @@
+<!DOCTYPE NvParameters>
+<NvParameters numObjects="1" version="1.0" >
+<value name="" type="Ref" className="ClothingAssetParameters" version="0.14" checksum="0x1095fcd4 0x7327d8f7 0xefaa63f8 0x5bda9add">
+  <struct name="">
+    <array name="physicalMeshes" size="1" type="Ref">
+      <value type="Ref" included="1" className="ClothingPhysicalMeshParameters" version="0.11" checksum="0x436eae3d 0xbb86cc6f 0xab9fa108 0x26281bae">      
+        <struct name="">
+          <struct name="physicalMesh">
+            <value name="numVertices" type="U32">33</value>
+            <value name="numSimulatedVertices" type="U32">30</value>
+            <value name="numMaxDistance0Vertices" type="U32">3</value>
+            <value name="numIndices" type="U32">120</value>
+            <value name="numSimulatedIndices" type="U32">108</value>
+            <value name="numBonesPerVertex" type="U32">4</value>
+            <array name="vertices" size="33" type="Vec3">
+              0.672805071 20.1075268 239.740738, -0.146148607 20.3863068 240.506683, -0.965102434 20.1075249 239.740738, -0.0458507463 19.563179 238.245148, 1.40903533 19.3209438 237.57962, -1.70133233 19.3209419 237.57962, 2.03303003 18.101202 234.228394, 0.00387124717 18.3649635 234.953079, -2.32532716 18.101202 234.228394, -0.0398459136 16.7074375 230.399063, 2.51527786 16.5229416 229.892166, -2.80757546 16.5229416 229.892166, -3.11856604 14.6608086 224.775986, 2.82626867 14.6608095 224.776001, -0.0649378747 14.7284126 224.961731, 2.9364903 12.5894442 219.084961, 
+              -3.22878718 12.5894432 219.084961, -0.0139716864 12.5894442 219.084961, 2.82626891 10.5180798 213.393936, -3.11856532 10.5180779 213.393921, -0.00579988956 10.4596796 213.233475, -2.80757475 8.65594482 208.277756, 2.51527834 8.65594578 208.277756, 0.00597426295 8.47144985 207.770859, -2.32532692 7.07768631 203.941528, 0.0224912316 6.81392384 203.216843, 2.03303003 7.07768679 203.941528, -1.70133221 5.85794497 200.590302, -0.146148756 5.61571169 199.924774, 1.40903533 5.85794592 200.590302, -0.965102077 5.07136202 198.429184, -0.146148443 4.79258108 197.663239, 
+              0.672805309 5.0713625 198.429184
+            </array>
+            <array name="normals" size="33" type="Vec3">
+              -3.12193151e-008 -0.939692795 0.342019945, 0 -0.939692795 0.342019975, 2.68362257e-008 -0.939692795 0.342019945, -5.43055423e-009 -0.939692795 0.342019945, -1.1947067e-007 -0.939692795 0.342019945, 1.03169192e-007 -0.939692795 0.342019945, -1.22727826e-007 -0.939692795 0.342019975, -8.7986276e-009 -0.939692795 0.342019945, 1.07946896e-007 -0.939692795 0.342019975, -4.54597959e-009 -0.939692676 0.342019975, -4.29418812e-008 -0.939692795 0.342019975, 3.96056308e-008 -0.939692795 0.342019975, -2.67437694e-009 -0.939692795 0.342019975, 2.8264231e-009 -0.939692795 0.342019975, -7.04752978e-010 -0.939692795 0.342019975, 2.40824236e-015 -0.939692795 0.342019975, 
+              -2.21021326e-015 -0.939692795 0.342019975, 5.87860538e-010 -0.939692795 0.342019975, 3.3677324e-008 -0.939692795 0.342019975, -3.0637878e-008 -0.939692795 0.342019975, 5.87029403e-009 -0.939692676 0.342019975, -1.67388805e-007 -0.939692676 0.342019975, 1.87500035e-007 -0.939692676 0.342019975, 1.49634864e-008 -0.939692795 0.342019975, -2.16499288e-007 -0.939692795 0.342019945, 1.22325838e-008 -0.939692795 0.342019916, 2.49968252e-007 -0.939692795 0.342019945, -8.72485231e-008 -0.939692795 0.342019916, 5.15516685e-010 -0.939692795 0.342019916, 1.00350881e-007 -0.939692795 0.342019916, 0 -0.939692795 0.342019975, 0 -0.939692795 0.342019975, 
+              0 -0.939692795 0.342019975
+            </array>
+            <array name="skinningNormals" size="33" type="Vec3">
+              -2.874404e-007 -0.939692974 0.342019111, 1.09427526e-006 -0.939692736 0.342019677, 2.03170862e-006 -0.939692974 0.342019022, 6.74204784e-007 -0.939692795 0.342019767, -7.61257127e-007 -0.939692855 0.342019558, 1.35415485e-006 -0.939692914 0.34201932, 5.33517266e-007 -0.939692616 0.342020065, 1.65002504e-007 -0.939692795 0.342019737, -4.28291457e-007 -0.939692736 0.342019975, 0 -0.939692557 0.342020124, -4.68937174e-007 -0.939692676 0.342020154, -6.61142181e-008 -0.939692616 0.342019886, -2.17209561e-007 -0.939692736 0.342020005, -6.25838879e-007 -0.939692736 0.342019916, -4.96596613e-007 -0.939692676 0.342019826, 0 -0.939692736 0.342019945, 
+              2.78759586e-007 -0.939692616 0.342019975, -2.51986904e-007 -0.939692736 0.342019916, -6.35043193e-007 -0.939692676 0.342019886, -2.72044787e-008 -0.939692736 0.342019886, -3.39291461e-007 -0.939692616 0.342019945, 3.89006942e-008 -0.939692616 0.342020243, -2.56302428e-007 -0.939692676 0.342020035, 1.48019467e-007 -0.939692616 0.342020184, 3.20572468e-007 -0.939692736 0.342019856, 1.56048912e-007 -0.939692914 0.342019528, -8.15783636e-008 -0.939692736 0.342019856, -3.93399318e-007 -0.939692914 0.34201926, 2.85548481e-007 -0.939692736 0.342019647, 8.85780707e-007 -0.939692914 0.34201923, -1.52546136e-007 -0.939692736 0.342019945, 2.73568816e-007 -0.939692676 0.342019945, 
+              7.0781806e-007 -0.939692736 0.342019945
+            </array>
+            <array name="constrainCoefficients" size="33" type="Struct" structElements="maxDistance(F32),collisionSphereRadius(F32),collisionSphereDistance(F32)">
+              70 0 0,70 0 0,70 0 0,60 0 0,
+              60 0 0,60 0 0,50 0 0,50 0 0,
+              50 0 0,40 0 0,40 0 0,40 0 0,
+              30 0 0,30 0 0,30 0 0,20 0 0,
+              20 0 0,20 0 0,10 0 0,10 0 0,
+              10 0 0,5 0 0,5 0 0,5 0 0,
+              3 0 0,3 0 0,3 0 0,0 0 0,
+              0 0 0,0 0 0,0 0 0,0 0 0,
+              0 0 0
+            </array>
+            <array name="boneIndices" size="132" type="U16">
+              0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 
+              0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 0 1 1 1 
+              0 1 1 1
+            </array>
+            <array name="boneWeights" size="132" type="F32">
+              1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 
+              1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 
+              1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 
+              1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0 0 0 
+              1 0 0 0
+            </array>
+            <array name="optimizationData" size="20" type="U8">
+              17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 1 0 0 0
+            </array>
+            <value name="hasNegativeBackstop" type="Bool">false</value>
+            <value name="isClosed" type="Bool">false</value>
+            <array name="indices" size="120" type="U32">
+              0 1 2 4 0 3 2 3 0 3 2 5 7 5 8 6 4 7 3 7 4 5 7 3 8 9 7 7 9 6 10 6 
+              9 9 8 11 9 14 10 14 11 12 13 10 14 11 14 9 12 17 14 15 13 17 17 12 16 14 17 13 17 18 15 16 
+              19 17 18 17 20 20 17 19 22 20 23 19 21 20 20 22 18 23 20 21 21 24 23 25 23 24 26 23 25 23 26 22 
+              28 25 27 24 27 25 29 25 28 25 29 26 27 30 28 30 31 32 32 28 30 28 32 29
+            </array>
+            <value name="maximumMaxDistance" type="F32">70</value>
+            <value name="physicalMeshSorting" type="U32">1</value>
+            <value name="shortestEdgeLength" type="F32">1.15545487</value>
+            <value name="averageEdgeLength" type="F32">3.74673223</value>
+            <value name="isTetrahedralMesh" type="Bool">false</value>
+            <value name="flipNormals" type="Bool">false</value>
+          </struct>
+          <array name="transitionUpB" size="0" type="Struct" structElements="vtxTetraBary(Vec3),vertexIndexPlusOffset(U32),nrmTetraBary(Vec3),faceIndex0(U32),tetraIndex(U32)"></array>
+          <array name="transitionUp" size="0" type="Struct" structElements="vertexBary(Vec3),vertexIndex0(U32),normalBary(Vec3),vertexIndex1(U32),tangentBary(Vec3),vertexIndex2(U32),vertexIndexPlusOffset(U32)"></array>
+          <value name="transitionUpThickness" type="F32">0</value>
+          <value name="transitionUpOffset" type="F32">0</value>
+          <array name="transitionDownB" size="0" type="Struct" structElements="vtxTetraBary(Vec3),vertexIndexPlusOffset(U32),nrmTetraBary(Vec3),faceIndex0(U32),tetraIndex(U32)"></array>
+          <array name="transitionDown" size="0" type="Struct" structElements="vertexBary(Vec3),vertexIndex0(U32),normalBary(Vec3),vertexIndex1(U32),tangentBary(Vec3),vertexIndex2(U32),vertexIndexPlusOffset(U32)"></array>
+          <value name="transitionDownThickness" type="F32">0</value>
+          <value name="transitionDownOffset" type="F32">0</value>
+          <value name="referenceCount" type="U32">1</value>
+        </struct>
+      </value>
+    </array>
+    <array name="graphicalLods" size="1" type="Ref">
+      <value type="Ref" included="1" className="ClothingGraphicalLodParameters" version="0.5" checksum="0xb82a1fab 0xfd43a015 0x35b1be8a 0x80ebc50f">      
+        <struct name="">
+          <array name="platforms" size="0" type="String"></array>
+          <value name="lod" type="U32">0</value>
+          <value name="physicalMeshId" type="U32">0</value>
+          <value name="renderMeshAsset" type="Ref" included="1" className="RenderMeshAssetParameters" version="0.0" checksum="0x119d6f62 0x8d1ff03d 0x19864d20 0x93421fd0">          
+            <struct name="">
+              <array name="submeshes" size="1" type="Ref">
+                <value type="Ref" included="1" className="SubmeshParameters" version="0.1" checksum="0xb2b4f308 0x5f4b8da6 0x4d45daeb 0xbfc7d9b0">                
+                  <struct name="">
+                    <value name="vertexBuffer" type="Ref" included="1" className="VertexBufferParameters" version="0.1" checksum="0x14ae7314 0xe50741cb 0x15eb480c 0x63f6c571">                    
+                      <struct name="">
+                        <value name="vertexCount" type="U32">33</value>
+                        <value name="vertexFormat" type="Ref" included="1" className="VertexFormatParameters" version="0.0" checksum="0xa7c1ed95 0x570ed2b1 0x55717659 0x9951d139">                        
+                          <struct name="">
+                            <value name="winding" type="U32">2</value>
+                            <value name="hasSeparateBoneBuffer" type="Bool">true</value>
+                            <array name="bufferFormats" size="6" type="Struct">
+                              <struct>
+                                <value name="name" type="String">SEMANTIC_POSITION</value>
+                                <value name="semantic" type="I32">0</value>
+                                <value name="id" type="U32">4058349641</value>
+                                <value name="format" type="U32">43</value>
+                                <value name="access" type="U32">1</value>
+                                <value name="serialize" type="Bool">true</value>
+                              </struct>
+                              <struct>
+                                <value name="name" type="String">SEMANTIC_NORMAL</value>
+                                <value name="semantic" type="I32">1</value>
+                                <value name="id" type="U32">628990755</value>
+                                <value name="format" type="U32">43</value>
+                                <value name="access" type="U32">1</value>
+                                <value name="serialize" type="Bool">true</value>
+                              </struct>
+                              <struct>
+                                <value name="name" type="String">SEMANTIC_TANGENT</value>
+                                <value name="semantic" type="I32">2</value>
+                                <value name="id" type="U32">1201849363</value>
+                                <value name="format" type="U32">44</value>
+                                <value name="access" type="U32">1</value>
+                                <value name="serialize" type="Bool">true</value>
+                              </struct>
+                              <struct>
+                                <value name="name" type="String">SEMANTIC_TEXCOORD0</value>
+                                <value name="semantic" type="I32">5</value>
+                                <value name="id" type="U32">1229059356</value>
+                                <value name="format" type="U32">42</value>
+                                <value name="access" type="U32">0</value>
+                                <value name="serialize" type="Bool">true</value>
+                              </struct>
+                              <struct>
+                                <value name="name" type="String">SEMANTIC_BONE_INDEX</value>
+                                <value name="semantic" type="I32">9</value>
+                                <value name="id" type="U32">284127831</value>
+                                <value name="format" type="U32">8</value>
+                                <value name="access" type="U32">0</value>
+                                <value name="serialize" type="Bool">true</value>
+                              </struct>
+                              <struct>
+                                <value name="name" type="String">SEMANTIC_BONE_WEIGHT</value>
+                                <value name="semantic" type="I32">10</value>
+                                <value name="id" type="U32">2091801033</value>
+                                <value name="format" type="U32">44</value>
+                                <value name="access" type="U32">0</value>
+                                <value name="serialize" type="Bool">true</value>
+                              </struct>
+                            </array>
+                          </struct>
+                        </value>
+                        <array name="buffers" size="6" type="Ref">
+                          <value type="Ref" included="1" className="BufferF32x3" version="0.0" checksum="0x458b554a 0x7ed3e930 0x299ff33 0x9d69c11b">                          
+                            <struct name="">
+                              <array name="data" size="33" type="Vec3">
+                                2.9364903 12.5894442 219.084961, 2.82626867 14.6608095 224.776001, -0.0139716864 12.5894442 219.084961, 2.82626891 10.5180798 213.393936, -0.965102434 20.1075249 239.740738, -0.0458507463 19.563179 238.245148, 0.672805071 20.1075268 239.740738, -0.146148607 20.3863068 240.506683, -3.22878718 12.5894432 219.084961, -3.11856532 10.5180779 213.393921, -3.11856604 14.6608086 224.775986, -0.146148756 5.61571169 199.924774, -0.146148443 4.79258108 197.663239, 2.51527786 16.5229416 229.892166, -0.0649378747 14.7284126 224.961731, -1.70133233 19.3209419 237.57962, 
+                                0.00387124717 18.3649635 234.953079, -2.80757475 8.65594482 208.277756, -0.00579988956 10.4596796 213.233475, 1.40903533 5.85794592 200.590302, 0.0224912316 6.81392384 203.216843, 2.03303003 18.101202 234.228394, -0.0398459136 16.7074375 230.399063, -2.32532716 18.101202 234.228394, -2.32532692 7.07768631 203.941528, 0.00597426295 8.47144985 207.770859, 2.03303003 7.07768679 203.941528, 1.40903533 19.3209438 237.57962, -2.80757546 16.5229416 229.892166, -1.70133221 5.85794497 200.590302, 2.51527834 8.65594578 208.277756, 0.672805309 5.0713625 198.429184, 
+                                -0.965102077 5.07136202 198.429184
+                              </array>
+                            </struct>
+                          </value>
+                          <value type="Ref" included="1" className="BufferF32x3" version="0.0" checksum="0x458b554a 0x7ed3e930 0x299ff33 0x9d69c11b">                          
+                            <struct name="">
+                              <array name="data" size="33" type="Vec3">
+                                2.40824236e-015 -0.939692795 0.342019975, 2.8264231e-009 -0.939692795 0.342019975, 5.87860538e-010 -0.939692795 0.342019975, 3.3677324e-008 -0.939692795 0.342019975, 2.68362257e-008 -0.939692795 0.342019945, -5.43055423e-009 -0.939692795 0.342019945, -3.12193151e-008 -0.939692795 0.342019945, 0 -0.939692795 0.342019975, -2.21021326e-015 -0.939692795 0.342019975, -3.0637878e-008 -0.939692795 0.342019975, -2.67437694e-009 -0.939692795 0.342019975, 5.15516685e-010 -0.939692795 0.342019916, 0 -0.939692795 0.342019975, -4.29418812e-008 -0.939692795 0.342019975, -7.04752978e-010 -0.939692795 0.342019975, 1.03169192e-007 -0.939692795 0.342019945, 
+                                -8.7986276e-009 -0.939692795 0.342019945, -1.67388805e-007 -0.939692676 0.342019975, 5.87029403e-009 -0.939692676 0.342019975, 1.00350881e-007 -0.939692795 0.342019916, 1.22325838e-008 -0.939692795 0.342019916, -1.22727826e-007 -0.939692795 0.342019975, -4.54597959e-009 -0.939692676 0.342019975, 1.07946896e-007 -0.939692795 0.342019975, -2.16499288e-007 -0.939692795 0.342019945, 1.49634864e-008 -0.939692795 0.342019975, 2.49968252e-007 -0.939692795 0.342019945, -1.1947067e-007 -0.939692795 0.342019945, 3.96056308e-008 -0.939692795 0.342019975, -8.72485231e-008 -0.939692795 0.342019916, 1.87500035e-007 -0.939692676 0.342019975, 0 -0.939692795 0.342019975, 
+                                0 -0.939692795 0.342019975
+                              </array>
+                            </struct>
+                          </value>
+                          <value type="Ref" included="1" className="BufferF32x4" version="0.1" checksum="0x80321851 0xa99e95a1 0xd26ec9a8 0x14206b37">                          
+                            <struct name="">
+                              <array name="data" size="33" type="Struct" structElements="x(F32),y(F32),z(F32),w(F32)">
+                                1 1.21523964e-008 3.338846e-008 1,1 1.22364936e-008 3.34684067e-008 1,1 1.11250893e-008 3.0534526e-008 1,1 1.34243052e-008 3.50824969e-008 1,
+                                1 1.34193208e-008 3.54345566e-008 1,1 1.064139e-008 2.95273406e-008 1,1 1.6752157e-008 4.76953055e-008 1,1 1.76593193e-008 4.85186185e-008 1,
+                                1 8.58391136e-009 2.35841195e-008 1,1 9.66402425e-009 2.81897155e-008 1,1 1.01455049e-008 2.80175474e-008 1,1 1.10087397e-008 3.02187289e-008 1,
+                                1 1.24710553e-008 3.42639694e-008 1,1 1.2217285e-008 3.58625556e-008 1,1 1.16673213e-008 3.20934035e-008 1,1 9.07489994e-009 1.94173246e-008 1,
+                                1 1.00171036e-008 2.79921952e-008 1,1 7.49587681e-009 2.95439477e-008 1,1 1.11796368e-008 3.04019743e-008 1,1 1.1818523e-008 2.71060525e-008 1,
+                                1 1.0743828e-008 2.88644593e-008 1,1 8.65391936e-009 3.03379188e-008 1,1 1.17283596e-008 3.24664668e-008 1,1 1.40422296e-008 3.28095275e-008 1,
+                                1 6.14591755e-009 2.84605797e-008 1,1 9.88445681e-009 2.6357343e-008 1,1 1.47081352e-008 2.70461484e-008 1,1 9.87849802e-009 3.35282877e-008 1,
+                                1 1.1274417e-008 2.88587767e-008 1,1 9.64054347e-009 3.11518065e-008 1,1 1.30630395e-008 2.58660364e-008 1,1 1.15010881e-008 3.15990043e-008 1,
+                                1 1.23702861e-008 3.39871065e-008 1
+                              </array>
+                            </struct>
+                          </value>
+                          <value type="Ref" included="1" className="BufferF32x2" version="0.0" checksum="0x788349ee 0x95c560e2 0x9633945e 0x8cc784a0">                          
+                            <struct name="">
+                              <array name="data" size="33" type="Struct" structElements="x(F32),y(F32)">
+                                1 0.499999881,0.982122183 0.632833123,0.521438897 0.5,0.982122183 0.367166638,
+                                0.367166847 0.982122302,0.516268253 0.947214127,0.632833302 0.982122242,0.500000119 1,
+                                0 0.50000006,0.0178778172 0.367166817,0.0178777575 0.632833302,0.499999851 0.0527859926,
+                                0.499999881 -5.96046448e-008,0.931679964 0.752248704,0.513172269 0.637168527,0.247751296 0.931679964,
+                                0.52433306 0.87037456,0.0683200657 0.247751266,0.522764325 0.363421708,0.752248645 0.0683200359,
+                                0.527353048 0.12962541,0.853459954 0.853459835,0.517242193 0.764080167,0.146540135 0.853460014,
+                                0.146540016 0.146540105,0.524674058 0.235919803,0.853459835 0.146539986,0.752248883 0.931679964,
+                                0.0683200657 0.752248883,0.247751147 0.0683200657,0.931679904 0.247751117,0.632833123 0.0178777277,
+                                0.367166698 0.0178777575
+                              </array>
+                            </struct>
+                          </value>
+                          <value type="Ref" included="1" className="BufferU16x4" version="0.0" checksum="0x17ce6b83 0x32ba98aa 0xd03f98f6 0x26918369">                          
+                            <struct name="">
+                              <array name="data" size="33" type="Struct" structElements="x(U16),y(U16),z(U16),w(U16)">
+                                0 1 1 1,0 1 1 1,0 1 1 1,0 1 1 1,
+                                0 1 1 1,0 1 1 1,0 1 1 1,0 1 1 1,
+                                0 1 1 1,0 1 1 1,0 1 1 1,0 1 1 1,
+                                0 1 1 1,0 1 1 1,0 1 1 1,0 1 1 1,
+                                0 1 1 1,0 1 1 1,0 1 1 1,0 1 1 1,
+                                0 1 1 1,0 1 1 1,0 1 1 1,0 1 1 1,
+                                0 1 1 1,0 1 1 1,0 1 1 1,0 1 1 1,
+                                0 1 1 1,0 1 1 1,0 1 1 1,0 1 1 1,
+                                0 1 1 1
+                              </array>
+                            </struct>
+                          </value>
+                          <value type="Ref" included="1" className="BufferF32x4" version="0.1" checksum="0x80321851 0xa99e95a1 0xd26ec9a8 0x14206b37">                          
+                            <struct name="">
+                              <array name="data" size="33" type="Struct" structElements="x(F32),y(F32),z(F32),w(F32)">
+                                1 0 0 0,1 0 0 0,1 0 0 0,1 0 0 0,
+                                1 0 0 0,1 0 0 0,1 0 0 0,1 0 0 0,
+                                1 0 0 0,1 0 0 0,1 0 0 0,1 0 0 0,
+                                1 0 0 0,1 0 0 0,1 0 0 0,1 0 0 0,
+                                1 0 0 0,1 0 0 0,1 0 0 0,1 0 0 0,
+                                1 0 0 0,1 0 0 0,1 0 0 0,1 0 0 0,
+                                1 0 0 0,1 0 0 0,1 0 0 0,1 0 0 0,
+                                1 0 0 0,1 0 0 0,1 0 0 0,1 0 0 0,
+                                1 0 0 0
+                              </array>
+                            </struct>
+                          </value>
+                        </array>
+                      </struct>
+                    </value>
+                    <array name="indexBuffer" size="120" type="U32">
+                      0 1 2 2 3 0 4 5 6 6 7 4 8 9 2 2 10 8 31 11 32 1 13 14 14 2 1 15 16 5 5 4 
+                      15 9 17 18 18 2 9 19 20 11 11 31 19 13 21 22 22 14 13 23 22 16 16 15 23 17 24 25 25 18 17 26 
+                      25 20 20 19 26 21 27 16 16 22 21 28 14 22 22 23 28 24 29 20 20 25 24 30 18 25 25 26 30 27 6 5 
+                      5 16 27 10 2 14 14 28 10 29 32 11 11 20 29 3 2 18 18 30 3 32 12 31
+                    </array>
+                    <array name="vertexPartition" size="2" type="U32">
+                      0 33
+                    </array>
+                    <array name="indexPartition" size="2" type="U32">
+                      0 120
+                    </array>
+                    <array name="smoothingGroups" size="0" type="U32"></array>
+                  </struct>
+                </value>
+              </array>
+              <array name="materialNames" size="1" type="String">
+                <value type="String">roboTasselMat</value>
+              </array>
+              <array name="partBounds" size="1" type="Bounds3">
+                -3.22878718 4.79258108 197.663239 2.9364903 20.3863068 240.506683
+              </array>
+              <value name="textureUVOrigin" type="U32">2</value>
+              <value name="boneCount" type="U32">2</value>
+              <value name="deleteStaticBuffersAfterUse" type="Bool">false</value>
+              <value name="isReferenced" type="Bool">true</value>
+            </struct>
+          </value>
+          <array name="immediateClothMap" size="33" type="U32">
+            15 13 17 18 2 3 0 1 16 19 12 28 31 10 14 5 7 21 20 29 25 6 9 8 24 23 26 4 11 27 22 32 
+            30
+          </array>
+          <array name="skinClothMapB" size="0" type="Struct" structElements="vtxTetraBary(Vec3),vertexIndexPlusOffset(U32),nrmTetraBary(Vec3),faceIndex0(U32),tetraIndex(U32)"></array>
+          <array name="skinClothMap" size="0" type="Struct" structElements="vertexBary(Vec3),vertexIndex0(U32),normalBary(Vec3),vertexIndex1(U32),tangentBary(Vec3),vertexIndex2(U32),vertexIndexPlusOffset(U32)"></array>
+          <value name="skinClothMapThickness" type="F32">1</value>
+          <value name="skinClothMapOffset" type="F32">0.374673337</value>
+          <array name="tetraMap" size="0" type="Struct" structElements="vertexBary(Vec3),tetraIndex0(U32),normalBary(Vec3)"></array>
+          <value name="renderMeshAssetSorting" type="U32">2</value>
+          <array name="physicsMeshPartitioning" size="1" type="Struct" structElements="graphicalSubmesh(U32),numSimulatedVertices(U32),numSimulatedVerticesAdditional(U32),numSimulatedIndices(U32)">
+            0 12 12 120
+          </array>
+        </struct>
+      </value>
+    </array>
+    <struct name="simulation">
+      <value name="hierarchicalLevels" type="U32">0</value>
+      <value name="thickness" type="F32">0.00999999978</value>
+      <value name="virtualParticleDensity" type="F32">0</value>
+      <value name="gravityDirection" type="Vec3">0 0 -0.99999994</value>
+      <value name="sleepLinearVelocity" type="F32">0</value>
+      <value name="disableCCD" type="Bool">true</value>
+      <value name="untangling" type="Bool">false</value>
+      <value name="twowayInteraction" type="Bool">false</value>
+      <value name="restLengthScale" type="F32">1</value>
+    </struct>
+    <array name="bones" size="18" type="Struct">
+      <struct>
+        <value name="internalIndex" type="I32">0</value>
+        <value name="externalIndex" type="I32">2</value>
+        <value name="numMeshReferenced" type="U32">66</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">4</value>
+        <value name="bindPose" type="Mat44">1.15251183e-007 6.22699588e-007 1 0  6.71898306e-008 -1 5.99196596e-007 0  1 6.64076651e-008 -1.15636801e-007 0  -1.95333268e-006 1.33514386e-005 187.430725 1</value>
+        <value name="name" type="String">Head</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">1</value>
+        <value name="externalIndex" type="I32">0</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">8</value>
+        <value name="bindPose" type="Mat44">-0.000569985539 -0.939747632 -0.341868728 0  0.999999464 -0.000252247759 -0.000973869639 0  0.000828955381 -0.341869056 0.939747095 0  0.0019082725 8.80492401 168.192993 1</value>
+        <value name="name" type="String">Clavicle</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">2</value>
+        <value name="externalIndex" type="I32">1</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">3</value>
+        <value name="bindPose" type="Mat44">0.999999344 0.000750909676 0.000909191906 0  -0.000910609437 0.00190675177 0.999997795 0  0.000749173283 -0.999997854 0.00190733257 0  89.3794937 4.94952869 166.790451 1</value>
+        <value name="name" type="String">Hand</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">3</value>
+        <value name="externalIndex" type="I32">3</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">9</value>
+        <value name="bindPose" type="Mat44">1 2.70083564e-008 3.15063517e-007 0  -3.02359695e-007 0.00910167955 0.999958515 0  2.32830644e-008 -0.999958575 0.00910157803 0  37.5512428 4.94952202 166.790436 1</value>
+        <value name="name" type="String">LowerArm</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">4</value>
+        <value name="externalIndex" type="I32">4</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">8</value>
+        <value name="bindPose" type="Mat44">-9.05587731e-005 -0.41617012 0.909286678 0  7.0198422e-007 0.909286737 0.41617012 0  -0.999999881 3.83269471e-005 -8.20513669e-005 0  0.00191595778 8.80488873 168.193024 1</value>
+        <value name="name" type="String">Neck</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">5</value>
+        <value name="externalIndex" type="I32">5</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">6</value>
+        <value name="bindPose" type="Mat44">0.00326619833 0.0451057889 0.998976886 0  -0.999994814 -1.83539705e-005 0.00327035459 0  0.000165847057 -0.99898231 0.0451054871 0  1.51596032e-006 -9.53674316e-007 105.721313 1</value>
+        <value name="name" type="String">Pelvis</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">6</value>
+        <value name="externalIndex" type="I32">6</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">-1</value>
+        <value name="bindPose" type="Mat44">1.62920685e-007 -2.65934271e-011 0.999999881 0  -1 0.000169893101 1.62920671e-007 0  -0.000169893101 -1 1.08566791e-012 0  -1.17544871e-017 1.62630326e-019 0.063727878 1</value>
+        <value name="name" type="String">Root</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">7</value>
+        <value name="externalIndex" type="I32">7</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">5</value>
+        <value name="bindPose" type="Mat44">2.03190339e-005 0.0756296888 0.997135997 0  -1.00000036 -0.000136479866 3.07304254e-005 0  0.000138412579 -0.997136235 0.0756296888 0  3.01348045e-005 -3.81469727e-006 112.5765 1</value>
+        <value name="name" type="String">Spine01</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">8</value>
+        <value name="externalIndex" type="I32">8</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">7</value>
+        <value name="bindPose" type="Mat44">4.97391666e-005 0.258819222 0.965925813 0  -1.00000072 4.49284562e-006 5.0292354e-005 0  8.67586641e-006 -0.965926468 0.258819133 0  0.000678828103 2.40745163 144.317291 1</value>
+        <value name="name" type="String">Spine02</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">9</value>
+        <value name="externalIndex" type="I32">9</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">1</value>
+        <value name="bindPose" type="Mat44">1.00000012 -4.49566897e-007 2.77999789e-007 0  4.31472387e-007 0.997899234 0.0647884756 0  -3.05939437e-007 -0.0647883862 0.997899175 0  -0.000428721542 4.94952488 166.790451 1</value>
+        <value name="name" type="String">UpperArm</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">10</value>
+        <value name="externalIndex" type="I32">10</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">12</value>
+        <value name="bindPose" type="Mat44">-0.000311805052 4.15742352e-006 -0.99999994 0  0.999949336 -0.0100637563 -0.000311830547 0  -0.0100637507 -0.999949336 -1.03563025e-006 0  15.6118612 3.32853746 -0.00133514369 1</value>
+        <value name="name" type="String">lFoot</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">11</value>
+        <value name="externalIndex" type="I32">11</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">5</value>
+        <value name="bindPose" type="Mat44">0.998862445 -0.0447624698 -0.0164351463 0  0.0166721158 0.00492555974 0.999848783 0  -0.0446747579 -0.998985529 0.0056662485 0  7.60108232e-005 -1.49011612e-006 112.589996 1</value>
+        <value name="name" type="String">lHip</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">12</value>
+        <value name="externalIndex" type="I32">12</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">13</value>
+        <value name="bindPose" type="Mat44">-0.0411927886 0.083187066 -0.995682418 0  0.999009371 -0.0133707495 -0.0424475297 0  -0.0168440957 -0.996444345 -0.0825538784 0  18.6381397 -2.78289604 73.1476212 1</value>
+        <value name="name" type="String">lShin</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">13</value>
+        <value name="externalIndex" type="I32">13</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">11</value>
+        <value name="bindPose" type="Mat44">0.0749103129 -0.0528527759 -0.995788813 0  0.995898962 -0.0468403138 0.0774047077 0  -0.0507341065 -0.997503161 0.049127195 0  15.6903772 -0.703138828 112.331848 1</value>
+        <value name="name" type="String">lThigh</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">14</value>
+        <value name="externalIndex" type="I32">14</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">16</value>
+        <value name="bindPose" type="Mat44">0.000311724143 4.37814788e-006 -0.999999762 0  0.999949396 0.010061129 0.000311753538 0  0.0100611364 -0.999949634 -1.20978746e-006 0  -15.6117105 3.32853699 -0.00133514346 1</value>
+        <value name="name" type="String">rFoot</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">15</value>
+        <value name="externalIndex" type="I32">15</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">5</value>
+        <value name="bindPose" type="Mat44">-0.998862743 -0.0447626784 -0.0164345447 0  0.0166715253 -0.00492581679 -0.999848664 0  0.0446749702 -0.998985529 0.00566647854 0  7.57910311e-005 6.97374344e-006 112.589996 1</value>
+        <value name="name" type="String">rHip</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">16</value>
+        <value name="externalIndex" type="I32">16</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">17</value>
+        <value name="bindPose" type="Mat44">0.0411928818 0.083187066 -0.995682478 0  0.999009669 0.0133698676 0.0424475446 0  0.0168431886 -0.996444345 -0.0825538859 0  -18.6379852 -2.78289676 73.1476212 1</value>
+        <value name="name" type="String">rShin</value>
+      </struct>
+      <struct>
+        <value name="internalIndex" type="I32">17</value>
+        <value name="externalIndex" type="I32">17</value>
+        <value name="numMeshReferenced" type="U32">0</value>
+        <value name="numRigidBodiesReferenced" type="U32">0</value>
+        <value name="parentIndex" type="I32">15</value>
+        <value name="bindPose" type="Mat44">-0.0749102756 -0.0528523847 -0.995788693 0  0.995898664 0.0468402207 -0.0774046332 0  0.0507339649 -0.997503221 0.0491268151 0  -15.6902246 -0.703140259 112.331848 1</value>
+        <value name="name" type="String">rThigh</value>
+      </struct>
+    </array>
+    <value name="bonesReferenced" type="U32">1</value>
+    <value name="bonesReferencedByMesh" type="U32">1</value>
+    <value name="rootBoneIndex" type="U32">0</value>
+    <array name="boneActors" size="0" type="Struct" structElements="boneIndex(I32),convexVerticesStart(U32),convexVerticesCount(U32),capsuleRadius(F32),capsuleHeight(F32),localPose(Mat44)"></array>
+    <array name="boneVertices" size="0" type="Vec3"></array>
+    <array name="boneSpheres" size="0" type="Struct" structElements="boneIndex(I32),radius(F32),localPos(Vec3)"></array>
+    <array name="boneSphereConnections" size="0" type="U16"></array>
+    <array name="bonePlanes" size="0" type="Struct" structElements="boneIndex(I32),n(Vec3),d(F32)"></array>
+    <array name="collisionConvexes" size="0" type="U32"></array>
+    <array name="cookedData" size="1" type="Struct">
+      <struct>
+        <value name="scale" type="F32">1</value>
+        <value name="cookedData" type="Ref" included="1" className="ClothingCookedPhysX3Param" version="0.5" checksum="0x5292657 0xc602622e 0xa6989638 0xf1f9e34f">        
+          <struct name="">
+            <value name="physicalMeshId" type="U32">0</value>
+            <value name="numVertices" type="U32">30</value>
+            <array name="deformableRestLengths" size="107" type="F32">
+              2.414783 4.84434748 4.57199812 5.94247818 6.80564594 7.00867748 6.75057507 5.9718132 4.79796839 3.1201148 4.79796886 1.63790751 4.75325537 3.27419186 6.72950268 5.92043781 6.68920469 6.88715172 6.6152668 5.93463326 2.40876365 6.07536983 4.67223454 6.93687153 6.80565882 5.84537792 4.55140638 3.28392768 3.12843466 6.63491726 5.84696817 7.01166391 
+              6.68919134 6.08400822 4.69481754 1.15545487 2.41478276 3.50369906 3.62047791 4.63964844 5.78634167 5.45338392 6.05726576 6.05726528 6.22702646 5.4533844 4.63964796 4.84631062 3.62047791 1.74630201 1.15545535 3.62047744 4.63964844 4.84647989 5.4533987 6.05728006 6.25413561 6.05728006 5.45339918 5.81320667 4.63964748 3.5074017 3.62047768 1.83796799 
+              1.80061781 2.45354939 2.61144423 3.06001902 3.21481562 2.83721232 2.56663013 2.1533711 1.61811554 2.17076588 2.81980658 2.89795446 2.95046186 3.11744452 2.8647933 2.47123241 5.13864517 6.02175093 8.34963131 8.25527287 10.0902557 11.5084972 12.1125402 12.4810886 11.5084972 12.0402327 10.09027 8.25527287 6.0217514 8.25527382 10.6327925 10.09027 
+              12.0402431 11.5084972 12.1125402 11.5084972 10.0902548 10.6595144 8.25527287 8.35101318 5.94483471 6.16527748 5.94483423
+            </array>
+            <array name="deformableIndices" size="214" type="U32">
+              0 4 3 8 6 9 7 10 12 17 14 16 19 23 20 21 24 28 25 29 26 28 0 2 3 6 5 7 9 12 11 14 
+              13 17 15 20 18 23 22 25 1 3 7 11 8 9 14 15 17 19 20 22 23 26 25 27 4 7 9 13 10 14 16 20 
+              17 18 21 25 23 24 0 1 2 5 3 7 4 6 8 11 9 14 10 13 12 16 15 18 17 20 19 21 22 26 23 25 
+              24 27 0 3 1 2 5 8 6 10 7 9 11 12 13 15 14 17 16 19 18 22 20 23 21 24 25 28 26 29 2 3 
+              3 5 7 8 9 10 12 14 16 17 18 20 22 23 25 26 3 4 6 7 9 11 13 14 15 17 19 20 21 23 24 25 
+              0 7 2 8 3 9 5 11 6 13 10 15 12 19 14 20 16 21 17 23 18 26 22 29 0 6 4 10 7 14 8 12 
+              9 17 11 16 13 18 15 22 19 24 20 25 21 27 23 28 12 13 15 16 18 19
+            </array>
+            <array name="selfCollisionIndices" size="30" type="U32">
+              0 1 2 3 4 5 7 6 8 11 9 10 13 14 12 16 17 15 18 20 19 21 23 22 26 25 24 27 28 29
+            </array>
+            <array name="selfCollisionNormalIndices" size="0" type="U32"></array>
+            <array name="selfCollisionNormalSetSizes" size="0" type="U32"></array>
+            <array name="deformableSets" size="12" type="Struct" structElements="fiberEnd(U32),longestFiber(U32),shortestFiber(U32),numEdges(U32),avgEdgeLength(F32),avgFiberLength(U32)">
+              11 0 0 11 5.18421602 0,20 0 0 9 5.38239479 0,28 0 0 8 5.07245111 0,35 0 0 7 5.72714281 0,
+              49 0 0 14 4.53394079 0,63 0 0 14 4.49032831 0,64 0 0 1 1.83796799 0,72 0 0 8 2.58720756 0,
+              80 0 0 8 2.61382198 0,92 0 0 12 9.6543293 0,104 0 0 12 9.96049404 0,107 0 0 3 6.01831579 0
+            </array>
+            <array name="deformablePhaseDescs" size="12" type="Struct" structElements="phaseType(U32),setIndex(U32),restValueOffset(U32)">
+              4 0 0,4 1 0,4 2 0,4 3 0,
+              1 4 0,1 5 0,1 6 0,2 7 0,
+              2 8 0,3 9 0,3 10 0,3 11 0
+            </array>
+            <array name="tetherAnchors" size="30" type="U32">
+              29 27 27 28 29 27 29 28 27 28 29 27 27 29 28 29 27 28 29 27 28 27 29 28 27 28 29 27 28 29
+            </array>
+            <array name="tetherLengths" size="30" type="F32">
+              41.6695251 42.5065804 41.6695251 40.7798119 39.363205 39.363205 35.8023453 37.2766418 35.8023453 32.430233 31.2020054 31.2020073 25.7768574 25.7768707 26.6438942 19.7407856 19.7407856 20.3902721 13.6988487 13.6988344 14.163518 8.25527287 8.25527287 8.35101318 3.62047791 3.5074017 3.62047768 0 0 0
+            </array>
+            <array name="deformableInvVertexWeights" size="30" type="F32">
+              6.30251074 31.9428062 5.90023661 2.17424893 2.91262197 2.51652861 1.51475441 0.915156007 1.34991932 0.561396003 1.01516688 0.946061194 0.773390889 0.826147377 0.425511777 1.1932987 1.09517395 0.286453784 0.838297784 0.764997959 0.425511807 0.927748799 1.03311503 0.56033957 1.33349693 0.915156007 1.53598046 3.16842031 3.91362977 3.54851699
+            </array>
+            <array name="virtualParticleIndices" size="0" type="U32"></array>
+            <array name="virtualParticleWeights" size="0" type="F32"></array>
+            <value name="cookedDataVersion" type="U32">302</value>
+            <value name="nextCookedData" type="Ref" included="1" classNames="ClothingCookedPhysX3Param ">            
+</value>
+          </struct>
+        </value>
+      </struct>
+    </array>
+    <value name="boundingBox" type="Bounds3">-3.22878718 4.79258108 197.663239  2.9364903 20.3863068 240.506683 </value>
+    <value name="materialLibrary" type="Ref" included="1" className="ClothingMaterialLibraryParameters" version="0.14" checksum="0xf827ceb7 0xd03d140a 0xc8ae038 0x16333673">    
+      <struct name="">
+        <array name="materials" size="1" type="Struct">
+          <struct>
+            <value name="materialName" type="String">Default</value>
+            <value name="verticalStretchingStiffness" type="F32">1</value>
+            <value name="horizontalStretchingStiffness" type="F32">1</value>
+            <value name="bendingStiffness" type="F32">1</value>
+            <value name="shearingStiffness" type="F32">1</value>
+            <value name="tetherStiffness" type="F32">1</value>
+            <value name="tetherLimit" type="F32">1</value>
+            <value name="orthoBending" type="Bool">false</value>
+            <struct name="verticalStiffnessScaling">
+              <value name="compressionRange" type="F32">1</value>
+              <value name="stretchRange" type="F32">1</value>
+              <value name="scale" type="F32">1</value>
+            </struct>
+            <struct name="horizontalStiffnessScaling">
+              <value name="compressionRange" type="F32">1</value>
+              <value name="stretchRange" type="F32">1</value>
+              <value name="scale" type="F32">1</value>
+            </struct>
+            <struct name="bendingStiffnessScaling">
+              <value name="compressionRange" type="F32">1</value>
+              <value name="stretchRange" type="F32">1</value>
+              <value name="scale" type="F32">1</value>
+            </struct>
+            <struct name="shearingStiffnessScaling">
+              <value name="compressionRange" type="F32">1</value>
+              <value name="stretchRange" type="F32">1</value>
+              <value name="scale" type="F32">1</value>
+            </struct>
+            <value name="damping" type="F32">0.800000012</value>
+            <value name="stiffnessFrequency" type="F32">100</value>
+            <value name="drag" type="F32">0.689999998</value>
+            <value name="comDamping" type="Bool">false</value>
+            <value name="friction" type="F32">0.5</value>
+            <value name="massScale" type="F32">25</value>
+            <value name="solverIterations" type="U32">5</value>
+            <value name="solverFrequency" type="F32">250</value>
+            <value name="gravityScale" type="F32">0.100000001</value>
+            <value name="inertiaScale" type="F32">0</value>
+            <value name="hardStretchLimitation" type="F32">0</value>
+            <value name="maxDistanceBias" type="F32">0</value>
+            <value name="hierarchicalSolverIterations" type="U32">0</value>
+            <value name="selfcollisionThickness" type="F32">0</value>
+            <value name="selfcollisionSquashScale" type="F32">0</value>
+            <value name="selfcollisionStiffness" type="F32">0</value>
+          </struct>
+        </array>
+      </struct>
+    </value>
+    <value name="materialIndex" type="U32">0</value>
+    <value name="interCollisionChannels" type="U32">0</value>
+    <value name="toolString" type="String">PhysX/APEX for Max 4.0.10209.23032:CL 21690813 Win64 (Apex 1.4.0, CL 20951837, PROFILE RELEASE) (PhysX 3.4) Apex Build Time: 10:30:50, Fri Jul 22, 2016Distribution author: emptyThe reason for the creation of the distribution: empty</value>
+  </struct>
+</value>
+</NvParameters>

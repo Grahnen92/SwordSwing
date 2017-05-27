@@ -40,4 +40,5 @@ public:
 	void yawCamera(float AxisValue);
 
 	void initCamera();
+	void setFOV(int _fov);
 };

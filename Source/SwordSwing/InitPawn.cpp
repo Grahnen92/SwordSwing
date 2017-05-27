@@ -42,6 +42,11 @@ void AInitPawn::cameraCalculations(float DeltaTime)
 	camera_spring_arm->SetWorldRotation(arm_rotation);
 }
 
+void AInitPawn::setFOV(int _fov)
+{
+	camera->SetFieldOfView(_fov);
+}
+
 // Called to bind functionality to input
 void AInitPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {

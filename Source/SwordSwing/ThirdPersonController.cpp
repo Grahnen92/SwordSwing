@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SwordSwing.h"
-#include "FightMode.h"
+#include "FightModeBase.h"
 #include "Blueprint/UserWidget.h"
 #include "ThirdPersonController.h"
 
@@ -58,9 +58,13 @@ void AThirdPersonController::pauseGame()
 
 void AThirdPersonController::spawnPlayer()
 {
-	Cast<AFightMode>(GetWorld()->GetAuthGameMode())->spawnPlayer(this);
+	//Cast<AFightMode>(GetWorld()->GetAuthGameMode())->spawnPlayer(this);
+	//Cast<AGameModeBase>(GetWorld()->GetAuthGameMode())->RestartPlayer(this);
+	Cast<AFightModeBase>(GetWorld()->GetAuthGameMode())->spawnPlayer(this);
 }
 void AThirdPersonController::despawnPlayer()
 {
-	Cast<AFightMode>(GetWorld()->GetAuthGameMode())->despawnPlayer(this);
+	//Cast<AFightMode>(GetWorld()->GetAuthGameMode())->despawnPlayer(this);
+	//Cast<AGameModeBase>(GetWorld()->GetAuthGameMode())->RestartPlayer(this);
+	Cast<AFightModeBase>(GetWorld()->GetAuthGameMode())->despawnPlayer(this);
 }

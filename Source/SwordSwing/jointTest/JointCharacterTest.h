@@ -138,8 +138,6 @@ protected:
 	bool can_move = true;
 	bool can_swing = true;
 
-
-
 	//camera ------------------------------------------------------------------------
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* camera_spring_arm;
@@ -147,6 +145,7 @@ protected:
 	UCameraComponent* camera;
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* camera_axis;
+
 
 	//targeting
 	TArray<USceneComponent* >lock_on_targets;
@@ -233,24 +232,16 @@ protected:
 
 
 	//Upper body ------------------------------------------------------------------------
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Body", VisibleAnywhere)
 	USkeletalMeshComponent* body;
-	
-	//upper body joint chain root
-	FLimbNode upbr;
-	void setTorsoTargets();
-	void setPelvisTargets();
 
-	//right leg joint chain root
-	FLimbNode rlr;
-	void setRThighTargets();
-	void setRShinTargets();
-	//left leg joint chain root
-	FLimbNode llr;
-	void setLThighTargets();
-	void setLShinTargets();
+	UPROPERTY(Category = "Body", VisibleAnywhere)
+	UParticleSystemComponent* body_trail;
 
-	FBodyInstance* torsoBI;
+	UPROPERTY(Category = "Body", VisibleAnywhere)
+	UParticleSystemComponent* left_thruster;
+	UPROPERTY(Category = "Body", VisibleAnywhere)
+	UParticleSystemComponent* right_thruster;
 
 
 	void cameraCalculations(float DeltaTime);
@@ -265,6 +256,17 @@ protected:
 	//cm/s
 	
 	void gripIndicatorCalculations(float DeltaTime);
+
+	void dash();
+	bool dashing = false;
+	UPROPERTY(EditAnywhere)
+	float dash_speed = 50000;
+	UPROPERTY(EditAnywhere)
+	float dash_cd = 1.5f;
+	float dash_cd_timer = 0.0f;
+	float dash_force;
+	const float dash_force_time = 0.1f;
+	float dash_force_timer = 0.f;
 	
 	void jump();
 	bool jumping;
@@ -307,6 +309,8 @@ public:
 	void setCanSwing(bool new_state);
 	void disableSwingAbility();
 	void enableSwingAbility();
+
+	void setFOV(int _fov);
 
 	//PIDS =================================================================================
 	//CAMERA -----------------------------------------------------------------
@@ -354,6 +358,22 @@ public:
 	FPIDData2D movement_velocity;
 
 	//BODY PIDS -----------------------------------------------------
+
+	//upper body joint chain root
+	FLimbNode upbr;
+	void setTorsoTargets();
+	void setPelvisTargets();
+
+	//right leg joint chain root
+	FLimbNode rlr;
+	void setRThighTargets();
+	void setRShinTargets();
+	//left leg joint chain root
+	FLimbNode llr;
+	void setLThighTargets();
+	void setLShinTargets();
+
+	FBodyInstance* torsoBI;
 
 	//Right thigh controller
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BodyPID")

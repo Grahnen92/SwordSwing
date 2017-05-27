@@ -3,6 +3,7 @@
 #include "SwordSwing.h"
 #include "AudioDevice.h"
 #include "FightMode.h"
+#include "LastManMode.h"
 #include "ActiveSound.h"
 #include "JointCharacterTest.h"
 
@@ -34,8 +35,6 @@ void AJointCharacterTest::BeginPlay()
 	initBodyJoints();
 	initPIDs();
 	initCustomPhysics();
-
-	camera->FieldOfView = 50.f;
 }
 
 // Called every frame
@@ -147,6 +146,10 @@ void AJointCharacterTest::cameraCalculations(float DeltaTime)
 	}
 	
 }
+void AJointCharacterTest::setFOV(int _fov)
+{
+	camera->SetFieldOfView(_fov);
+}
 
 void AJointCharacterTest::movementCalculations(float DeltaTime)
 {
@@ -160,11 +163,26 @@ void AJointCharacterTest::movementCalculations(float DeltaTime)
 
 	FVector curr_vel = torsoBI->GetUnrealWorldVelocity();
 	FVector2D curr_vel2D = FVector2D(curr_vel.X, curr_vel.Y);
+	UE_LOG(LogTemp, Warning, TEXT("current vel %f"), curr_vel2D.Size());
+	UE_LOG(LogTemp, Warning, TEXT("current err %f"), movement_velocity.error.Size());
 
-	FVector target_vel = (camera_axis->GetForwardVector()*movement_input.X + camera_axis->GetRightVector()* movement_input.Y)*target_speed;
-	FVector2D target_vel2D = FVector2D(target_vel.X, target_vel.Y);
+	FVector target_vel;
+	//if (!dashing){
+		target_vel = (camera_axis->GetForwardVector()*movement_input.X + camera_axis->GetRightVector()* movement_input.Y)*target_speed;
+		FVector2D target_vel2D = FVector2D(target_vel.X, target_vel.Y);
+		movement_velocity.error = target_vel2D - curr_vel2D;
+	//}
+	//else {
+	//	target_vel = (camera_axis->GetForwardVector()*movement_input.X + camera_axis->GetRightVector()* movement_input.Y)*dash_speed;
+	//	FVector2D target_vel2D = FVector2D(target_vel.X, target_vel.Y);
+	//	movement_velocity.error = target_vel2D - curr_vel2D;
+	//	if (movement_velocity.error.Size() < 100.f)
+	//		dashing = false;
+	//}
 
-	movement_velocity.error = target_vel2D - curr_vel2D;
+	
+
+	
 	movement_velocity.integral = movement_velocity.integral + movement_velocity.error * DeltaTime;
 	movement_velocity.derivative = (movement_velocity.error - movement_velocity.prev_err) / DeltaTime;
 
@@ -178,13 +196,33 @@ void AJointCharacterTest::movementCalculations(float DeltaTime)
 	FVector move_force = FVector(movement_velocity.adjustment.X, movement_velocity.adjustment.Y, 0.f)*torsoBI->GetBodyMass();
 	
 	torsoBI->AddForce(move_force );
+
+	//dashing -------------------------------------------------------------------------------------
+
+	if (dashing) {
+		if (dash_force_timer == 0.f) {//the factor of 100 is because unreal apparently applies forces in kg*cm*s^(-2)
+			dash_force = (body->GetMass()*dash_speed - body->GetMass()*curr_vel2D.Size()) / jump_force_time;
+		}
+		if (dash_force_timer < dash_force_time) {
+			torsoBI->AddForce(target_direction*dash_force*DeltaTime);
+			dash_force_timer += DeltaTime;
+		}
+
+		dash_cd_timer += DeltaTime;
+		body_trail->SetFloatParameter(FName("trailLifetime"), FMath::Lerp(1.0f, 0.0f, dash_cd_timer/ dash_cd));
+
+		if (dash_cd_timer > dash_cd) {
+			dashing = false;
+			dash_force_timer = 0.0f;
+			dash_cd_timer = 0.0f;
+			body_trail->EndTrails();
+		}
+	}
+
 	//Jumping -------------------------------------------------------------------------------------
 
-	if (jumping) 
-	{
-
-		if (curr_jump_time == 0.f)
-		{//the factor of 100 is because unreal apparently applies forces in kg*cm*s^(-2)
+	if (jumping) {
+		if (curr_jump_time == 0.f){//the factor of 100 is because unreal apparently applies forces in kg*cm*s^(-2)
 			jump_force = (((FMath::Sqrt(2.f*1000.f*jump_height) - torsoBI->GetUnrealWorldVelocity().Z) / jump_force_time) + 1000.f)*(body->GetMass()) * 100.f;
 		}
 
@@ -195,7 +233,6 @@ void AJointCharacterTest::movementCalculations(float DeltaTime)
 			jumping = false;
 			curr_jump_time = 0.0f;
 		}
-
 	}
 }
 //SETTERS / GETTERS ===========================================================================
@@ -272,7 +309,7 @@ void AJointCharacterTest::enableSwingAbility()
 
 void AJointCharacterTest::setPlayerSpecificMaterial(UMaterial* mat)
 {
-	//torso_vis->SetMaterial(0, mat);
+	body->SetMaterial(3, mat);
 }
 
 bool AJointCharacterTest::isAlive()
@@ -289,32 +326,43 @@ bool AJointCharacterTest::isGuarding()
 
 void AJointCharacterTest::OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (NormalImpulse.Size() > 30000.f)
+	if (OtherActor != this)
 	{
-		TArray<USceneComponent*> tmp_child_comps;
-		HitComp->GetChildrenComponents(true, tmp_child_comps);
-		for (int i = 0; i < tmp_child_comps.Num(); i++)
+		if (NormalImpulse.Size() > 30000.f)
 		{
-			/*UE_LOG(LogTemp, Warning, TEXT(" %s"), *tmp_child_comps[i]->GetFullName());
-			if (tmp_child_comps[i]->GetFullName().Contains("Attachment"))
+			TArray<USceneComponent*> tmp_child_comps;
+			HitComp->GetChildrenComponents(true, tmp_child_comps);
+			for (int i = 0; i < tmp_child_comps.Num(); i++)
 			{
-			UPhysicsConstraintComponent* tmp_constraint = dynamic_cast<UPhysicsConstraintComponent*>(tmp_child_comps[i]);
-			tmp_constraint->BreakConstraint();
-			}*/
-			//tmp_child_comps[i]->DestroyComponent();
+				/*UE_LOG(LogTemp, Warning, TEXT(" %s"), *tmp_child_comps[i]->GetFullName());
+				if (tmp_child_comps[i]->GetFullName().Contains("Attachment"))
+				{
+				UPhysicsConstraintComponent* tmp_constraint = dynamic_cast<UPhysicsConstraintComponent*>(tmp_child_comps[i]);
+				tmp_constraint->BreakConstraint();
+				}*/
+				//tmp_child_comps[i]->DestroyComponent();
 
-			//body->BreakConstraint();
+				//body->BreakConstraint();
+			}
+
+			release();
+
+			//body->BreakConstraint(FVector::ZeroVector, FVector::ZeroVector, Hit.BoneName);
+			FConstraintInstance* tmp_const = body->FindConstraintInstance(Hit.BoneName);
+			if (tmp_const)
+				tmp_const->TermConstraint();
+
+			alive = false;
+			fight_mode = false;
+			body->OnComponentHit.RemoveAll(this);
+
+			ALastManMode* tmp_mode = Cast<ALastManMode>(GetWorld()->GetAuthGameMode());
+			if (tmp_mode)
+			{
+				tmp_mode->registerDeath(this->GetNetOwningPlayer()->PlayerController);
+			}
+			//HitComp->DestroyComponent();
 		}
-
-		release();
-
-		alive = false;
-		fight_mode = false;
-		body->OnComponentHit.RemoveAll(this);
-		
-
-		Cast<AFightMode>(GetWorld()->GetAuthGameMode())->registerDeath(this->GetNetOwningPlayer()->PlayerController);
-		//HitComp->DestroyComponent();
 	}
 }
 
@@ -399,14 +447,14 @@ void AJointCharacterTest::customHoverPhysics(float DeltaTime, FBodyInstance* Bod
 	//	RV_TraceParams
 	//);
 
-	DrawDebugPoint(
-		GetWorld(),
-		BodyInstance->GetUnrealWorldTransform().GetLocation(),
-		5,  					//size
-		FColor(255, 0, 0),  //pink
-		false,  				//persistent (never goes away)
-		0.03 					//point leaves a trail on moving object
-	);
+	//DrawDebugPoint(
+	//	GetWorld(),
+	//	BodyInstance->GetUnrealWorldTransform().GetLocation(),
+	//	5,  					//size
+	//	FColor(255, 0, 0),  //pink
+	//	false,  				//persistent (never goes away)
+	//	0.03 					//point leaves a trail on moving object
+	//);
 	//UE_LOG(LogTemp, Warning, TEXT("body mass %f"), BodyInstance->GetBodyMass());
 
 
@@ -485,7 +533,7 @@ void AJointCharacterTest::setPelvisTargets()
 
 	pelv_tar->twist_dir = (camera_axis->GetForwardVector() - FVector::DotProduct(camera_axis->GetForwardVector(), upbr.state.up)* upbr.state.up).GetSafeNormal();
 
-	DrawDebugLine(GetWorld(), upbr.state.pos, upbr.state.pos + pelv_tar->twist_dir*100, FColor(255, 0, 255), false, 0.03, 10, 1.f);
+	//DrawDebugLine(GetWorld(), upbr.state.pos, upbr.state.pos + pelv_tar->twist_dir*100, FColor(255, 0, 255), false, 0.03, 10, 1.f);
 	//DrawDebugLine(GetWorld(), upbr.state.pos, upbr.state.pos + -upbr.state.up * 100, FColor(255, 0, 255), false, 0.03, 10, 1.f);
 }
 
@@ -529,9 +577,9 @@ void AJointCharacterTest::updateLimbStates(FLimbNode* limb)
 	limb->state.prev_up = limb->state.up;
 	limb->state.up = limb->bi->GetUnrealWorldTransform().GetUnitAxis(EAxis::X);
 
-	DrawDebugLine(GetWorld(), limb->state.pos, limb->state.pos + limb->state.forward * 100, FColor(255, 0, 0), false, 0.03, 10, 1.f);
-	DrawDebugLine(GetWorld(), limb->state.pos, limb->state.pos + limb->state.right * 100, FColor(0, 255, 0), false, 0.03, 10, 1.f);
-	DrawDebugLine(GetWorld(), limb->state.pos, limb->state.pos + limb->state.up * 100, FColor(0, 0, 255), false, 0.03, 10, 1.f);
+	//DrawDebugLine(GetWorld(), limb->state.pos, limb->state.pos + limb->state.forward * 100, FColor(255, 0, 0), false, 0.03, 10, 1.f);
+	//DrawDebugLine(GetWorld(), limb->state.pos, limb->state.pos + limb->state.right * 100, FColor(0, 255, 0), false, 0.03, 10, 1.f);
+	//DrawDebugLine(GetWorld(), limb->state.pos, limb->state.pos + limb->state.up * 100, FColor(0, 0, 255), false, 0.03, 10, 1.f);
 
 	//DrawDebugPoint(
 	//	GetWorld(),
@@ -585,8 +633,6 @@ void AJointCharacterTest::ControlLimb(float DeltaTime, FLimbNode* limb)
 	//calculate PID
 	limb->pid->error.X = limb->pid->error.X*(jri);
 	limb->pid->error.Y = limb->pid->error.Y*(jvi);
-	if (limb->bi == upbr.bi)
-		UE_LOG(LogTemp, Warning, TEXT("twist error: %f"), limb->pid->error.Z);
 	limb->pid->error.Z = limb->pid->error.Z*lui;
 	
 
@@ -1056,6 +1102,8 @@ void AJointCharacterTest::SetupPlayerInputComponent(UInputComponent* PlayerInput
 
 	InputComponent->BindAction("Jump", IE_Pressed, this, &AJointCharacterTest::jump);
 
+	InputComponent->BindAction("Dash", IE_Pressed, this, &AJointCharacterTest::dash);
+
 	//Hook up every-frame handling for our four axes
 	InputComponent->BindAxis("MoveForward", this, &AJointCharacterTest::moveForward);
 	InputComponent->BindAxis("MoveRight", this, &AJointCharacterTest::moveRight);
@@ -1075,11 +1123,20 @@ void AJointCharacterTest::moveRight(float AxisValue)
 	movement_input.Y = FMath::Clamp<float>(AxisValue, -1.0f, 1.0f);
 }
 
+void AJointCharacterTest::dash()
+{
+	if (!dashing)
+	{
+		dashing = true;
+		dash_force_timer = 0.f;
+		body_trail->BeginTrails(FName("Spine01"), FName("Neck"), ETrailWidthMode::ETrailWidthMode_FromCentre, 1.0f);
+	}	
+}
+
 void AJointCharacterTest::jump()
 {
 	jumping = true;
 	curr_jump_time = 0.0f;
-
 }
 
 void AJointCharacterTest::pitchCamera(float AxisValue)
@@ -1324,6 +1381,8 @@ void AJointCharacterTest::initBody()
 	body->SetPhysicsAsset(jointSKeletalMesh.Object->PhysicsAsset);
 	body->SetSimulatePhysics(true);
 
+	body_trail = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("BodyTrail"));
+	body_trail->SetupAttachment(body, FName("Spine02"));
 	//UE_LOG(LogTemp, Warning, TEXT("constraintnum %d"), body->Constraints.Num());
 
 	//UPhysicsAsset* test = body->GetPhysicsAsset();
@@ -1529,9 +1588,9 @@ void AJointCharacterTest::initPIDs()
 	//movement  ------------------------------------------------
 
 	movement_velocity.max_adjustment = FVector2D(1000000.f, 1000000.f);
-	movement_velocity.P = FVector2D(5.f, 5.f);
+	movement_velocity.P = FVector2D(10.f, 10.f);
 	movement_velocity.I = FVector2D(0.f, 0.f);
-	movement_velocity.D = FVector2D(0.1f, 0.1f);
+	movement_velocity.D = FVector2D(0.5f, 0.5f);
 	movement_velocity.integral = FVector2D::ZeroVector;
 
 }
@@ -1594,7 +1653,7 @@ void AJointCharacterTest::calculateRelativeInertia(FBodyInstance* offset_bi, con
 {
 	FVector bi_inrt = offset_bi->GetBodyInertiaTensor();
 	FMatrix bi_T = offset_bi->GetUnrealWorldTransform().ToMatrixWithScale();
-	bi_T.ScaleTranslation(FVector(0.f, 0.f, 0.f));
+	//bi_T.ScaleTranslation(FVector(0.f, 0.f, 0.f));
 	FMatrix bi_di = FMatrix(FVector(bi_inrt.X, 0.f, 0.f), FVector(0.f, bi_inrt.Y, 0.f), FVector(0.f, 0.f, bi_inrt.Z), FVector(0.f, 0.f, 0.f));
 	*out_inertia = bi_T*bi_di*bi_T.GetTransposed();
 	FVector r = offset_bi->GetCOMPosition() - cor;
