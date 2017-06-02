@@ -3,6 +3,7 @@
 #include "SwordSwing.h"
 #include "AudioDevice.h"
 #include "FightMode.h"
+#include "FightModeBase.h"
 #include "LastManMode.h"
 #include "ActiveSound.h"
 #include "JointCharacterTest.h"
@@ -16,6 +17,7 @@ AJointCharacterTest::AJointCharacterTest()
 	PrimaryActorTick.bCanEverTick = true;
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 
+	this->bCanBeDamaged = true;
 	//body settings
 	
 	initBody();
@@ -52,9 +54,6 @@ void AJointCharacterTest::Tick(float DeltaTime)
 	//	false,  				//persistent (never goes away)
 	//	0.03 					//point leaves a trail on moving object
 	//);
-
-
-
 
 	if (alive)
 	//	if (false)
@@ -356,13 +355,29 @@ void AJointCharacterTest::OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherA
 			fight_mode = false;
 			body->OnComponentHit.RemoveAll(this);
 
-			ALastManMode* tmp_mode = Cast<ALastManMode>(GetWorld()->GetAuthGameMode());
+			AFightModeBase* tmp_mode = Cast<AFightModeBase>(GetWorld()->GetAuthGameMode());
 			if (tmp_mode)
 			{
-				tmp_mode->registerDeath(this->GetNetOwningPlayer()->PlayerController);
+				if (this->GetNetOwningPlayer())
+					tmp_mode->registerDeath(this->GetNetOwningPlayer()->PlayerController);
+				else
+					tmp_mode->registerDeath(nullptr);
 			}
 			//HitComp->DestroyComponent();
 		}
+	}
+}
+
+void AJointCharacterTest::FellOutOfWorld(const class UDamageType& dmgType)
+{
+	Super::FellOutOfWorld(dmgType);
+	AFightModeBase* tmp_mode = Cast<AFightModeBase>(GetWorld()->GetAuthGameMode());
+	if (tmp_mode)
+	{
+		if (this->GetNetOwningPlayer())
+			tmp_mode->registerDeath(this->GetNetOwningPlayer()->PlayerController);
+		else
+			tmp_mode->registerDeath(nullptr);
 	}
 }
 
@@ -423,10 +438,9 @@ void AJointCharacterTest::aquireTarget()
 void AJointCharacterTest::customHoverPhysics(float DeltaTime, FBodyInstance* BodyInstance)
 {
 	FCollisionQueryParams RV_TraceParams = FCollisionQueryParams(FName(TEXT("RV_Trace")), true, this);
-	RV_TraceParams.bTraceComplex = true;
-	RV_TraceParams.bTraceAsyncScene = true;
+	RV_TraceParams.bTraceComplex = false;
 	RV_TraceParams.bReturnPhysicalMaterial = false;
-
+	RV_TraceParams.MobilityType = EQueryMobilityType::Any;
 	//Re-initialize hit info
 	FHitResult rv_hit(ForceInit);
 
@@ -434,11 +448,15 @@ void AJointCharacterTest::customHoverPhysics(float DeltaTime, FBodyInstance* Bod
 	FVector end = start - FVector::UpVector*hover_height.target*2.f;
 
 	//call GetWorld() from within an actor extending class
-	GetWorld()->LineTraceSingleByObjectType(rv_hit,        //result
-		start,    //start
-		end, //end
-		FCollisionObjectQueryParams::AllStaticObjects, //collision channel
-		RV_TraceParams);
+	//GetWorld()->LineTraceSingleByObjectType(rv_hit,        //result
+	//	start,    //start
+	//	end, //end
+	//	FCollisionObjectQueryParams::AllStaticObjects, //collision channel
+	//	RV_TraceParams);
+
+	//GetWorld()->SweepSingleByChannel(rv_hit, start, end, FQuat(), ECollisionChannel::ECC_WorldStatic, FCollisionShape::MakeSphere(20.f), RV_TraceParams);
+	//GetWorld()->SweepSingleByObjectType(rv_hit, start, end, FQuat(), FCollisionObjectQueryParams::AllObjects, FCollisionShape::MakeSphere(20.f), RV_TraceParams);
+	GetWorld()->SweepSingleByProfile(rv_hit, start, end, FQuat(), FName("OverlapAllTerrain"), FCollisionShape::MakeSphere(20.f), RV_TraceParams);
 	//GetWorld()->LineTraceSingleByChannel(
 	//	rv_hit,        //result
 	//	start,    //start
@@ -1356,7 +1374,7 @@ void AJointCharacterTest::initCamera()
 
 	camera_spring_arm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraSpringArm"));
 	camera_spring_arm->SetupAttachment(camera_axis);
-	camera_spring_arm->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, 50.0f), FRotator(-60.0f, 0.0f, 0.0f));
+	camera_spring_arm->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, 50.0f), FRotator(0.f, 0.0f, 0.0f));
 	camera_spring_arm->TargetArmLength = 400.f;
 	camera_spring_arm->bEnableCameraLag = true;
 	camera_spring_arm->CameraLagSpeed = 6.0f;
@@ -1375,7 +1393,7 @@ void AJointCharacterTest::initBody()
 	body = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Body"));
 	body->SetupAttachment(RootComponent);
 
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh>  jointSKeletalMesh(TEXT("/Game/JointCharacter/mesh/robotWithArm_2/featherBot.featherBot"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh>  jointSKeletalMesh(TEXT("/Game/JointCharacter/mesh/robotWithArm_2/featherBotUVNoArm.featherBotUVNoArm"));
 	body->SetSkeletalMesh(jointSKeletalMesh.Object);
 	
 	body->SetPhysicsAsset(jointSKeletalMesh.Object->PhysicsAsset);

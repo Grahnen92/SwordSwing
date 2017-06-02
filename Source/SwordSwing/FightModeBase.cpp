@@ -75,6 +75,11 @@ AActor* AFightModeBase::ChoosePlayerStart_Implementation(AController* Player)
 	return nullptr;
 }
 
+void AFightModeBase::registerDeath(APlayerController* round_loser)
+{
+
+}
+
 void AFightModeBase::spawnPlayer(APlayerController* pc)
 {
 	APawn* currentPawn = pc->GetPawn();
@@ -83,9 +88,8 @@ void AFightModeBase::spawnPlayer(APlayerController* pc)
 	{
 		currentPawn->Destroy();
 	}
+
 	FActorSpawnParameters SpawnInfo;
-
-
 	AJointCharacterTest* new_char = GetWorld()->SpawnActor<AJointCharacterTest>(fight_char, pc->StartSpot->GetActorTransform(), SpawnInfo);
 	if (new_char)
 	{

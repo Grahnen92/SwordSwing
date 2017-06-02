@@ -400,6 +400,8 @@ public:
 
 private:
 
+	void FellOutOfWorld(const class UDamageType& dmgType);
+
 	void initInputVars();
 	void setArmTwistTargets();
 

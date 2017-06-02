@@ -26,6 +26,8 @@ public:
 	virtual void spawnPlayer(APlayerController* pc);
 	virtual void despawnPlayer(APlayerController* pc);
 
+	virtual void registerDeath(APlayerController* round_loser);
+
 protected:
 	virtual void BeginPlay() override;
 

@@ -32,7 +32,10 @@ public:
 	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Trigger")
-	UBoxComponent* trigger;
+	USceneComponent* root;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Trigger")
+	UCapsuleComponent* trigger;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TriggerText")
 	UTextRenderComponent* trigger_ftext;
@@ -40,8 +43,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TriggerText")
 	UTextRenderComponent* trigger_btext;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TriggerVis")
-	UStaticMeshComponent* trigger_vis;
+	UPROPERTY(Category = "Trigger", VisibleAnywhere)
+	UDecalComponent* trigger_indicator_decal;
 
 	
 

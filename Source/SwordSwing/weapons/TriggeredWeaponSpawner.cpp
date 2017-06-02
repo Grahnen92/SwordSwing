@@ -10,27 +10,43 @@
 // Sets default values
 ATriggeredWeaponSpawner::ATriggeredWeaponSpawner() : AWeaponSpawner()
 {
-	
-	trigger = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger"));
-	trigger->SetBoxExtent(FVector(50.f, 50.f, 50.f));
+	root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	RootComponent = root;
+
+	trigger = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Trigger"));
+	trigger->SetCapsuleHalfHeight(150.f);
+	trigger->SetCapsuleRadius(50.f);
 	trigger->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	trigger->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Overlap);
 	trigger->SetCollisionResponseToChannel(ECollisionChannel::ECC_PhysicsBody, ECollisionResponse::ECR_Overlap);
 	trigger->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	trigger->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	trigger->SetupAttachment(RootComponent);
+	trigger->SetupAttachment(root);
+	trigger->SetRelativeLocation(FVector(0.f, 0.f, 100.f));
+	trigger->SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel3);
 
-	trigger_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TriggerVis"));
-	//trigger_vis->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	trigger_vis->SetupAttachment(trigger);
+	trigger_indicator_decal = CreateDefaultSubobject<UDecalComponent>(TEXT("TriggerVis"));
+	trigger_indicator_decal->SetupAttachment(root);
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> decal_mat(TEXT("/Game/materials/redCircleDecal.redCircleDecal"));
+	//instance_mats.Add(land_mat.Object);
+	trigger_indicator_decal->SetMaterial(0, decal_mat.Object);
+	trigger_indicator_decal->SetRelativeRotation(FRotator(90.f, 0.f, 0.f));
+	trigger_indicator_decal->DecalSize = FVector(20.f, 50.f, 50.f);
 
 	trigger_ftext = CreateDefaultSubobject<UTextRenderComponent>(TEXT("TriggerFText"));
 	trigger_ftext->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	trigger_ftext->SetupAttachment(RootComponent);
+	trigger_ftext->SetupAttachment(root);
+	trigger_ftext->SetRelativeLocation(FVector(0.f, 0.f, 200.f));
+	trigger_ftext->SetWorldSize(50.f);
+	trigger_ftext->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
 
 	trigger_btext = CreateDefaultSubobject<UTextRenderComponent>(TEXT("TriggerBText"));
 	trigger_btext->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	trigger_btext->SetupAttachment(RootComponent);
+	trigger_btext->SetupAttachment(root);
+	trigger_btext->SetRelativeLocation(FVector(0.f, 0.f, 200.f));
+	trigger_btext->SetRelativeRotation(FRotator(0.f, -180.f, 0.f));
+	trigger_btext->SetWorldSize(50.f);
+	trigger_btext->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
 
 }
 

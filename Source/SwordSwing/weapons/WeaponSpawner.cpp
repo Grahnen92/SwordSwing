@@ -38,8 +38,8 @@ void AWeaponSpawner::Tick(float DeltaTime)
 void AWeaponSpawner::spawnWeapon()
 {
 	FActorSpawnParameters SpawnInfo;
-	weapons.Add(GetWorld()->SpawnActor<AWeapon>(weapon_template, GetActorTransform(), SpawnInfo));
-
+	//weapons.Add(GetWorld()->SpawnActor<AWeapon>(weapon_template, GetActorTransform() + FVector::UpVector*100.f, SpawnInfo));
+	weapons.Add(GetWorld()->SpawnActor<AWeapon>(weapon_template, GetActorLocation() + FVector::UpVector*100.f, GetActorRotation().Add(0.f, 0.f, 90.f), SpawnInfo));
 }
 void AWeaponSpawner::despawnWeapon(int w_index)
 {
