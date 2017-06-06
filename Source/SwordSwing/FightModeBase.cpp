@@ -36,7 +36,7 @@ void AFightModeBase::InitGame(const FString &MapName, const FString &Options, FS
 
 	bPauseable = true;
 	//PlayerControllerClass = AThirdPersonController::StaticClass();
-	DefaultPawnClass = AInitPawn::StaticClass();
+	//DefaultPawnClass = AInitPawn::StaticClass();
 }
 
 void AFightModeBase::BeginPlay()

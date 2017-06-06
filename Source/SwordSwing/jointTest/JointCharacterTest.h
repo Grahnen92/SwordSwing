@@ -133,34 +133,99 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
+	//character states ===========================================================================
+	UPROPERTY(EditAnywhere, Category = "CharacterStates")
+	bool mortal = true;
+	UPROPERTY(EditAnywhere, Category = "CharacterStates" )
 	bool alive = true;
-
+	UPROPERTY(EditAnywhere, Category = "CharacterStates")
 	bool can_move = true;
-	bool can_swing = true;
+	UPROPERTY(EditAnywhere, Category = "CharacterStates")
+	bool fight_mode;
 
-	//camera ------------------------------------------------------------------------
-	UPROPERTY(VisibleAnywhere)
-	USpringArmComponent* camera_spring_arm;
-	UPROPERTY(VisibleAnywhere)
-	UCameraComponent* camera;
-	UPROPERTY(VisibleAnywhere)
-	USceneComponent* camera_axis;
+	bool dashing = false;
+	UPROPERTY(EditAnywhere)
+	float dash_speed = 50000;
+	UPROPERTY(EditAnywhere)
+	float dash_cd = 1.5f;
+	float dash_cd_timer = 0.0f;
+	float dash_force;
+	const float dash_force_time = 0.1f;
+	float dash_force_timer = 0.f;
 
+	bool jumping;
+	UPROPERTY(EditAnywhere)
+	float jump_height = 100;
+	float jump_force;
+	const float jump_force_time = 0.1f;
+	float curr_jump_time = 0.f;
+	//int jump_frame_count;
+	//const int jump_frame_nr = 3;
 
-	//targeting
-	TArray<USceneComponent* >lock_on_targets;
-	USceneComponent* locked_target;
-	UPROPERTY(Category = "Weapon", VisibleAnywhere)
-	USphereComponent* targeting_sphere;
+	// body components ==============================================================================
+	UPROPERTY(Category = "Body", VisibleAnywhere)
+		USkeletalMeshComponent* body;
+
+	UPROPERTY(Category = "Body", VisibleAnywhere)
+		UParticleSystemComponent* body_trail;
+
+	UPROPERTY(Category = "Body", VisibleAnywhere)
+		UParticleSystemComponent* left_thruster;
+	UPROPERTY(Category = "Body", VisibleAnywhere)
+		UParticleSystemComponent* right_thruster;
+
+	//Weapon States ==============================================================================
+
 	
-	UFUNCTION()
-	void addPotentialTarget(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-	UFUNCTION()
-	void removePotentialTarget(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-	
-	void aquireTarget();
+	UPROPERTY(EditAnywhere, Category = "CharacterStates")
+	bool arm_disabled = false;
+	UPROPERTY(EditAnywhere, Category = "CharacterStates")
+	float arm_disable_duration = 0.5f;
+	float arm_disable_start;
 
-	//weapon ------------------------------------------------------------------------
+
+	// 0 disengaged
+	// 1 engaging
+	// 2 engaged
+	// 3 disengaging
+	int fight_mode_state;
+	float fight_t;
+	UPROPERTY(EditAnywhere)
+	float fight_mode_engage_time = 0.25;
+	// 0 normal
+	// 1 guarding
+	// 2 guarding locked
+	// 3 disabled
+	int fight_stance = 0;
+
+	bool was_standing_still = true;
+	bool wep_extended = false;
+	bool rot_forward = true;
+
+	UPROPERTY(EditAnywhere, Category = "CharacterStates")
+	bool guarding = false;
+	bool guard_locked = false;
+
+	bool grabbing_weapon = false;
+	bool holding_weapon = false;
+	bool holding_object = false;
+
+	void fightModeOn();
+	void fightModeOff();
+	void release();
+	void grab();
+	void abortGrab();
+	UFUNCTION(BlueprintCallable)
+	void attachWeapon(AWeapon* _wep);
+	AWeapon* held_weapon;
+	UObject* held_object;
+
+	void guard();
+	void abortGuard();
+	void lockGuard();
+	void unlockGuard();
+
+	//weapon components ==============================================================================
 	UPROPERTY(Category = "Arm", VisibleAnywhere)
 	USphereComponent* grip_axis;
 	UPROPERTY(Category = "Arm", VisibleAnywhere)
@@ -187,30 +252,30 @@ protected:
 	TArray<FBodyInstance*> arm_BIs;
 
 
-	//FBodyInstance* grip_axis_bi;
-	//FBodyInstance* grip_bi;
-	//FVector offset_wep_inertia;
 
-	void fightModeOn();
-	void fightModeOff();
-	void release();
-	void grab();
-	void abortGrab();
-	void attachWeapon(AWeapon* _wep);
+	//camera ==============================================================================
+	UPROPERTY(VisibleAnywhere)
+	USpringArmComponent* camera_spring_arm;
+	UPROPERTY(VisibleAnywhere)
+	UCameraComponent* camera;
+	UPROPERTY(VisibleAnywhere)
+	USceneComponent* camera_axis;
 
-	void guard();
-	void abortGuard();
-	void lockGuard();
-	void unlockGuard();
-	bool guarding = false;
-	bool guard_locked = false;
+	//targeting
+	TArray<USceneComponent* >lock_on_targets;
+	USceneComponent* locked_target;
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	USphereComponent* targeting_aura;
+	UPROPERTY(Category = "Weapon", VisibleAnywhere)
+	USphereComponent* targeting_point;
 	
+	UFUNCTION()
+	void addPotentialTarget(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void removePotentialTarget(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	void aquireTarget();
+
 	void calculateWepInertia();
-	bool grabbing_weapon = false;
-	bool holding_weapon = false;
-	AWeapon* held_weapon;
-	bool holding_object = false;
-	UObject* held_object;
 
 	FRotator axis_target_rot;
 	FRotator arm_target_rot;
@@ -219,96 +284,52 @@ protected:
 	float arm_length_before_fight;
 	float target_arm_length;
 
-	bool fight_mode;
 
-	// 0 disengaged
-	// 1 engaging
-	// 2 engaged
-	// 3 disengaging
-	int fight_mode_state;
-	float fight_t;
-	UPROPERTY(EditAnywhere)
-	float fight_mode_engage_time = 0.25;
-
-
-	//Upper body ------------------------------------------------------------------------
-	UPROPERTY(Category = "Body", VisibleAnywhere)
-	USkeletalMeshComponent* body;
-
-	UPROPERTY(Category = "Body", VisibleAnywhere)
-	UParticleSystemComponent* body_trail;
-
-	UPROPERTY(Category = "Body", VisibleAnywhere)
-	UParticleSystemComponent* left_thruster;
-	UPROPERTY(Category = "Body", VisibleAnywhere)
-	UParticleSystemComponent* right_thruster;
-
-
+	//Camera INPUT ==============================================================================
+	void pitchCamera(float AxisValue);
+	void yawCamera(float AxisValue);
 	void cameraCalculations(float DeltaTime);
 	FVector2D camera_input;
 	float scaled_inverted_cam_input_size = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	FVector input_dir;
+	FVector prev_input_dir;
+
+	//movement INPUT ==============================================================================
 	void movementCalculations(float DeltaTime);
 	FVector2D movement_input;
 	FVector target_direction;
 
 	void moveForward(float AxisValue);
 	void moveRight(float AxisValue);
-	//cm/s
-	
-	void gripIndicatorCalculations(float DeltaTime);
 
 	void dash();
-	bool dashing = false;
-	UPROPERTY(EditAnywhere)
-	float dash_speed = 50000;
-	UPROPERTY(EditAnywhere)
-	float dash_cd = 1.5f;
-	float dash_cd_timer = 0.0f;
-	float dash_force;
-	const float dash_force_time = 0.1f;
-	float dash_force_timer = 0.f;
-	
 	void jump();
-	bool jumping;
-	UPROPERTY(EditAnywhere)
-	float jump_height = 100;
-	float jump_force;
-	const float jump_force_time = 0.1f;
-	float curr_jump_time = 0.f;
-	//int jump_frame_count;
-	//const int jump_frame_nr = 3;
-
-	void pitchCamera(float AxisValue);
-	void yawCamera(float AxisValue);
+	//cm/s
 	
-	void zoomIn();
-	void zoomOut();
-	float zoom_factor;
-	bool zooming;
 
 
 public:	
 
-	UFUNCTION()
-	void OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
-	// Called every frame
+	// UNREAL FUNCTIONS ==============================================================================
 	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
+	// STATE checkers/setters/getters ==============================================================================
 	void setPlayerSpecificMaterial(UMaterial* mat);
-
+	void setAlive(bool new_state);
 	bool isAlive();
 
 	bool isGuarding();
 
 	void setCanMove(bool new_state);
 
-	void setCanSwing(bool new_state);
-	void disableSwingAbility();
-	void enableSwingAbility();
+	void setArmDisabled(bool new_state);
+	void disableArm(float duration);
+	void enableArm();
+	void setInputDir(FVector _dir);
 
 	void setFOV(int _fov);
 
@@ -320,6 +341,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FPIDData2D cdc;
 
+	FVector locked_target_dir;
+	FVector locked_target_dir_xy;
+
 	//WEAPON -----------------------------------------------------------------
 	
 	//arm joint direction controllers(plural)
@@ -328,6 +352,10 @@ public:
 	//arm joint direction targets(plural)
 	TArray<FLimbTarget> ajdc_targets;
 	
+	//general variables used across several function
+	FVector weapon_twist_solder;
+	FVector weapon_twist_target;
+
 	//arm_twist_controller
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FPIDData atc;
@@ -398,16 +426,23 @@ public:
 
 
 
-private:
+protected:
 
+	//COLLISION FUNCTIONS =================================================================================
 	void FellOutOfWorld(const class UDamageType& dmgType);
+	UFUNCTION()
+	void OnBodyHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
+
+	//CONTROL FUNCTIONS =================================================================================
 	void initInputVars();
+	void setNormalStanceTargets();
+	void setGuardingStanceTargets();
+	void setDisabledStanceTargets();
 	void setArmTwistTargets();
 
 	FCalculateCustomPhysics OnCalculateCustomHoverPhysics; //HOVER
 	void customHoverPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-	
 	FCalculateCustomPhysics OnCalculateControlGripPhysics; //GRIP
 	void ControlGripPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateControlArmJointDirectionPhysics; //GRIP POSITION
@@ -416,29 +451,27 @@ private:
 	void ControlArmTwistPhysics(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateControlWeaponTwistPhysics; // WEAPON TWist
 	void ControlWeaponTwistPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-	
 	FCalculateCustomPhysics OnCalculateWeaponGrabControl; // WEAPON Grabbing
 	void weaponGrabControl(float DeltaTime, FBodyInstance* BodyInstance);
 	FCalculateCustomPhysics OnCalculateCustomInitGripPhysics;
 	void customInitGripPhysics(float DeltaTime, FBodyInstance* BodyInstance);
-
-	FCalculateCustomPhysics CalculateControlBody; //GRIP POSITION
+	FCalculateCustomPhysics CalculateControlBody;
 	void ControlBody(float DeltaTime, FBodyInstance* BodyInstance);
 
 	void updateLimbStates(FLimbNode* limb);
 	void ControlLimb(float DeltaTime, FLimbNode* limb);
 	
 	void controlCameraDirection(float DeltaTime);
+
+	void gripIndicatorCalculations(float DeltaTime);
+
+	// INIT FUNCTIONS ====================================================================================================
 	void initCamera();
-
 	void initBody();
-
 	void initWeapon();
 	void initWeaponJoints();
-
 	void initPIDs();
 	void initBodyJoints();
-
 	void initCustomPhysics();
 
 	//calculates the inertia of a bodyinstance relative to a point in worldspace
@@ -446,21 +479,7 @@ private:
 	float inertiaAboutAxis(const FMatrix& inertia_mat, const FVector& axis);
 	
 
-	//Camera control --------------------------------------------------------------
-	FVector locked_target_dir;
-	FVector locked_target_dir_xy;
 
-	//Weapon control --------------------------------------------------------------
-	//weapon control states
-	bool was_standing_still = true;
-	bool wep_extended = false;
-	bool rot_forward = true;
-
-	//general variables used across several function
-	FVector weapon_twist_solder;
-	FVector weapon_twist_target;
-	FVector input_dir;
-	FVector prev_input_dir;	
 	
 	//variables used for readability across several function
 

@@ -37,7 +37,7 @@ ATriggeredWeaponSpawner::ATriggeredWeaponSpawner() : AWeaponSpawner()
 	trigger_ftext->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	trigger_ftext->SetupAttachment(root);
 	trigger_ftext->SetRelativeLocation(FVector(0.f, 0.f, 200.f));
-	trigger_ftext->SetWorldSize(50.f);
+	trigger_ftext->SetWorldSize(26.f);
 	trigger_ftext->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
 
 	trigger_btext = CreateDefaultSubobject<UTextRenderComponent>(TEXT("TriggerBText"));
@@ -45,18 +45,19 @@ ATriggeredWeaponSpawner::ATriggeredWeaponSpawner() : AWeaponSpawner()
 	trigger_btext->SetupAttachment(root);
 	trigger_btext->SetRelativeLocation(FVector(0.f, 0.f, 200.f));
 	trigger_btext->SetRelativeRotation(FRotator(0.f, -180.f, 0.f));
-	trigger_btext->SetWorldSize(50.f);
+	trigger_btext->SetWorldSize(26.f);
 	trigger_btext->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
-
 }
 
 // Called when the game starts or when spawned
 void ATriggeredWeaponSpawner::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	trigger_ftext->SetText(weapon_template->GetName());
-	trigger_btext->SetText(weapon_template->GetName());
+	if (weapon_template)
+	{
+		trigger_ftext->SetText(weapon_template->GetName());
+		trigger_btext->SetText(weapon_template->GetName());
+	}
 
 	trigger->OnComponentBeginOverlap.AddDynamic(this, &ATriggeredWeaponSpawner::OnOverlapBegin);
 	trigger->OnComponentEndOverlap.AddDynamic(this, &ATriggeredWeaponSpawner::OnOverlapEnd);

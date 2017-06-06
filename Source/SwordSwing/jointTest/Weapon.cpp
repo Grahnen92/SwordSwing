@@ -63,10 +63,11 @@ void AWeapon::OnWeaponHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPri
 	{
 		if (hit_vel.Size() > 3500.f)
 		{
-			
 			FLatentActionInfo actionInfo;
 			actionInfo.CallbackTarget = this;
-			holder->GetController()->CastToPlayerController()->PlayDynamicForceFeedback(0.2f, 0.2f, false, true, false, true, EDynamicForceFeedbackAction::Start, actionInfo);
+			APlayerController* tmp_controller = holder->GetController()->CastToPlayerController();
+			if(tmp_controller)
+				tmp_controller->PlayDynamicForceFeedback(0.2f, 0.2f, false, true, false, true, EDynamicForceFeedbackAction::Start, actionInfo);
 		}
 	}
 
@@ -76,22 +77,42 @@ void AWeapon::OnWeaponHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPri
 		UE_LOG(LogTemp, Warning, TEXT("NormalImpulse.Size() 11 %f"), NormalImpulse.Size());
 		//UE_LOG(LogTemp, Warning, TEXT("hit_vel: %f"), hit_vel.Size());
 		FMath::Min(weapon_wood_impact_audio->VolumeMultiplier = NormalImpulse.Size() / 40000.f, 0.6f);
-		weapon_wood_impact_audio->Deactivate();
+		//weapon_wood_impact_audio->Deactivate();
 		weapon_wood_impact_audio->Activate();
 
 
 		if (holder)
 		{
-			holder->GetController()->CastToPlayerController()->ClientPlayForceFeedback(weapon_impact, false, FName("SwordImpact"));
+			APlayerController* tmp_controller = holder->GetController()->CastToPlayerController();
+			if (tmp_controller)
+				tmp_controller->ClientPlayForceFeedback(weapon_impact, false, FName("SwordImpact"));
 			//GetController()->CastToPlayerController()->DynamicForceFeedbacks
 		}
 	}
 
-	if (NormalImpulse.Size() > 30000.f && holder)
+	if (holder)
 	{
-		holder->disableSwingAbility();
-		FTimerHandle unused_handle;
-		GetWorldTimerManager().SetTimer(unused_handle, holder, &AJointCharacterTest::enableSwingAbility, 0.7f, false);
+		if (NormalImpulse.Size() > 30000.f && !holder->isGuarding())
+		{
+			//holder->disableArm();
+			FTimerHandle unused_handle;
+			//GetWorldTimerManager().SetTimer(unused_handle, holder, &AJointCharacterTest::enableArm, 0.7f, false);
+		}
+
+		AWeapon* tmp_wep = Cast<AWeapon>(OtherActor);
+		if (tmp_wep)
+		{
+			if (tmp_wep->holder->isGuarding() && !holder->isGuarding())
+			{
+				//holder->disableArm(0.7f);
+			}
+		}
+
+		if (holder->isGuarding()){
+			//HitComp->AddImpulseAtLocation(NormalImpulse, Hit.Location);
+			weapon_shaft->SetPhysicsLinearVelocity(FVector::ZeroVector);
+			weapon_shaft->SetPhysicsAngularVelocity(FVector::ZeroVector);
+		}
 	}
 }
 
