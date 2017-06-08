@@ -1,4 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
+#define LOCTEXT_NAMESPACE "SwordSwing" 
 
 #include "SwordSwing.h"
 #include "TriggeredWeaponSpawner.h"
@@ -55,8 +56,8 @@ void ATriggeredWeaponSpawner::BeginPlay()
 	Super::BeginPlay();
 	if (weapon_template)
 	{
-		trigger_ftext->SetText(weapon_template->GetName());
-		trigger_btext->SetText(weapon_template->GetName());
+		trigger_ftext->SetText(FText::FromString(weapon_template->GetName()));
+		trigger_btext->SetText(FText::FromString(weapon_template->GetName()));
 	}
 
 	trigger->OnComponentBeginOverlap.AddDynamic(this, &ATriggeredWeaponSpawner::OnOverlapBegin);

@@ -6,10 +6,10 @@ public class SwordSwing : ModuleRules
 {
 	public SwordSwing(TargetInfo Target)
 	{
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ProceduralMeshComponent",  "UMG", "Slate", "SlateCore"});
-
-		PrivateDependencyModuleNames.AddRange(new string[] { "RawMesh" });
-
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ProceduralMeshComponent", "Synthesis",  "UMG", "Slate", "SlateCore"});
+        PublicIncludePathModuleNames.AddRange(new string[] { "Synthesis" });
+        PrivateDependencyModuleNames.AddRange(new string[] {  });
+        PrivateIncludePathModuleNames.AddRange(new string[] {  });
         PublicAdditionalLibraries.Add(@"C:/Program Files (x86)/Epic Games/projects/SwordSwing/ThirdParty/voro++/libs/voro++.lib");
 
         PublicIncludePaths.Add(@"C:/Program Files (x86)/Epic Games/projects/SwordSwing/ThirdParty/voro++/includes");

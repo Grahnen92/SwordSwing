@@ -43,7 +43,7 @@ public:
 
 	void voronoiDiagramSignedDist(std::vector<voro::voronoicell_neighbor> *_v_cells, const std::vector<FVector> &_v_particles, FVector &_vd_dims, const  FVector& _world_pos = FVector(0.f, 0.f, 0.f));
 
-	void meshToLeveSet(FRawMesh* _rm, FVector& _world_pos);
+	//void meshToLeveSet(FRawMesh* _rm, FVector& _world_pos);
 
 	//_rel_transform is the transform that puts the origin of sf2 at a certain point relative to the origin of sf1
 	static void mergeLevelSets(LevelSet* _ls1, LevelSet* _ls2, FMatrix _rel_rotation, FVector rel_position, FVector frag_offset);
@@ -65,7 +65,7 @@ private:
 
 	void reallocateData();
 
-	float distanceToMesh(FRawMesh* _rm, FVector _p);
+	/*float distanceToMesh(FRawMesh* _rm, FVector _p);*/
 
 	// Transforms the positition to the integer space of  the data 3D array. Note that the returned 
 	// vector still contains floats and these are not rounded to integer values.

@@ -199,7 +199,7 @@ void ALastManMode::initStartRound()
 		//tmp_controller->SetIgnoreMoveInput(true);
 		Cast<AJointCharacterTest>(tmp_controller->GetPawn())->setCanMove(false);
 
-		fight_counters[i]->TextRender->SetText("Get ready!");
+		fight_counters[i]->GetTextRender()->SetText("Get ready!");
 		round_info_displays[i]->setRound(current_round);
 	}
 	for (const auto& spawn : weapon_spawns)
@@ -224,7 +224,7 @@ void ALastManMode::decrementCountdown()
 		ss_count << count_down;
 		for (int i = 0; i < GameState->PlayerArray.Num(); i++)
 		{
-			fight_counters[i]->TextRender->SetText(ss_count.str().c_str());
+			fight_counters[i]->GetTextRender()->SetText(ss_count.str().c_str());
 		}
 		count_down--;
 		FTimerHandle unused_handle;
@@ -234,7 +234,7 @@ void ALastManMode::decrementCountdown()
 	{
 		for (int i = 0; i < GameState->PlayerArray.Num(); i++)
 		{
-			fight_counters[i]->TextRender->SetText("Fight!");
+			fight_counters[i]->GetTextRender()->SetText("Fight!");
 		}
 		startRound();
 		FTimerHandle unused_handle;
@@ -334,7 +334,7 @@ void  ALastManMode::toggleFightText()
 {
 	for (int i = 0; i < GameState->PlayerArray.Num(); i++)
 	{
-		fight_counters[i]->TextRender->ToggleVisibility();
+		fight_counters[i]->GetTextRender()->ToggleVisibility();
 	}
 }
 

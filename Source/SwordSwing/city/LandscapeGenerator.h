@@ -4,7 +4,6 @@
 
 #include "GameFramework/Actor.h"
 #include "ProceduralMeshComponent.h"
-#include "breakables/MCTriangulator.h"
 #include "C:/Program Files (x86)/Epic Games/projects/SwordSwing/ThirdParty/voro++/includes/voro++.hh"
 
 #include "LandscapeGenerator.generated.h"

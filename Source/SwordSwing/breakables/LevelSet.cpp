@@ -447,67 +447,67 @@ void LevelSet::voronoiDiagramSignedDist(std::vector<voro::voronoicell_neighbor> 
 	}
 }
 
-void LevelSet::meshToLeveSet(FRawMesh* _rm, FVector& _w_pos)
-{
-	/*FVector dim = sf.getDims();
-	FVector res = sf.getRes();*/
-	float*** data = sf.getDataPtr();
-
-	w_pos = _w_pos;
-	float x, y, z;
-	float ox = (dims->X / res->X)*0.5f;
-	float oy = (dims->Y / res->Y)*0.5f;
-	float oz = (dims->Z / res->Z)*0.5f;
-	float resxm1d2 = ((res->X - 1) / 2.f);
-	float resym1d2 = ((res->Y - 1) / 2.f);
-	float reszm1d2 = ((res->Z - 1) / 2.f);
-	float resxm1 = (res->X - 1);
-	float resym1 = (res->Y - 1);
-	float reszm1 = (res->Z - 1);
-
-	/*scalar_value max = -std::numeric_limits<scalar_value>::infinity();
-	scalar_value min = -max;*/
-
-	for (int i = 0; i < res->X; i++)
-	{
-		for (int j = 0; j < res->Y; j++)
-		{
-			for (int k = 0; k < res->Z; k++) {
-				//if (i == 0 || j == 0 || k == 0 || i == res.X - 1 || j == res.Y - 1 || k == res.Z - 1) 
-				//{
-				//	//data[i][j][k] = -1000.0f;
-				//}
-				//else
-				//{
-				x = ((i - resxm1d2) / resxm1)*dims->X + w_pos.X;
-				y = ((j - resym1d2) / resym1)*dims->Y + w_pos.Y;
-				z = ((k - reszm1d2) / reszm1)*dims->Z + w_pos.Z;
-				//z = ((k ) / res.Z)*dim.Z + (dim.Z / res.Z)*0.5f;
-				data[i][j][k] = -distanceToMesh(_rm, FVector(x, y, z));
-
-
-				/*if (data[i][j][k] > max)
-				{
-				max = data[i][j][k];
-				}
-				else if (data[i][j][k] < min)
-				{
-				min = data[i][j][k];
-				}*/
-
-				/*if(data[i][j][k] > 0)
-				{
-				data[i][j][k] = 0.0f;
-				}
-				else
-				{
-				data[i][j][k] = 255.0f;
-				}*/
-				//}
-			}
-		}
-	}
-}
+//void LevelSet::meshToLeveSet(FRawMesh* _rm, FVector& _w_pos)
+//{
+//	/*FVector dim = sf.getDims();
+//	FVector res = sf.getRes();*/
+//	float*** data = sf.getDataPtr();
+//
+//	w_pos = _w_pos;
+//	float x, y, z;
+//	float ox = (dims->X / res->X)*0.5f;
+//	float oy = (dims->Y / res->Y)*0.5f;
+//	float oz = (dims->Z / res->Z)*0.5f;
+//	float resxm1d2 = ((res->X - 1) / 2.f);
+//	float resym1d2 = ((res->Y - 1) / 2.f);
+//	float reszm1d2 = ((res->Z - 1) / 2.f);
+//	float resxm1 = (res->X - 1);
+//	float resym1 = (res->Y - 1);
+//	float reszm1 = (res->Z - 1);
+//
+//	/*scalar_value max = -std::numeric_limits<scalar_value>::infinity();
+//	scalar_value min = -max;*/
+//
+//	for (int i = 0; i < res->X; i++)
+//	{
+//		for (int j = 0; j < res->Y; j++)
+//		{
+//			for (int k = 0; k < res->Z; k++) {
+//				//if (i == 0 || j == 0 || k == 0 || i == res.X - 1 || j == res.Y - 1 || k == res.Z - 1) 
+//				//{
+//				//	//data[i][j][k] = -1000.0f;
+//				//}
+//				//else
+//				//{
+//				x = ((i - resxm1d2) / resxm1)*dims->X + w_pos.X;
+//				y = ((j - resym1d2) / resym1)*dims->Y + w_pos.Y;
+//				z = ((k - reszm1d2) / reszm1)*dims->Z + w_pos.Z;
+//				//z = ((k ) / res.Z)*dim.Z + (dim.Z / res.Z)*0.5f;
+//				data[i][j][k] = -distanceToMesh(_rm, FVector(x, y, z));
+//
+//
+//				/*if (data[i][j][k] > max)
+//				{
+//				max = data[i][j][k];
+//				}
+//				else if (data[i][j][k] < min)
+//				{
+//				min = data[i][j][k];
+//				}*/
+//
+//				/*if(data[i][j][k] > 0)
+//				{
+//				data[i][j][k] = 0.0f;
+//				}
+//				else
+//				{
+//				data[i][j][k] = 255.0f;
+//				}*/
+//				//}
+//			}
+//		}
+//	}
+//}
 
 //_rel_transform is the transform that puts the origin of sf2 at a certain point relative to the origin of sf1
 void LevelSet::mergeLevelSets(LevelSet* _ls1, LevelSet* _ls2, FMatrix _rel_rotation, FVector rel_position, FVector frag_w_pos)
@@ -616,57 +616,57 @@ float LevelSet::getTLIValue(FVector _pos)
 	return v;
 }
 
-float LevelSet::distanceToMesh(FRawMesh* _rm, FVector _p)
-{
-	FVector closest_point_on_tri;
-	FVector closest_point_on_mesh;
-
-	float tmp_dist;
-	float min_dist;
-
-	int closest_tri_index;
-
-	closest_point_on_tri = FMath::ClosestPointOnTriangleToPoint(_p,
-		_rm->VertexPositions[_rm->WedgeIndices[0]],
-		_rm->VertexPositions[_rm->WedgeIndices[0 + 1]],
-		_rm->VertexPositions[_rm->WedgeIndices[0 + 2]]);
-
-	min_dist = FVector::DistSquared(closest_point_on_tri, _p);
-	closest_point_on_mesh = closest_point_on_tri;
-	closest_tri_index = 0;
-
-
-	for (int i = 3; i < _rm->WedgeIndices.Num(); i = i + 3)
-	{
-		closest_point_on_tri = FMath::ClosestPointOnTriangleToPoint(_p,
-			_rm->VertexPositions[_rm->WedgeIndices[i]],
-			_rm->VertexPositions[_rm->WedgeIndices[i + 1]],
-			_rm->VertexPositions[_rm->WedgeIndices[i + 2]]);
-
-		tmp_dist = FVector::DistSquared(closest_point_on_tri, _p);
-		if (tmp_dist < min_dist)
-		{
-			min_dist = tmp_dist;
-			closest_point_on_mesh = closest_point_on_tri;
-			closest_tri_index = i;
-		}
-	}
-
-
-	FVector closest_vector = closest_point_on_mesh - _p;
-	FVector e1 = _rm->VertexPositions[_rm->WedgeIndices[closest_tri_index + 1]] - _rm->VertexPositions[_rm->WedgeIndices[closest_tri_index]];
-	FVector e2 = _rm->VertexPositions[_rm->WedgeIndices[closest_tri_index + 2]] - _rm->VertexPositions[_rm->WedgeIndices[closest_tri_index]];
-	closest_vector.Normalize();
-	if (FVector::DotProduct(closest_vector, FVector::CrossProduct(e1, e2)) < 0)
-	{
-		return -min_dist;
-	}
-	else
-	{
-		return min_dist;
-	}
-
-}
+//float LevelSet::distanceToMesh(FRawMesh* _rm, FVector _p)
+//{
+//	FVector closest_point_on_tri;
+//	FVector closest_point_on_mesh;
+//
+//	float tmp_dist;
+//	float min_dist;
+//
+//	int closest_tri_index;
+//
+//	closest_point_on_tri = FMath::ClosestPointOnTriangleToPoint(_p,
+//		_rm->VertexPositions[_rm->WedgeIndices[0]],
+//		_rm->VertexPositions[_rm->WedgeIndices[0 + 1]],
+//		_rm->VertexPositions[_rm->WedgeIndices[0 + 2]]);
+//
+//	min_dist = FVector::DistSquared(closest_point_on_tri, _p);
+//	closest_point_on_mesh = closest_point_on_tri;
+//	closest_tri_index = 0;
+//
+//
+//	for (int i = 3; i < _rm->WedgeIndices.Num(); i = i + 3)
+//	{
+//		closest_point_on_tri = FMath::ClosestPointOnTriangleToPoint(_p,
+//			_rm->VertexPositions[_rm->WedgeIndices[i]],
+//			_rm->VertexPositions[_rm->WedgeIndices[i + 1]],
+//			_rm->VertexPositions[_rm->WedgeIndices[i + 2]]);
+//
+//		tmp_dist = FVector::DistSquared(closest_point_on_tri, _p);
+//		if (tmp_dist < min_dist)
+//		{
+//			min_dist = tmp_dist;
+//			closest_point_on_mesh = closest_point_on_tri;
+//			closest_tri_index = i;
+//		}
+//	}
+//
+//
+//	FVector closest_vector = closest_point_on_mesh - _p;
+//	FVector e1 = _rm->VertexPositions[_rm->WedgeIndices[closest_tri_index + 1]] - _rm->VertexPositions[_rm->WedgeIndices[closest_tri_index]];
+//	FVector e2 = _rm->VertexPositions[_rm->WedgeIndices[closest_tri_index + 2]] - _rm->VertexPositions[_rm->WedgeIndices[closest_tri_index]];
+//	closest_vector.Normalize();
+//	if (FVector::DotProduct(closest_vector, FVector::CrossProduct(e1, e2)) < 0)
+//	{
+//		return -min_dist;
+//	}
+//	else
+//	{
+//		return min_dist;
+//	}
+//
+//}
 
 // Transforms the positition to the integer space of  the data 3D array. Note that the returned 
 // vector still contains floats and these are not rounded to integer values.

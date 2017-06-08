@@ -17,7 +17,7 @@ ARoundInfo::ARoundInfo()
 
 	round_text = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Score"));
 	round_text->SetupAttachment(RootComponent);
-	round_text->SetText("Round 0");
+	round_text->SetText(FText::FromString("Round 0"));
 	round_text->WorldSize = 500.f;
 	round_text->HorizontalAlignment = EHorizTextAligment::EHTA_Center;
 	round_text->SetOnlyOwnerSee(true);
@@ -126,6 +126,6 @@ void ARoundInfo::setRound(int _round)
 {
 	std::stringstream ss;
 	ss << "Round " << _round;
-	round_text->SetText(ss.str().c_str());
+	round_text->SetText(FText::FromString(ss.str().c_str()));
 }
 

@@ -36,12 +36,12 @@ void MCTriangulator::marchingCubes(UProceduralMeshComponent* _mesh, ScalarField<
 	float _iso_value = _iso_val;
 	float*** _data = _sf->getDataPtr();
 
-	float resxm1 = (_res.X - 1);
-	float resxm1d2 = resxm1 / 2.0f;
-	float resym1 = (_res.Y - 1);
-	float resym1d2 = resym1 / 2.0f;
-	float reszm1 = (_res.Z - 1);
-	float reszm1d2 = reszm1 / 2.0f;
+	resxm1 = (_res.X - 1);
+	resxm1d2 = resxm1 / 2.0f;
+	resym1 = (_res.Y - 1);
+	resym1d2 = resym1 / 2.0f;
+	reszm1 = (_res.Z - 1);
+	reszm1d2 = reszm1 / 2.0f;
 
 	isoCache = new mcCacheCell**[2];
 	for (int i = 0; i < 2; i++)

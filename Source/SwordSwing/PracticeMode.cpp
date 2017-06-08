@@ -139,7 +139,7 @@ void APracticeMode::eventOne(UPrimitiveComponent* OverlappedComp, AActor* OtherA
 	FActorSpawnParameters SpawnInfo;
 	FTransform tmp_trans; tmp_trans.SetTranslation(platforms[1]->GetComponentLocation() + FVector(-700.f, 500.f, -initial_pos + 200.f)); tmp_trans.SetRotation(FQuat(FRotator(0.f, -70.f, 0.f)));
 	ATextRenderActor* tmp_text = GetWorld()->SpawnActor<ATextRenderActor>(ATextRenderActor::StaticClass(), tmp_trans, SpawnInfo);
-	tmp_text->GetTextRender()->SetText("Press  A  to jump");
+	tmp_text->GetTextRender()->SetText(TEXT("Press  A  to jump"));
 	tmp_text->GetTextRender()->SetWorldSize(50.f);
 	tmp_text->GetTextRender()->SetTextRenderColor(FColor::Black);
 	tmp_text->GetTextRender()->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
@@ -174,7 +174,7 @@ void APracticeMode::eventThree(UPrimitiveComponent* OverlappedComp, AActor* Othe
 	FActorSpawnParameters SpawnInfo;
 	FTransform tmp_trans; tmp_trans.SetTranslation(platforms[2]->GetComponentLocation() + FVector(-700.f, 500.f, -initial_pos + 200.f)); tmp_trans.SetRotation(FQuat(FRotator(0.f, -70.f, 0.f)));
 	ATextRenderActor* tmp_text2 = GetWorld()->SpawnActor<ATextRenderActor>(ATextRenderActor::StaticClass(), tmp_trans, SpawnInfo);
-	tmp_text2->GetTextRender()->SetText("Press  L1  to dash <br> Try combining it with jump to travel further");
+	tmp_text2->GetTextRender()->SetText(TEXT("Press  L1  to dash <br> Try combining it with jump to travel further"));
 	tmp_text2->GetTextRender()->SetWorldSize(50.f);
 	tmp_text2->GetTextRender()->SetTextRenderColor(FColor::Black);
 	tmp_text2->GetTextRender()->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
@@ -192,7 +192,7 @@ void APracticeMode::eventFour(UPrimitiveComponent* OverlappedComp, AActor* Other
 	FActorSpawnParameters SpawnInfo;
 	FTransform tmp_trans; tmp_trans.SetTranslation(platforms[4]->GetComponentLocation() + FVector(-700.f, 500.f, -initial_pos + 220.f)); tmp_trans.SetRotation(FQuat(FRotator(0.f, -60.f, 0.f)));
 	ATextRenderActor* tmp_text = GetWorld()->SpawnActor<ATextRenderActor>(ATextRenderActor::StaticClass(), tmp_trans, SpawnInfo);
-	tmp_text->GetTextRender()->SetText("Press and HOLD R1 with your <br> hand above a weapon to pick it up");
+	tmp_text->GetTextRender()->SetText(TEXT("Press and HOLD R1 with your <br> hand above a weapon to pick it up"));
 	tmp_text->GetTextRender()->SetWorldSize(50.f);
 	tmp_text->GetTextRender()->SetTextRenderColor(FColor::Black);
 	tmp_text->GetTextRender()->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
@@ -235,7 +235,7 @@ void APracticeMode::eventFive(UPrimitiveComponent* OverlappedComp, AActor* Other
 	FActorSpawnParameters SpawnInfo;
 	FTransform tmp_trans; tmp_trans.SetTranslation(bridges[2]->GetComponentLocation() + FVector(-700.f, 500.f, -initial_pos + 220.f)); tmp_trans.SetRotation(FQuat(FRotator(0.f, -60.f, 0.f)));
 	ATextRenderActor* tmp_text = GetWorld()->SpawnActor<ATextRenderActor>(ATextRenderActor::StaticClass(), tmp_trans, SpawnInfo);
-	tmp_text->GetTextRender()->SetText("Press and HOLD L2 to enter FIGHT MODE <br> The camera will then lock to a target and <br> RIGHT STICK no longer controls the camera <br> instead it now controls the direction of your weapon <br> <br> try touching the middle of the object in front of you.");
+	tmp_text->GetTextRender()->SetText(TEXT("Press and HOLD L2 to enter FIGHT MODE <br> The camera will then lock to a target and <br> RIGHT STICK no longer controls the camera <br> instead it now controls the direction of your weapon <br> <br> try touching the middle of the object in front of you."));
 	tmp_text->GetTextRender()->SetWorldSize(50.f);
 	tmp_text->GetTextRender()->SetTextRenderColor(FColor::Black);
 	tmp_text->GetTextRender()->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);

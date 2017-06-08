@@ -20,6 +20,12 @@ void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 
+	weapon_head->SetPhysicsMaxAngularVelocity(5000.f);
+	weapon_head->SetMassOverrideInKg(NAME_None, 10.f, true);
+
+	weapon_shaft->SetPhysicsMaxAngularVelocity(5000.f);
+	weapon_shaft->SetMassOverrideInKg(NAME_None, 2.f, true);
+
 	weapon_head->OnComponentHit.AddDynamic(this, &AWeapon::OnWeaponHit);
 }
 
@@ -118,14 +124,14 @@ void AWeapon::OnWeaponHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPri
 
 void AWeapon::weaponSwishAudioMix()
 {
-	weapon_swish_audio->active_sound->LowPassFilterFrequency = (weapon_head->GetPhysicsLinearVelocity() + weapon_head->GetPhysicsAngularVelocity()).Size();
+	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (weapon_head->GetPhysicsLinearVelocity() + weapon_head->GetPhysicsAngularVelocity()).Size();
 	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (FMath::Pow(weapon_bi->GetUnrealWorldAngularVelocity().Size(),2) / FMath::Pow(weapon_bi->MaxAngularVelocity, 2))*16000.f;
 	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (weapon_bi->GetUnrealWorldAngularVelocity().Size() / weapon_bi->MaxAngularVelocity)*12000.f;
 	//weapon_swish_audio->active_sound->LowPassFilterFrequency = (FMath::Sqrt(weapon_bi->GetUnrealWorldAngularVelocity().Size()) / FMath::Sqrt(weapon_bi->MaxAngularVelocity))*5000.f;
 
 	//weapon_swish_audio->active_sound->VolumeMultiplier = FMath::Loge(weapon_bi->GetUnrealWorldAngularVelocity().Size()) / FMath::Loge(weapon_bi->MaxAngularVelocity);
 	//weapon_swish_audio->active_sound->VolumeMultiplier = weapon_bi->GetUnrealWorldAngularVelocity().Size() / weapon_bi->MaxAngularVelocity;
-	weapon_swish_audio->active_sound->VolumeMultiplier = FMath::Min(FMath::Pow(weapon_head->GetPhysicsAngularVelocity().Size(), 2) / FMath::Pow(weapon_head->GetBodyInstance()->MaxAngularVelocity, 2), 0.4f);
+	//weapon_swish_audio->active_sound->VolumeMultiplier = FMath::Min(FMath::Pow(weapon_head->GetPhysicsAngularVelocity().Size(), 2) / FMath::Pow(weapon_head->GetBodyInstance()->MaxAngularVelocity, 2), 0.4f);
 }
 
 void AWeapon::initWeapon()
@@ -141,8 +147,7 @@ void AWeapon::initWeapon()
 	weapon_shaft->SetCapsuleRadius(2.5f);
 	weapon_shaft->SetSimulatePhysics(true);
 	weapon_shaft->SetEnableGravity(false);
-	weapon_shaft->SetPhysicsMaxAngularVelocity(5000.f);
-	weapon_shaft->SetMassOverrideInKg(NAME_None, 2.f, true);
+
 	weapon_shaft_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponShaftVis"));
 	weapon_shaft_vis->SetupAttachment(weapon_shaft);
 
@@ -161,8 +166,7 @@ void AWeapon::initWeapon()
 	//weapon_head->SetCapsuleRadius(10.f);
 	weapon_head->SetSimulatePhysics(false);
 	weapon_head->SetEnableGravity(false);
-	weapon_head->SetPhysicsMaxAngularVelocity(5000.f);
-	weapon_head->SetMassOverrideInKg(NAME_None, 10.f, true);
+
 	weapon_head_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponHeadVis"));
 	weapon_head_vis->SetupAttachment(weapon_head);
 

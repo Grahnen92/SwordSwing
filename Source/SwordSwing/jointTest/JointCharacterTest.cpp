@@ -1585,8 +1585,7 @@ void AJointCharacterTest::initWeapon()
 	grip_axis->SetSphereRadius(30.f);
 	grip_axis->SetSimulatePhysics(true);
 	grip_axis->SetEnableGravity(false);
-	grip_axis->SetMassOverrideInKg(NAME_None, 20.f, true);
-	grip_axis->SetPhysicsMaxAngularVelocity(5000.f);
+
 	grip_axis_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponAxisVis"));
 	grip_axis_vis->SetupAttachment(grip_axis);
 	grip_axis_attachment = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("GripAxisAttachment"));
@@ -1600,8 +1599,7 @@ void AJointCharacterTest::initWeapon()
 	grip->SetSphereRadius(20.f);
 	grip->SetSimulatePhysics(true);
 	grip->SetEnableGravity(false);
-	grip->SetMassOverrideInKg(NAME_None, 15.f, true);
-	grip->SetPhysicsMaxAngularVelocity(5000.f);
+	
 	grip_vis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponHandle1Vis"));
 	grip_vis->SetupAttachment(grip);
 	
@@ -1820,6 +1818,13 @@ void AJointCharacterTest::initCustomPhysics()
 
 	//arm_BIs[1]->SetBodyTransform(FTransform(arm_BIs[1]->GetUnrealWorldTransform().GetTranslation() + FVector::UpVector*70.f), true);
 	//grip_v_bi->SetBodyTransform(FTransform(grip_v_bi->GetUnrealWorldTransform().GetTranslation() + FVector::UpVector*70.f), true);
+
+
+	grip->SetMassOverrideInKg(NAME_None, 15.f, true);
+	grip->SetPhysicsMaxAngularVelocity(5000.f);
+
+	grip_axis->SetMassOverrideInKg(NAME_None, 20.f, true);
+	grip_axis->SetPhysicsMaxAngularVelocity(5000.f);
 }
 
 void AJointCharacterTest::calculateWepInertia()

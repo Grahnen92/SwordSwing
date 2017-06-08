@@ -14,7 +14,6 @@
 #include "C:/Program Files (x86)/Epic Games/projects/SwordSwing/ThirdParty/voro++/includes/voro++.hh"
 
 #include "utilities/OMath.h"
-#include "RawMesh.h"
 #include <limits>
 #include <iostream>
 

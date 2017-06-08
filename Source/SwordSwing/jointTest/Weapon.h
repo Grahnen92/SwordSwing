@@ -40,10 +40,11 @@ protected:
 	UPROPERTY(Category = "WeaponPart", VisibleAnywhere)
 	UParticleSystemComponent* weapon_trail;
 
-	UPROPERTY(Category = "WeaponPart", VisibleAnywhere)
+	UPROPERTY(Category = "WeaponAudio", VisibleAnywhere)
 	UAudioComponent* weapon_swish_audio;
-	UPROPERTY(Category = "WeaponPart", VisibleAnywhere)
+	UPROPERTY(Category = "WeaponAudio", VisibleAnywhere)
 	UAudioComponent* weapon_wood_impact_audio;
+
 
 	UForceFeedbackEffect* weapon_impact;
 

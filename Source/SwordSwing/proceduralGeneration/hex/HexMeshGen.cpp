@@ -11,7 +11,6 @@ AHexMeshGen::AHexMeshGen()
 	PrimaryActorTick.bCanEverTick = true;
 
 	root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
-
 	hexscape = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Hexscape"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> land_mat(TEXT("/Game/materials/ProceduralMaterial.ProceduralMaterial"));
 	hexscape_material = land_mat.Object;

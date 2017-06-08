@@ -23,9 +23,9 @@ void AdebugController::BeginPlay()
 void AdebugController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	APlayerController* const MyPlayer = Cast<APlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
-	if (MyPlayer->IsPaused())
-		MyPlayer->SetPause(false);
+
+	if (IsPaused())
+		SetPause(false);
 }
 
 

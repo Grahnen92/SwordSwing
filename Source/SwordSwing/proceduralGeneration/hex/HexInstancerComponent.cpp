@@ -50,7 +50,8 @@ int UHexInstancerComponent::addInstance()
 	int i = instances.Num();
 	std::string comp_name = "Instance" + std::to_string(i);
 
-	instances.Add(ConstructObject<UInstancedStaticMeshComponent>(UInstancedStaticMeshComponent::StaticClass(), this, FName(&comp_name[0])));
+	//instances.Add(ConstructObject<UInstancedStaticMeshComponent>(UInstancedStaticMeshComponent::StaticClass(), this, FName(&comp_name[0])));
+	instances.Add(NewObject<UInstancedStaticMeshComponent>(this, UInstancedStaticMeshComponent::StaticClass()));
 	instances[i]->SetMaterial(0, instances[0]->GetMaterial(0));
 	return i;
 }
@@ -61,7 +62,8 @@ int  UHexInstancerComponent::addInstance(UMaterialInterface* mat)
 	int i = instances.Num();
 	std::string comp_name = "Instance" + std::to_string(i);
 
-	instances.Add(ConstructObject<UInstancedStaticMeshComponent>(UInstancedStaticMeshComponent::StaticClass(), this, FName(&comp_name[0])));
+	//instances.Add(ConstructObject<UInstancedStaticMeshComponent>(UInstancedStaticMeshComponent::StaticClass(), this, FName(&comp_name[0])));
+	instances.Add(NewObject<UInstancedStaticMeshComponent>(this, UInstancedStaticMeshComponent::StaticClass()));
 	instances[i]->SetMaterial(0, mat);
 	return i;
 }

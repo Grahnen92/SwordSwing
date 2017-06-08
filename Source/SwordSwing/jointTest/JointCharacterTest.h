@@ -164,15 +164,15 @@ protected:
 
 	// body components ==============================================================================
 	UPROPERTY(Category = "Body", VisibleAnywhere)
-		USkeletalMeshComponent* body;
+	USkeletalMeshComponent* body;
 
 	UPROPERTY(Category = "Body", VisibleAnywhere)
-		UParticleSystemComponent* body_trail;
+	UParticleSystemComponent* body_trail;
 
 	UPROPERTY(Category = "Body", VisibleAnywhere)
-		UParticleSystemComponent* left_thruster;
+	UParticleSystemComponent* left_thruster;
 	UPROPERTY(Category = "Body", VisibleAnywhere)
-		UParticleSystemComponent* right_thruster;
+	UParticleSystemComponent* right_thruster;
 
 	//Weapon States ==============================================================================
 
@@ -308,8 +308,6 @@ protected:
 	void jump();
 	//cm/s
 	
-
-
 public:	
 
 
@@ -386,7 +384,6 @@ public:
 	FPIDData2D movement_velocity;
 
 	//BODY PIDS -----------------------------------------------------
-
 	//upper body joint chain root
 	FLimbNode upbr;
 	void setTorsoTargets();
@@ -423,7 +420,6 @@ public:
 	//torso controller
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BodyPID")
 	FPIDData3D torso_controller;
-
 
 
 protected:
@@ -479,8 +475,6 @@ protected:
 	float inertiaAboutAxis(const FMatrix& inertia_mat, const FVector& axis);
 	
 
-
-	
 	//variables used for readability across several function
 
 	//arm body instance states
